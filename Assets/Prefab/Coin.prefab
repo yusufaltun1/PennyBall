@@ -9,6 +9,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3600200798398696661}
+  - component: {fileID: 7493714517531971334}
+  - component: {fileID: 6696761547977650908}
+  - component: {fileID: 6498795458950903796}
+  - component: {fileID: 3075832622915397146}
+  - component: {fileID: 4829173640582937145}
+  - component: {fileID: 5930284751693048256}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -32,6 +38,113 @@ Transform:
   - {fileID: 6075574771614398818}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
+--- !u!54 &7493714517531971334
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 291418687983328524}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 1
+  m_Constraints: 116
+  m_CollisionDetection: 2
+--- !u!114 &6696761547977650908
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 291418687983328524}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd18b15a27e6b4804af20ee2e3616f2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinDragController
+  _launchForceMultiplier: 4
+  _maxLaunchSpeed: 8
+  _maxPullDistance: 0.35
+  _minPullDistance: 0.025
+  _stopSpeedThreshold: 0.05
+  _linearDamping: 2
+  _angularDamping: 5
+  _mass: 0.1
+  _wallBounceRetention: 0.9
+  _boundariesRootName: Boundries
+--- !u!114 &6498795458950903796
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 291418687983328524}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6faaa7fcb4c484dce8dc6b4ef0912aa5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinAimIndicator
+  _lineHeightOffset: 0.003
+  _lineWidth: 0.006
+  _pullLineColor: {r: 1, g: 0.45, b: 0.2, a: 0}
+  _aimLineColor: {r: 0.2, g: 0.95, b: 0.45, a: 0.95}
+--- !u!114 &3075832622915397146
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 291418687983328524}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a045b69fb3c5e45248465ebbd0cd6478, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinColliderFitter
+  _radiusScale: 0.98
+  _heightScale: 1
+  _cylinderSegments: 24
+--- !u!114 &4829173640582937145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 291418687983328524}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d37c95f0d1db54043ab34c8f36a36d9d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinIdentity
+  _team: 0
+  _autoDetectTeamFromName: 1
+--- !u!114 &5930284751693048256
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 291418687983328524}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1dfe6c2a517047ee9c5be975eab32fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinVisualState
+  _passiveColorMultiplier: 0.55
 --- !u!1 &6853097355249902552
 GameObject:
   m_ObjectHideFlags: 0
@@ -58,13 +171,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6853097355249902552}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0.00000017881392, y: -0.000000104308114, z: 0.3490534, w: -0.9371029}
+  m_LocalPosition: {x: -0.000000012780672, y: -0.0000000071729094, z: -1.1368684e-15}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3600200798398696661}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 180}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 319.141}
 --- !u!33 &7205509290170889927
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -81,7 +194,7 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6853097355249902552}
   m_Enabled: 1
-  m_CastShadows: 1
+  m_CastShadows: 0
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
