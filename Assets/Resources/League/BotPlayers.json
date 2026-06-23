@@ -1,0 +1,8012 @@
+{
+  "version": 1,
+  "totalBots": 1000,
+  "countryDistribution": {
+    "US": 920,
+    "CA": 40,
+    "MX": 25,
+    "GB": 15
+  },
+  "bots": [
+    {
+      "id": 0,
+      "displayName": "BearFox18",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 14,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 1,
+      "displayName": "CoinMaster46",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 2,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 2,
+      "displayName": "xXOmegaStrike66Xx",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 14,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 3,
+      "displayName": "Ryan46",
+      "countryCode": "CA",
+      "homeLeague": 1,
+      "avatarIndex": 7,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 4,
+      "displayName": "xXLegendPro25Xx",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 12,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 5,
+      "displayName": "Kevin92",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 14,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 6,
+      "displayName": "FlashShot15",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 15,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 7,
+      "displayName": "ThunderBoss28",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 4,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 8,
+      "displayName": "BlazeBoss58",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 2,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 9,
+      "displayName": "Dynamo_75",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 13,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 10,
+      "displayName": "Brock38",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 15,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 11,
+      "displayName": "FrostX50",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 13,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 12,
+      "displayName": "ZeroMaster50",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 2,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 13,
+      "displayName": "Omega_98",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 3,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 14,
+      "displayName": "PennyKid66",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 14,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 15,
+      "displayName": "Brandon58",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 3,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 16,
+      "displayName": "Rush_83",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 15,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 17,
+      "displayName": "TurboMaster14",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 0,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 18,
+      "displayName": "Rogue_91",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 9,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 19,
+      "displayName": "CobraMaster80",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 10,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 20,
+      "displayName": "Wyatt93",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 11,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 21,
+      "displayName": "xXShadowX81Xx",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 12,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 22,
+      "displayName": "Neon_44",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 1,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 23,
+      "displayName": "Brian78",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 9,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 24,
+      "displayName": "xXBearX37Xx",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 10,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 25,
+      "displayName": "Rush_58",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 6,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 26,
+      "displayName": "Ghost_67",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 12,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 27,
+      "displayName": "Wolf_53",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 9,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 28,
+      "displayName": "xXGhostStrike92Xx",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 2,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 29,
+      "displayName": "RocketFox25",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 2,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 30,
+      "displayName": "Trevor60",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 13,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 31,
+      "displayName": "LaserFox65",
+      "countryCode": "CA",
+      "homeLeague": 1,
+      "avatarIndex": 14,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 32,
+      "displayName": "BoltFox35",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 0,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 33,
+      "displayName": "LaserPro37",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 11,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 34,
+      "displayName": "Mason11",
+      "countryCode": "CA",
+      "homeLeague": 1,
+      "avatarIndex": 11,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 35,
+      "displayName": "Sarah68",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 4,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 36,
+      "displayName": "Steel_74",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 2,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 37,
+      "displayName": "TurboMaster85",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 2,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 38,
+      "displayName": "Prime_76",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 1,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 39,
+      "displayName": "xXShadowGuy75Xx",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 15,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 40,
+      "displayName": "WolfBoss49",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 9,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 41,
+      "displayName": "Grant95",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 9,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 42,
+      "displayName": "Raptor_79",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 15,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 43,
+      "displayName": "NeonPro80",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 0,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 44,
+      "displayName": "Hunter17",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 2,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 45,
+      "displayName": "xXRaptorStrike42Xx",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 8,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 46,
+      "displayName": "Mike39",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 3,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 47,
+      "displayName": "RogueGuy82",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 5,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 48,
+      "displayName": "Jackson96",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 5,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 49,
+      "displayName": "Coin_11",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 4,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 50,
+      "displayName": "RocketFox26",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 7,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 51,
+      "displayName": "Ace_99",
+      "countryCode": "MX",
+      "homeLeague": 1,
+      "avatarIndex": 11,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 52,
+      "displayName": "Rachel40",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 1,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 53,
+      "displayName": "Blake58",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 15,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 54,
+      "displayName": "Nova_75",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 12,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 55,
+      "displayName": "NitroFox25",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 9,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 56,
+      "displayName": "xXRushBoss64Xx",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 1,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 57,
+      "displayName": "Emily75",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 13,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 58,
+      "displayName": "SteelBoss90",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 8,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 59,
+      "displayName": "Prime_39",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 14,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 60,
+      "displayName": "Prime_37",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 10,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 61,
+      "displayName": "Penny_30",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 0,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 62,
+      "displayName": "Shadow_15",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 3,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 63,
+      "displayName": "CobraBoss94",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 9,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 64,
+      "displayName": "Jake11",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 2,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 65,
+      "displayName": "Madison83",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 3,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 66,
+      "displayName": "Turbo_22",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 4,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 67,
+      "displayName": "OmegaStrike89",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 5,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 68,
+      "displayName": "Madison66",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 14,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 69,
+      "displayName": "xXBearBoss42Xx",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 5,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 70,
+      "displayName": "Neon_42",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 12,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 71,
+      "displayName": "Aiden14",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 5,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 72,
+      "displayName": "CrimsonX69",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 5,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 73,
+      "displayName": "RogueKid20",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 6,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 74,
+      "displayName": "CobraPro20",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 1,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 75,
+      "displayName": "Lauren80",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 14,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 76,
+      "displayName": "Logan70",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 0,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 77,
+      "displayName": "xXRushPro92Xx",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 10,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 78,
+      "displayName": "xXShadowKid80Xx",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 15,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 79,
+      "displayName": "PixelKid58",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 0,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 80,
+      "displayName": "FlashShot95",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 11,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 81,
+      "displayName": "Adam45",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 2,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 82,
+      "displayName": "TurboGuy50",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 6,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 83,
+      "displayName": "Eric12",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 6,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 84,
+      "displayName": "Austin56",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 11,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 85,
+      "displayName": "CobraMaster87",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 1,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 86,
+      "displayName": "Drew99",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 15,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 87,
+      "displayName": "PhantomGuy76",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 14,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 88,
+      "displayName": "xXIronBoss9Xx",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 10,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 89,
+      "displayName": "Hawk_12",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 6,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 90,
+      "displayName": "Nitro_92",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 4,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 91,
+      "displayName": "Pixel_36",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 4,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 92,
+      "displayName": "FlashX9",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 7,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 93,
+      "displayName": "Shadow_23",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 1,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 94,
+      "displayName": "xXDynamoX19Xx",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 2,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 95,
+      "displayName": "Storm_20",
+      "countryCode": "CA",
+      "homeLeague": 1,
+      "avatarIndex": 7,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 96,
+      "displayName": "Nathan32",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 12,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 97,
+      "displayName": "Cole94",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 4,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 98,
+      "displayName": "Rachel34",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 5,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 99,
+      "displayName": "Jayden22",
+      "countryCode": "US",
+      "homeLeague": 1,
+      "avatarIndex": 13,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 100,
+      "displayName": "Brock54",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 14,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 101,
+      "displayName": "Chris81",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 3,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 102,
+      "displayName": "Legend_87",
+      "countryCode": "CA",
+      "homeLeague": 2,
+      "avatarIndex": 5,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 103,
+      "displayName": "Noah69",
+      "countryCode": "CA",
+      "homeLeague": 2,
+      "avatarIndex": 0,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 104,
+      "displayName": "Jessica18",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 9,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 105,
+      "displayName": "GhostMaster67",
+      "countryCode": "CA",
+      "homeLeague": 2,
+      "avatarIndex": 8,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 106,
+      "displayName": "ViperStrike59",
+      "countryCode": "CA",
+      "homeLeague": 2,
+      "avatarIndex": 1,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 107,
+      "displayName": "RocketX98",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 9,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 108,
+      "displayName": "Brock7",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 6,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 109,
+      "displayName": "Austin74",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 11,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 110,
+      "displayName": "xXLaserMaster76Xx",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 6,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 111,
+      "displayName": "Cody31",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 15,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 112,
+      "displayName": "IronKing27",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 11,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 113,
+      "displayName": "Aiden62",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 14,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 114,
+      "displayName": "Tanner13",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 5,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 115,
+      "displayName": "Laser_69",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 2,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 116,
+      "displayName": "xXCobraX99Xx",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 10,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 117,
+      "displayName": "PennyMaster93",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 10,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 118,
+      "displayName": "Megan37",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 6,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 119,
+      "displayName": "PixelGuy35",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 15,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 120,
+      "displayName": "Logan62",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 14,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 121,
+      "displayName": "Hunter54",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 6,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 122,
+      "displayName": "CrimsonBoss41",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 1,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 123,
+      "displayName": "Steel_14",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 3,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 124,
+      "displayName": "xXWolfStrike65Xx",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 7,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 125,
+      "displayName": "xXAceX84Xx",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 7,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 126,
+      "displayName": "Chase73",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 15,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 127,
+      "displayName": "Shadow_42",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 13,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 128,
+      "displayName": "Viper_38",
+      "countryCode": "CA",
+      "homeLeague": 2,
+      "avatarIndex": 13,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 129,
+      "displayName": "RogueX82",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 13,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 130,
+      "displayName": "xXFlashKid12Xx",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 13,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 131,
+      "displayName": "BlazeGuy68",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 7,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 132,
+      "displayName": "Sarah8",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 13,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 133,
+      "displayName": "xXStrikerPro23Xx",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 2,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 134,
+      "displayName": "Wyatt92",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 14,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 135,
+      "displayName": "xXSwiftGuy81Xx",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 4,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 136,
+      "displayName": "xXBoltBoss58Xx",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 14,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 137,
+      "displayName": "Pixel_7",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 10,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 138,
+      "displayName": "BearPro44",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 6,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 139,
+      "displayName": "Legend_17",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 1,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 140,
+      "displayName": "SniperKing93",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 12,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 141,
+      "displayName": "IronBoss86",
+      "countryCode": "CA",
+      "homeLeague": 2,
+      "avatarIndex": 5,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 142,
+      "displayName": "PixelKid97",
+      "countryCode": "CA",
+      "homeLeague": 2,
+      "avatarIndex": 6,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 143,
+      "displayName": "Jackson49",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 3,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 144,
+      "displayName": "FrostMaster81",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 11,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 145,
+      "displayName": "xXBearPro71Xx",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 2,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 146,
+      "displayName": "RocketKid64",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 3,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 147,
+      "displayName": "ZeroPro75",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 11,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 148,
+      "displayName": "Pixel_95",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 14,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 149,
+      "displayName": "Ethan57",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 2,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 150,
+      "displayName": "Cody42",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 4,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 151,
+      "displayName": "NitroKing33",
+      "countryCode": "CA",
+      "homeLeague": 2,
+      "avatarIndex": 13,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 152,
+      "displayName": "xXGhostGuy76Xx",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 13,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 153,
+      "displayName": "SwiftPro89",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 2,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 154,
+      "displayName": "Garrett36",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 10,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 155,
+      "displayName": "PennyGuy50",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 14,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 156,
+      "displayName": "GhostPro79",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 8,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 157,
+      "displayName": "Carter54",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 4,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 158,
+      "displayName": "AceX65",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 9,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 159,
+      "displayName": "Jessica29",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 4,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 160,
+      "displayName": "Chris21",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 4,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 161,
+      "displayName": "BoltMaster54",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 1,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 162,
+      "displayName": "Rogue_51",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 14,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 163,
+      "displayName": "ZeroPro27",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 0,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 164,
+      "displayName": "RogueGuy70",
+      "countryCode": "MX",
+      "homeLeague": 2,
+      "avatarIndex": 4,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 165,
+      "displayName": "Colton76",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 9,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 166,
+      "displayName": "OmegaStrike44",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 14,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 167,
+      "displayName": "Lauren21",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 1,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 168,
+      "displayName": "Cody77",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 0,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 169,
+      "displayName": "CobraBoss35",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 10,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 170,
+      "displayName": "Noah89",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 7,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 171,
+      "displayName": "Crimson_42",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 2,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 172,
+      "displayName": "TurboKid64",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 6,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 173,
+      "displayName": "EliteKid84",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 11,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 174,
+      "displayName": "BearBoss98",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 11,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 175,
+      "displayName": "Brian51",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 14,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 176,
+      "displayName": "xXFrostGuy18Xx",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 13,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 177,
+      "displayName": "Ace_43",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 13,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 178,
+      "displayName": "Ghost_60",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 2,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 179,
+      "displayName": "William45",
+      "countryCode": "GB",
+      "homeLeague": 2,
+      "avatarIndex": 10,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 180,
+      "displayName": "Rachel82",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 2,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 181,
+      "displayName": "Jayden88",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 5,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 182,
+      "displayName": "OmegaStrike97",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 5,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 183,
+      "displayName": "Alpha_44",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 1,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 184,
+      "displayName": "Prime_45",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 15,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 185,
+      "displayName": "NovaKing66",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 4,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 186,
+      "displayName": "Ricardo88",
+      "countryCode": "MX",
+      "homeLeague": 2,
+      "avatarIndex": 9,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 187,
+      "displayName": "ViperKing69",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 8,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 188,
+      "displayName": "EliteBoss15",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 15,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 189,
+      "displayName": "FlashShot40",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 0,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 190,
+      "displayName": "Prime_27",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 4,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 191,
+      "displayName": "Hunter95",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 5,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 192,
+      "displayName": "Justin53",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 11,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 193,
+      "displayName": "Garrett44",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 2,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 194,
+      "displayName": "BoltShot87",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 5,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 195,
+      "displayName": "PhantomPro47",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 11,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 196,
+      "displayName": "Brian81",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 0,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 197,
+      "displayName": "Jason43",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 13,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 198,
+      "displayName": "Austin27",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 4,
+      "difficultyLevel": 1
+    },
+    {
+      "id": 199,
+      "displayName": "AlphaX31",
+      "countryCode": "US",
+      "homeLeague": 2,
+      "avatarIndex": 3,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 200,
+      "displayName": "StormStrike16",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 15,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 201,
+      "displayName": "Jason95",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 14,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 202,
+      "displayName": "xXNitroBoss83Xx",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 9,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 203,
+      "displayName": "Lucas22",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 4,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 204,
+      "displayName": "Ghost_46",
+      "countryCode": "MX",
+      "homeLeague": 3,
+      "avatarIndex": 4,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 205,
+      "displayName": "xXStormShot61Xx",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 15,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 206,
+      "displayName": "Crimson_12",
+      "countryCode": "MX",
+      "homeLeague": 3,
+      "avatarIndex": 1,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 207,
+      "displayName": "Prime_72",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 15,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 208,
+      "displayName": "Chris39",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 9,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 209,
+      "displayName": "Storm_19",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 6,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 210,
+      "displayName": "BoltBoss32",
+      "countryCode": "GB",
+      "homeLeague": 3,
+      "avatarIndex": 2,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 211,
+      "displayName": "Drew42",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 11,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 212,
+      "displayName": "Kayla71",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 7,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 213,
+      "displayName": "BlazeX15",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 6,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 214,
+      "displayName": "xXShadowShot75Xx37",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 15,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 215,
+      "displayName": "BoltGuy82",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 3,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 216,
+      "displayName": "Eric52",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 6,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 217,
+      "displayName": "StormBoss59",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 14,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 218,
+      "displayName": "Chase24",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 9,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 219,
+      "displayName": "TurboBoss12",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 3,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 220,
+      "displayName": "ElitePro65",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 14,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 221,
+      "displayName": "Carter59",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 6,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 222,
+      "displayName": "xXSniperStrike67Xx",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 15,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 223,
+      "displayName": "Cobra_57",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 2,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 224,
+      "displayName": "Adam57",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 3,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 225,
+      "displayName": "Pixel_28",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 6,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 226,
+      "displayName": "Adam83",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 7,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 227,
+      "displayName": "Rocket_99",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 8,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 228,
+      "displayName": "Hawk_89",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 15,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 229,
+      "displayName": "Rocket_58",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 8,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 230,
+      "displayName": "Austin65",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 8,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 231,
+      "displayName": "GhostKing36",
+      "countryCode": "CA",
+      "homeLeague": 3,
+      "avatarIndex": 1,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 232,
+      "displayName": "Swift_70",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 12,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 233,
+      "displayName": "RoguePro48",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 3,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 234,
+      "displayName": "Nitro_91",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 14,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 235,
+      "displayName": "Chase91",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 8,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 236,
+      "displayName": "ZeroKing76",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 13,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 237,
+      "displayName": "xXRushGuy22Xx",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 12,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 238,
+      "displayName": "IronStrike11",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 9,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 239,
+      "displayName": "xXRocketFox28Xx",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 9,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 240,
+      "displayName": "Storm_69",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 15,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 241,
+      "displayName": "Zero_94",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 15,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 242,
+      "displayName": "LaserKing27",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 8,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 243,
+      "displayName": "LegendBoss55",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 10,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 244,
+      "displayName": "Chris82",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 11,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 245,
+      "displayName": "Jake81",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 10,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 246,
+      "displayName": "StrikerBoss61",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 11,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 247,
+      "displayName": "Jackson38",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 9,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 248,
+      "displayName": "PixelPro95",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 10,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 249,
+      "displayName": "Ryan75",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 14,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 250,
+      "displayName": "Omega_61",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 13,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 251,
+      "displayName": "Blake96",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 0,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 252,
+      "displayName": "xXOmegaFox55Xx",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 3,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 253,
+      "displayName": "Frost_19",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 15,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 254,
+      "displayName": "CoinStrike92",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 9,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 255,
+      "displayName": "CrimsonGuy62",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 2,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 256,
+      "displayName": "Frost_75",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 8,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 257,
+      "displayName": "Adam80",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 2,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 258,
+      "displayName": "Blaze_81",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 10,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 259,
+      "displayName": "Garrett79",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 13,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 260,
+      "displayName": "Ashley16",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 9,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 261,
+      "displayName": "PennyMaster76",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 12,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 262,
+      "displayName": "Trevor72",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 5,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 263,
+      "displayName": "xXNitroStrike87Xx",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 15,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 264,
+      "displayName": "Jayden66",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 13,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 265,
+      "displayName": "xXNeonKid87Xx",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 11,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 266,
+      "displayName": "RoguePro37",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 13,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 267,
+      "displayName": "Emily15",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 13,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 268,
+      "displayName": "Ethan43",
+      "countryCode": "CA",
+      "homeLeague": 3,
+      "avatarIndex": 7,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 269,
+      "displayName": "RogueMaster21",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 7,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 270,
+      "displayName": "Dynamo_46",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 13,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 271,
+      "displayName": "CrimsonStrike11",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 4,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 272,
+      "displayName": "Madison42",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 5,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 273,
+      "displayName": "RocketKing12",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 2,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 274,
+      "displayName": "Brandon45",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 11,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 275,
+      "displayName": "Hawk_18",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 4,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 276,
+      "displayName": "Megan80",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 3,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 277,
+      "displayName": "NitroPro81",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 2,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 278,
+      "displayName": "Kayla22",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 10,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 279,
+      "displayName": "Viper_56",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 6,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 280,
+      "displayName": "Liam29",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 14,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 281,
+      "displayName": "NeonGuy82",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 11,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 282,
+      "displayName": "Penny_21",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 13,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 283,
+      "displayName": "SteelStrike38",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 15,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 284,
+      "displayName": "Swift_46",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 1,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 285,
+      "displayName": "Neon_91",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 7,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 286,
+      "displayName": "Wyatt56",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 11,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 287,
+      "displayName": "xXStormKid94Xx",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 14,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 288,
+      "displayName": "RaptorPro57",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 7,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 289,
+      "displayName": "Derek27",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 10,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 290,
+      "displayName": "xXWolfKing89Xx",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 2,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 291,
+      "displayName": "Flash_69",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 13,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 292,
+      "displayName": "xXBearShot49Xx",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 8,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 293,
+      "displayName": "WolfX52",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 10,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 294,
+      "displayName": "NeonStrike10",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 14,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 295,
+      "displayName": "Shadow_24",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 6,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 296,
+      "displayName": "OmegaShot47",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 5,
+      "difficultyLevel": 2
+    },
+    {
+      "id": 297,
+      "displayName": "Kayla98",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 4,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 298,
+      "displayName": "Wolf_94",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 14,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 299,
+      "displayName": "RaptorStrike24",
+      "countryCode": "US",
+      "homeLeague": 3,
+      "avatarIndex": 10,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 300,
+      "displayName": "Turbo_32",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 11,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 301,
+      "displayName": "Cole55",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 0,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 302,
+      "displayName": "xXLegendMaster78Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 14,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 303,
+      "displayName": "Mason96",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 12,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 304,
+      "displayName": "RaptorStrike83",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 11,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 305,
+      "displayName": "Cody79",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 306,
+      "displayName": "Rocket_65",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 7,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 307,
+      "displayName": "Steel_31",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 15,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 308,
+      "displayName": "FrostX62",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 9,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 309,
+      "displayName": "Wolf_31",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 310,
+      "displayName": "Thunder_10",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 7,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 311,
+      "displayName": "SniperX38",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 14,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 312,
+      "displayName": "Hunter67",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 12,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 313,
+      "displayName": "Rush_98",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 314,
+      "displayName": "Pixel_39",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 1,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 315,
+      "displayName": "Blake37",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 1,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 316,
+      "displayName": "Shane71",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 9,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 317,
+      "displayName": "xXSniperStrike92Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 1,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 318,
+      "displayName": "AceKid40",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 10,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 319,
+      "displayName": "xXTurboBoss23Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 320,
+      "displayName": "Ryan21",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 4,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 321,
+      "displayName": "SniperFox42",
+      "countryCode": "CA",
+      "homeLeague": 4,
+      "avatarIndex": 8,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 322,
+      "displayName": "NitroBoss40",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 5,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 323,
+      "displayName": "Rachel69",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 14,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 324,
+      "displayName": "Tyler26",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 5,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 325,
+      "displayName": "Mason40",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 14,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 326,
+      "displayName": "IronGuy70",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 15,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 327,
+      "displayName": "RogueShot21",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 2,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 328,
+      "displayName": "Steel_7282",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 6,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 329,
+      "displayName": "NitroX7",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 330,
+      "displayName": "xXRocketShot38Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 0,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 331,
+      "displayName": "Cody94",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 11,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 332,
+      "displayName": "PennyStrike20",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 2,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 333,
+      "displayName": "FlashGuy97",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 8,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 334,
+      "displayName": "CoinKing7",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 14,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 335,
+      "displayName": "Jack79",
+      "countryCode": "GB",
+      "homeLeague": 4,
+      "avatarIndex": 1,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 336,
+      "displayName": "Penny_43",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 2,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 337,
+      "displayName": "RushShot84",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 8,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 338,
+      "displayName": "Dylan58",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 6,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 339,
+      "displayName": "Carter58",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 4,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 340,
+      "displayName": "Nathan69",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 9,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 341,
+      "displayName": "xXGhostBoss84Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 3,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 342,
+      "displayName": "Crimson_72",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 14,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 343,
+      "displayName": "xXSteelX67Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 344,
+      "displayName": "Jason61",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 5,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 345,
+      "displayName": "TurboKing61",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 10,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 346,
+      "displayName": "xXNovaStrike93Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 2,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 347,
+      "displayName": "Dylan62",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 9,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 348,
+      "displayName": "Hannah23",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 7,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 349,
+      "displayName": "OmegaKing44",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 2,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 350,
+      "displayName": "xXBlazeKid72Xx",
+      "countryCode": "CA",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 351,
+      "displayName": "Lauren91",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 8,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 352,
+      "displayName": "TurboKid81",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 3,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 353,
+      "displayName": "Bolt_66",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 12,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 354,
+      "displayName": "Jessica60",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 10,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 355,
+      "displayName": "CobraX65",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 10,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 356,
+      "displayName": "xXFrostStrike30Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 8,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 357,
+      "displayName": "xXBearKid20Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 0,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 358,
+      "displayName": "AceGuy8",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 12,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 359,
+      "displayName": "xXRocketPro84Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 11,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 360,
+      "displayName": "Hawk_95",
+      "countryCode": "CA",
+      "homeLeague": 4,
+      "avatarIndex": 2,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 361,
+      "displayName": "Noah8",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 0,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 362,
+      "displayName": "Swift_31",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 15,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 363,
+      "displayName": "ViperFox90",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 6,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 364,
+      "displayName": "Logan66",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 365,
+      "displayName": "Logan28",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 14,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 366,
+      "displayName": "xXSwiftGuy67Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 7,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 367,
+      "displayName": "Adam79",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 10,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 368,
+      "displayName": "Connor87",
+      "countryCode": "CA",
+      "homeLeague": 4,
+      "avatarIndex": 15,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 369,
+      "displayName": "Alpha_83",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 1,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 370,
+      "displayName": "LaserX69",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 15,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 371,
+      "displayName": "Garrett14",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 372,
+      "displayName": "PixelPro77",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 373,
+      "displayName": "xXRocketX21Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 11,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 374,
+      "displayName": "SwiftStrike62",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 6,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 375,
+      "displayName": "NovaKid63",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 10,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 376,
+      "displayName": "xXDynamoStrike98Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 12,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 377,
+      "displayName": "xXSniperGuy93Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 6,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 378,
+      "displayName": "Madison18",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 4,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 379,
+      "displayName": "Grant27",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 3,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 380,
+      "displayName": "Phantom_70",
+      "countryCode": "MX",
+      "homeLeague": 4,
+      "avatarIndex": 6,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 381,
+      "displayName": "StrikerPro9",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 5,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 382,
+      "displayName": "Chris71",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 10,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 383,
+      "displayName": "NovaShot86",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 7,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 384,
+      "displayName": "StrikerKing50",
+      "countryCode": "CA",
+      "homeLeague": 4,
+      "avatarIndex": 8,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 385,
+      "displayName": "xXLaserX95Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 3,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 386,
+      "displayName": "Dynamo_63",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 3,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 387,
+      "displayName": "Blaze_85",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 1,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 388,
+      "displayName": "StormMaster28",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 5,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 389,
+      "displayName": "Cobra_97",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 15,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 390,
+      "displayName": "Rogue_19",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 11,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 391,
+      "displayName": "Cody24",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 14,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 392,
+      "displayName": "xXViperGuy7Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 9,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 393,
+      "displayName": "SteelBoss17",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 394,
+      "displayName": "ViperStrike92",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 395,
+      "displayName": "Bear_24",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 396,
+      "displayName": "xXSniperKing73Xx",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 4,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 397,
+      "displayName": "Nitro_98",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 2,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 398,
+      "displayName": "Kayla58",
+      "countryCode": "US",
+      "homeLeague": 4,
+      "avatarIndex": 13,
+      "difficultyLevel": 3
+    },
+    {
+      "id": 399,
+      "displayName": "Luis11",
+      "countryCode": "MX",
+      "homeLeague": 4,
+      "avatarIndex": 1,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 400,
+      "displayName": "xXNitroPro98Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 12,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 401,
+      "displayName": "xXAlphaPro96Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 10,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 402,
+      "displayName": "xXSteelKid8Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 4,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 403,
+      "displayName": "Frost_64",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 14,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 404,
+      "displayName": "Hawk_90",
+      "countryCode": "GB",
+      "homeLeague": 5,
+      "avatarIndex": 9,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 405,
+      "displayName": "Kevin75",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 4,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 406,
+      "displayName": "ThunderMaster76",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 9,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 407,
+      "displayName": "AceKing88",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 8,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 408,
+      "displayName": "Lauren45",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 3,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 409,
+      "displayName": "Raptor_54",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 11,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 410,
+      "displayName": "Cody90",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 9,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 411,
+      "displayName": "DynamoBoss7",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 7,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 412,
+      "displayName": "OmegaStrike43",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 12,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 413,
+      "displayName": "BlazeBoss38",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 6,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 414,
+      "displayName": "Dynamo_53",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 4,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 415,
+      "displayName": "Turbo_59",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 1,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 416,
+      "displayName": "FlashMaster23",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 2,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 417,
+      "displayName": "HawkX74",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 12,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 418,
+      "displayName": "xXRocketFox81Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 15,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 419,
+      "displayName": "Ace_60",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 4,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 420,
+      "displayName": "GhostKid65",
+      "countryCode": "GB",
+      "homeLeague": 5,
+      "avatarIndex": 3,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 421,
+      "displayName": "Flash_65",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 5,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 422,
+      "displayName": "xXStormX54Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 3,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 423,
+      "displayName": "Carter80",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 4,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 424,
+      "displayName": "Jason46",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 9,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 425,
+      "displayName": "RogueX25",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 1,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 426,
+      "displayName": "xXThunderMaster46Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 15,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 427,
+      "displayName": "Brian77",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 1,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 428,
+      "displayName": "PhantomX80",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 10,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 429,
+      "displayName": "Elite_67",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 4,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 430,
+      "displayName": "CobraGuy65",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 10,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 431,
+      "displayName": "Madison86",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 13,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 432,
+      "displayName": "CoinKid57",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 14,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 433,
+      "displayName": "Turbo_89",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 0,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 434,
+      "displayName": "PhantomKid97",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 3,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 435,
+      "displayName": "CrimsonX17",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 1,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 436,
+      "displayName": "xXCrimsonGuy73Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 0,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 437,
+      "displayName": "Ethan75",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 8,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 438,
+      "displayName": "Prime_38",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 2,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 439,
+      "displayName": "Penny_84",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 1,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 440,
+      "displayName": "CoinFox9",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 13,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 441,
+      "displayName": "Ryan74",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 8,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 442,
+      "displayName": "Tanner19",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 9,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 443,
+      "displayName": "Kayla39",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 4,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 444,
+      "displayName": "Hannah59",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 1,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 445,
+      "displayName": "BoltKing48",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 1,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 446,
+      "displayName": "Ryan19",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 13,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 447,
+      "displayName": "xXRushShot40Xx",
+      "countryCode": "CA",
+      "homeLeague": 5,
+      "avatarIndex": 6,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 448,
+      "displayName": "Drew83",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 15,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 449,
+      "displayName": "RushShot71",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 1,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 450,
+      "displayName": "Justin77",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 15,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 451,
+      "displayName": "Lucas88",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 8,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 452,
+      "displayName": "BlazeMaster82",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 4,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 453,
+      "displayName": "Derek59",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 6,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 454,
+      "displayName": "Sniper_25",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 5,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 455,
+      "displayName": "Bear_75",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 14,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 456,
+      "displayName": "Shane66",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 5,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 457,
+      "displayName": "Jayden68",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 8,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 458,
+      "displayName": "Striker_55",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 6,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 459,
+      "displayName": "ThunderKing72",
+      "countryCode": "CA",
+      "homeLeague": 5,
+      "avatarIndex": 2,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 460,
+      "displayName": "Sarah57",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 4,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 461,
+      "displayName": "Bear_42",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 10,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 462,
+      "displayName": "xXRaptorGuy50Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 7,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 463,
+      "displayName": "Coin_48",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 14,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 464,
+      "displayName": "xXSwiftStrike49Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 0,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 465,
+      "displayName": "ShadowStrike7",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 15,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 466,
+      "displayName": "Turbo_75",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 2,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 467,
+      "displayName": "CobraShot92",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 12,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 468,
+      "displayName": "Rush_52",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 0,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 469,
+      "displayName": "Noah54",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 0,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 470,
+      "displayName": "Jose9",
+      "countryCode": "MX",
+      "homeLeague": 5,
+      "avatarIndex": 11,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 471,
+      "displayName": "Emily85",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 7,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 472,
+      "displayName": "Jason70",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 8,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 473,
+      "displayName": "EliteMaster97",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 6,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 474,
+      "displayName": "xXHawkShot88Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 15,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 475,
+      "displayName": "Madison31",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 5,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 476,
+      "displayName": "Megan23",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 4,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 477,
+      "displayName": "Lucas79",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 8,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 478,
+      "displayName": "Jake93",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 8,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 479,
+      "displayName": "Shadow_65",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 1,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 480,
+      "displayName": "xXBearFox48Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 3,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 481,
+      "displayName": "Rocket_66",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 1,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 482,
+      "displayName": "xXNeonPro35Xx",
+      "countryCode": "CA",
+      "homeLeague": 5,
+      "avatarIndex": 14,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 483,
+      "displayName": "Noah57",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 2,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 484,
+      "displayName": "xXNovaFox10Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 7,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 485,
+      "displayName": "Wyatt49",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 3,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 486,
+      "displayName": "Jake62",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 10,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 487,
+      "displayName": "Blaze_38",
+      "countryCode": "GB",
+      "homeLeague": 5,
+      "avatarIndex": 7,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 488,
+      "displayName": "xXCoinKid13Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 2,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 489,
+      "displayName": "Cobra_86",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 14,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 490,
+      "displayName": "NeonKing17",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 10,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 491,
+      "displayName": "xXPixelStrike95Xx",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 14,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 492,
+      "displayName": "NeonKid2016",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 12,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 493,
+      "displayName": "WolfMaster86",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 0,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 494,
+      "displayName": "BearX66",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 3,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 495,
+      "displayName": "PrimeMaster4923",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 0,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 496,
+      "displayName": "PrimeMaster15",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 4,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 497,
+      "displayName": "StrikerFox39",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 14,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 498,
+      "displayName": "Chris24",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 4,
+      "difficultyLevel": 4
+    },
+    {
+      "id": 499,
+      "displayName": "Colton62",
+      "countryCode": "US",
+      "homeLeague": 5,
+      "avatarIndex": 11,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 500,
+      "displayName": "Ethan76",
+      "countryCode": "CA",
+      "homeLeague": 6,
+      "avatarIndex": 15,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 501,
+      "displayName": "Carter50",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 0,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 502,
+      "displayName": "RogueKing91",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 1,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 503,
+      "displayName": "CrimsonMaster32",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 10,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 504,
+      "displayName": "Sarah67",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 14,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 505,
+      "displayName": "PrimeX49",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 9,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 506,
+      "displayName": "BlazeGuy27",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 15,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 507,
+      "displayName": "Emily7",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 7,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 508,
+      "displayName": "ViperGuy34",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 10,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 509,
+      "displayName": "Frost_55",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 5,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 510,
+      "displayName": "Sniper_7",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 2,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 511,
+      "displayName": "StormStrike78",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 14,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 512,
+      "displayName": "Rachel81",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 1,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 513,
+      "displayName": "xXCrimsonPro32Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 7,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 514,
+      "displayName": "xXBoltBoss99Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 7,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 515,
+      "displayName": "Ethan9",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 3,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 516,
+      "displayName": "Hunter93",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 3,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 517,
+      "displayName": "Wyatt33",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 7,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 518,
+      "displayName": "AceKid54",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 13,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 519,
+      "displayName": "xXStormStrike15Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 6,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 520,
+      "displayName": "Sarah55",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 10,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 521,
+      "displayName": "ViperKing88",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 6,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 522,
+      "displayName": "xXRogueBoss44Xx",
+      "countryCode": "MX",
+      "homeLeague": 6,
+      "avatarIndex": 1,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 523,
+      "displayName": "GhostKid42",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 15,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 524,
+      "displayName": "Blake17",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 2,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 525,
+      "displayName": "Rachel56",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 11,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 526,
+      "displayName": "BoltBoss66",
+      "countryCode": "GB",
+      "homeLeague": 6,
+      "avatarIndex": 11,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 527,
+      "displayName": "RocketGuy68",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 12,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 528,
+      "displayName": "IronMaster81",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 6,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 529,
+      "displayName": "HawkMaster37",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 13,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 530,
+      "displayName": "xXAceBoss80Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 2,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 531,
+      "displayName": "Carter17",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 11,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 532,
+      "displayName": "Trevor12",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 10,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 533,
+      "displayName": "BearFox66",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 15,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 534,
+      "displayName": "Jake55",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 14,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 535,
+      "displayName": "Brandon89",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 2,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 536,
+      "displayName": "Colton71",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 2,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 537,
+      "displayName": "Blaze_36",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 2,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 538,
+      "displayName": "CrimsonBoss76",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 10,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 539,
+      "displayName": "Jayden94",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 4,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 540,
+      "displayName": "xXZeroPro98Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 9,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 541,
+      "displayName": "Adam51",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 0,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 542,
+      "displayName": "RogueFox72",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 7,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 543,
+      "displayName": "Flash_33",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 14,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 544,
+      "displayName": "Coin_66",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 10,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 545,
+      "displayName": "Wolf_61",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 14,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 546,
+      "displayName": "SwiftBoss78",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 4,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 547,
+      "displayName": "Chase8",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 11,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 548,
+      "displayName": "Nathan60",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 12,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 549,
+      "displayName": "Zero_95",
+      "countryCode": "MX",
+      "homeLeague": 6,
+      "avatarIndex": 10,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 550,
+      "displayName": "IronStrike79",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 10,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 551,
+      "displayName": "EliteX84",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 12,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 552,
+      "displayName": "Brandon57",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 12,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 553,
+      "displayName": "Kevin20",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 14,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 554,
+      "displayName": "TurboStrike45",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 5,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 555,
+      "displayName": "CrimsonShot3059",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 6,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 556,
+      "displayName": "Garrett91",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 14,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 557,
+      "displayName": "Mike73",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 10,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 558,
+      "displayName": "xXHawkStrike59Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 4,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 559,
+      "displayName": "PixelFox68",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 4,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 560,
+      "displayName": "xXBearGuy46Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 9,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 561,
+      "displayName": "DynamoPro71",
+      "countryCode": "CA",
+      "homeLeague": 6,
+      "avatarIndex": 0,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 562,
+      "displayName": "xXPixelFox64Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 7,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 563,
+      "displayName": "RocketGuy79",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 1,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 564,
+      "displayName": "Dynamo_43",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 9,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 565,
+      "displayName": "WolfMaster29",
+      "countryCode": "MX",
+      "homeLeague": 6,
+      "avatarIndex": 13,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 566,
+      "displayName": "BoltX91",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 12,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 567,
+      "displayName": "Viper_12",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 8,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 568,
+      "displayName": "xXThunderShot75Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 6,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 569,
+      "displayName": "xXAlphaShot59Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 2,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 570,
+      "displayName": "Penny_71",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 14,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 571,
+      "displayName": "Colton33",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 14,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 572,
+      "displayName": "Ryan88",
+      "countryCode": "CA",
+      "homeLeague": 6,
+      "avatarIndex": 10,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 573,
+      "displayName": "Hawk_31",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 0,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 574,
+      "displayName": "Hunter97",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 14,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 575,
+      "displayName": "TurboKid15",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 7,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 576,
+      "displayName": "Ghost_63",
+      "countryCode": "CA",
+      "homeLeague": 6,
+      "avatarIndex": 8,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 577,
+      "displayName": "Swift_28",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 3,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 578,
+      "displayName": "Tanner22",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 12,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 579,
+      "displayName": "Rachel92",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 8,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 580,
+      "displayName": "Luis52",
+      "countryCode": "MX",
+      "homeLeague": 6,
+      "avatarIndex": 1,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 581,
+      "displayName": "xXFrostGuy75Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 1,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 582,
+      "displayName": "Blaze_73",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 9,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 583,
+      "displayName": "ShadowKing83",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 6,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 584,
+      "displayName": "xXViperMaster54Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 0,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 585,
+      "displayName": "CoinMaster8",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 2,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 586,
+      "displayName": "Madison19",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 5,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 587,
+      "displayName": "Austin72",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 10,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 588,
+      "displayName": "LegendMaster31",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 12,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 589,
+      "displayName": "xXNovaMaster22Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 11,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 590,
+      "displayName": "Adam8",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 10,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 591,
+      "displayName": "Trevor34",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 2,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 592,
+      "displayName": "Legend_42",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 1,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 593,
+      "displayName": "Justin34",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 15,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 594,
+      "displayName": "xXZeroX20Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 8,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 595,
+      "displayName": "xXPennyFox83Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 4,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 596,
+      "displayName": "Rachel88",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 10,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 597,
+      "displayName": "xXFlashShot92Xx",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 0,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 598,
+      "displayName": "CobraFox81",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 7,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 599,
+      "displayName": "ShadowMaster97",
+      "countryCode": "US",
+      "homeLeague": 6,
+      "avatarIndex": 3,
+      "difficultyLevel": 5
+    },
+    {
+      "id": 600,
+      "displayName": "Rachel61",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 2,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 601,
+      "displayName": "Chase54",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 6,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 602,
+      "displayName": "Ashley33",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 7,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 603,
+      "displayName": "xXCobraBoss83Xx",
+      "countryCode": "CA",
+      "homeLeague": 7,
+      "avatarIndex": 8,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 604,
+      "displayName": "Garrett12",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 9,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 605,
+      "displayName": "Coin_36",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 7,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 606,
+      "displayName": "Madison13",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 7,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 607,
+      "displayName": "NitroBoss55",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 14,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 608,
+      "displayName": "RocketShot15",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 1,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 609,
+      "displayName": "FrostStrike25",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 5,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 610,
+      "displayName": "ViperKid33",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 13,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 611,
+      "displayName": "Ace_46",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 6,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 612,
+      "displayName": "Grant29",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 9,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 613,
+      "displayName": "Emily64",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 8,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 614,
+      "displayName": "xXTurboBoss68Xx",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 12,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 615,
+      "displayName": "Nathan63",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 13,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 616,
+      "displayName": "Swift_68",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 13,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 617,
+      "displayName": "xXEliteKid45Xx",
+      "countryCode": "MX",
+      "homeLeague": 7,
+      "avatarIndex": 5,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 618,
+      "displayName": "Wyatt66",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 9,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 619,
+      "displayName": "FlashShot84",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 4,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 620,
+      "displayName": "Rogue_32",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 0,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 621,
+      "displayName": "Lauren71",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 11,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 622,
+      "displayName": "HawkBoss60",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 15,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 623,
+      "displayName": "Brandon82",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 1,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 624,
+      "displayName": "xXRushX22Xx",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 6,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 625,
+      "displayName": "Striker_39",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 15,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 626,
+      "displayName": "NeonFox54",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 7,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 627,
+      "displayName": "Jason11",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 0,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 628,
+      "displayName": "Rogue_89",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 14,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 629,
+      "displayName": "xXRaptorMaster25Xx",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 5,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 630,
+      "displayName": "Ashley18",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 12,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 631,
+      "displayName": "TurboKid82",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 13,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 632,
+      "displayName": "Aiden61",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 9,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 633,
+      "displayName": "RushX75",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 13,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 634,
+      "displayName": "Blaze_18",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 11,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 635,
+      "displayName": "Frost_41",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 12,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 636,
+      "displayName": "Ace_7",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 0,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 637,
+      "displayName": "Justin96",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 13,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 638,
+      "displayName": "Ace_62",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 11,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 639,
+      "displayName": "Noah24",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 5,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 640,
+      "displayName": "CobraX21",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 5,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 641,
+      "displayName": "Rachel30",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 8,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 642,
+      "displayName": "xXCobraX59Xx",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 5,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 643,
+      "displayName": "Eric17",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 8,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 644,
+      "displayName": "Drew10",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 15,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 645,
+      "displayName": "ShadowKing19",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 0,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 646,
+      "displayName": "Blaze_12",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 0,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 647,
+      "displayName": "SteelGuy73",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 10,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 648,
+      "displayName": "SniperBoss50",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 7,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 649,
+      "displayName": "xXHawkFox92Xx",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 1,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 650,
+      "displayName": "xXBlazeKing49Xx",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 12,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 651,
+      "displayName": "Swift_24",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 3,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 652,
+      "displayName": "xXViperBoss42Xx",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 15,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 653,
+      "displayName": "CrimsonKing91",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 10,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 654,
+      "displayName": "Chris53",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 10,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 655,
+      "displayName": "Elite_36",
+      "countryCode": "GB",
+      "homeLeague": 7,
+      "avatarIndex": 12,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 656,
+      "displayName": "Striker_17",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 15,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 657,
+      "displayName": "xXBlazeFox96Xx",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 6,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 658,
+      "displayName": "Omega_73",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 1,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 659,
+      "displayName": "Wyatt18",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 14,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 660,
+      "displayName": "Cody64",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 7,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 661,
+      "displayName": "Rachel28",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 2,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 662,
+      "displayName": "Jake98",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 10,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 663,
+      "displayName": "xXNovaPro42Xx",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 15,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 664,
+      "displayName": "xXStormStrike92Xx",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 15,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 665,
+      "displayName": "Kevin95",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 2,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 666,
+      "displayName": "RushKid55",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 7,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 667,
+      "displayName": "Carter21",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 3,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 668,
+      "displayName": "Miguel82",
+      "countryCode": "MX",
+      "homeLeague": 7,
+      "avatarIndex": 3,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 669,
+      "displayName": "PennyFox23",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 0,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 670,
+      "displayName": "Tanner82",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 12,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 671,
+      "displayName": "xXSniperStrike47Xx",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 7,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 672,
+      "displayName": "Tanner8",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 10,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 673,
+      "displayName": "George44",
+      "countryCode": "GB",
+      "homeLeague": 7,
+      "avatarIndex": 14,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 674,
+      "displayName": "Logan43",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 1,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 675,
+      "displayName": "LaserShot46",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 15,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 676,
+      "displayName": "RocketPro34",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 12,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 677,
+      "displayName": "Logan49",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 6,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 678,
+      "displayName": "Neon_35",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 15,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 679,
+      "displayName": "Ace_45",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 12,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 680,
+      "displayName": "Blake93",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 12,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 681,
+      "displayName": "ThunderPro74",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 6,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 682,
+      "displayName": "Hawk_77",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 4,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 683,
+      "displayName": "Carlos81",
+      "countryCode": "MX",
+      "homeLeague": 7,
+      "avatarIndex": 9,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 684,
+      "displayName": "OmegaStrike27",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 15,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 685,
+      "displayName": "Liam25",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 6,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 686,
+      "displayName": "Sniper_8",
+      "countryCode": "CA",
+      "homeLeague": 7,
+      "avatarIndex": 3,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 687,
+      "displayName": "Rush_25",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 5,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 688,
+      "displayName": "xXStrikerGuy19Xx",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 1,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 689,
+      "displayName": "Ashley72",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 13,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 690,
+      "displayName": "xXHawkMaster87Xx",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 3,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 691,
+      "displayName": "Wyatt69",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 5,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 692,
+      "displayName": "Turbo_55",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 12,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 693,
+      "displayName": "Derek90",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 0,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 694,
+      "displayName": "Cody17",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 7,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 695,
+      "displayName": "Cole80",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 8,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 696,
+      "displayName": "Prime_19",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 12,
+      "difficultyLevel": 6
+    },
+    {
+      "id": 697,
+      "displayName": "BearPro89",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 4,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 698,
+      "displayName": "Jessica15",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 5,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 699,
+      "displayName": "SwiftFox96",
+      "countryCode": "US",
+      "homeLeague": 7,
+      "avatarIndex": 15,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 700,
+      "displayName": "Tanner81",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 3,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 701,
+      "displayName": "Storm_33",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 5,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 702,
+      "displayName": "Ryan64",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 1,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 703,
+      "displayName": "Ethan33",
+      "countryCode": "CA",
+      "homeLeague": 8,
+      "avatarIndex": 8,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 704,
+      "displayName": "xXTurboShot11Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 9,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 705,
+      "displayName": "AceFox76",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 0,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 706,
+      "displayName": "xXZeroGuy44Xx27",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 15,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 707,
+      "displayName": "Striker_73",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 6,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 708,
+      "displayName": "Iron_91",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 1,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 709,
+      "displayName": "Liam45",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 6,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 710,
+      "displayName": "GhostX42",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 2,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 711,
+      "displayName": "RushStrike40",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 14,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 712,
+      "displayName": "Hannah39",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 4,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 713,
+      "displayName": "SteelMaster16",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 11,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 714,
+      "displayName": "LaserX89",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 13,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 715,
+      "displayName": "Bear_47",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 0,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 716,
+      "displayName": "xXPixelPro38Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 3,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 717,
+      "displayName": "Pixel_59",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 2,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 718,
+      "displayName": "SteelStrike49",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 8,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 719,
+      "displayName": "Lucas55",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 3,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 720,
+      "displayName": "Bolt_22",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 9,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 721,
+      "displayName": "BlazeKid69",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 9,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 722,
+      "displayName": "BlazeKing84",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 10,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 723,
+      "displayName": "xXBoltBoss56Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 12,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 724,
+      "displayName": "RaptorKing23",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 4,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 725,
+      "displayName": "NeonBoss4141",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 13,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 726,
+      "displayName": "Cobra_30",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 14,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 727,
+      "displayName": "BearKid42",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 7,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 728,
+      "displayName": "TurboShot4719",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 7,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 729,
+      "displayName": "xXOmegaKing28Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 9,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 730,
+      "displayName": "ShadowFox70",
+      "countryCode": "MX",
+      "homeLeague": 8,
+      "avatarIndex": 4,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 731,
+      "displayName": "ZeroShot72",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 0,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 732,
+      "displayName": "BearKid7",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 11,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 733,
+      "displayName": "Elite_1267",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 7,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 734,
+      "displayName": "Hunter53",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 11,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 735,
+      "displayName": "xXRocketFox61Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 11,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 736,
+      "displayName": "xXViperKid50Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 9,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 737,
+      "displayName": "Aiden44",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 0,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 738,
+      "displayName": "Hawk_79",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 9,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 739,
+      "displayName": "xXLaserKing89Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 15,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 740,
+      "displayName": "Shane7",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 10,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 741,
+      "displayName": "Mike20",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 5,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 742,
+      "displayName": "BlazeFox8",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 6,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 743,
+      "displayName": "Logan72",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 3,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 744,
+      "displayName": "xXRoguePro7Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 15,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 745,
+      "displayName": "SniperFox45",
+      "countryCode": "MX",
+      "homeLeague": 8,
+      "avatarIndex": 8,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 746,
+      "displayName": "Madison63",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 5,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 747,
+      "displayName": "Mike62",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 6,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 748,
+      "displayName": "Chris43",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 12,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 749,
+      "displayName": "IronStrike49",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 6,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 750,
+      "displayName": "xXSteelShot92Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 15,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 751,
+      "displayName": "GhostBoss94",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 12,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 752,
+      "displayName": "Liam20",
+      "countryCode": "CA",
+      "homeLeague": 8,
+      "avatarIndex": 4,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 753,
+      "displayName": "Kayla8",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 7,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 754,
+      "displayName": "Nathan50",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 0,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 755,
+      "displayName": "ThunderGuy44",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 13,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 756,
+      "displayName": "Lauren26",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 5,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 757,
+      "displayName": "Aiden21",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 7,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 758,
+      "displayName": "Crimson_61",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 3,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 759,
+      "displayName": "Legend_71",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 6,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 760,
+      "displayName": "xXRogueMaster82Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 4,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 761,
+      "displayName": "CrimsonStrike42",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 0,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 762,
+      "displayName": "NeonFox18",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 9,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 763,
+      "displayName": "Nova_36",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 13,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 764,
+      "displayName": "BearKing72",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 3,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 765,
+      "displayName": "Brian42",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 13,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 766,
+      "displayName": "Ethan13",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 0,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 767,
+      "displayName": "Liam48",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 15,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 768,
+      "displayName": "Austin84",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 5,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 769,
+      "displayName": "Jason69",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 9,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 770,
+      "displayName": "Liam92",
+      "countryCode": "CA",
+      "homeLeague": 8,
+      "avatarIndex": 4,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 771,
+      "displayName": "Megan53",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 11,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 772,
+      "displayName": "Liam42",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 12,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 773,
+      "displayName": "Hunter20",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 3,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 774,
+      "displayName": "Noah90",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 14,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 775,
+      "displayName": "xXZeroX16Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 9,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 776,
+      "displayName": "Zero_32",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 4,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 777,
+      "displayName": "Justin31",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 8,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 778,
+      "displayName": "xXStrikerBoss78Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 3,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 779,
+      "displayName": "xXFlashFox15Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 0,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 780,
+      "displayName": "Sarah42",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 9,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 781,
+      "displayName": "Tyler79",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 6,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 782,
+      "displayName": "Rocket_57",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 2,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 783,
+      "displayName": "Eric72",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 12,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 784,
+      "displayName": "FrostStrike41",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 5,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 785,
+      "displayName": "ShadowKid82",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 8,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 786,
+      "displayName": "Carter35",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 8,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 787,
+      "displayName": "NovaKing28",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 7,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 788,
+      "displayName": "Logan88",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 4,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 789,
+      "displayName": "Miguel13",
+      "countryCode": "MX",
+      "homeLeague": 8,
+      "avatarIndex": 3,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 790,
+      "displayName": "Emily51",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 11,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 791,
+      "displayName": "Brock97",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 4,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 792,
+      "displayName": "ThunderBoss85",
+      "countryCode": "GB",
+      "homeLeague": 8,
+      "avatarIndex": 0,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 793,
+      "displayName": "Steel_35",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 8,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 794,
+      "displayName": "xXPrimeShot75Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 12,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 795,
+      "displayName": "xXEliteKid39Xx",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 14,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 796,
+      "displayName": "Liam41",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 12,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 797,
+      "displayName": "Lauren36",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 13,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 798,
+      "displayName": "TurboGuy68",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 14,
+      "difficultyLevel": 7
+    },
+    {
+      "id": 799,
+      "displayName": "Noah29",
+      "countryCode": "US",
+      "homeLeague": 8,
+      "avatarIndex": 15,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 800,
+      "displayName": "xXThunderKing30Xx",
+      "countryCode": "CA",
+      "homeLeague": 9,
+      "avatarIndex": 5,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 801,
+      "displayName": "xXEliteMaster57Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 802,
+      "displayName": "Trevor38",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 12,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 803,
+      "displayName": "Hunter74",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 0,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 804,
+      "displayName": "RushKing55",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 0,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 805,
+      "displayName": "Iron_89",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 7,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 806,
+      "displayName": "Rogue_41",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 0,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 807,
+      "displayName": "Blaze_8",
+      "countryCode": "CA",
+      "homeLeague": 9,
+      "avatarIndex": 10,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 808,
+      "displayName": "xXCrimsonStrike17Xx",
+      "countryCode": "GB",
+      "homeLeague": 9,
+      "avatarIndex": 14,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 809,
+      "displayName": "Coin_46",
+      "countryCode": "CA",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 810,
+      "displayName": "Sarah76",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 3,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 811,
+      "displayName": "Austin12",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 9,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 812,
+      "displayName": "Logan60",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 7,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 813,
+      "displayName": "Eric61",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 11,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 814,
+      "displayName": "Rush_35",
+      "countryCode": "CA",
+      "homeLeague": 9,
+      "avatarIndex": 3,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 815,
+      "displayName": "NovaShot21",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 11,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 816,
+      "displayName": "Cody49",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 2,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 817,
+      "displayName": "xXRogueStrike84Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 10,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 818,
+      "displayName": "BearStrike93",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 9,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 819,
+      "displayName": "StrikerShot43",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 15,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 820,
+      "displayName": "Pixel_40",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 821,
+      "displayName": "Penny_25",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 12,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 822,
+      "displayName": "PixelShot68",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 13,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 823,
+      "displayName": "xXRogueShot42Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 824,
+      "displayName": "Juan56",
+      "countryCode": "MX",
+      "homeLeague": 9,
+      "avatarIndex": 15,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 825,
+      "displayName": "WolfX95",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 10,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 826,
+      "displayName": "Jackson90",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 13,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 827,
+      "displayName": "ZeroGuy75",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 7,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 828,
+      "displayName": "WolfKid81",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 7,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 829,
+      "displayName": "Sniper_37",
+      "countryCode": "CA",
+      "homeLeague": 9,
+      "avatarIndex": 6,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 830,
+      "displayName": "xXSniperKid9Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 831,
+      "displayName": "xXStrikerBoss14Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 9,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 832,
+      "displayName": "WolfMaster77",
+      "countryCode": "CA",
+      "homeLeague": 9,
+      "avatarIndex": 7,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 833,
+      "displayName": "xXRogueFox97Xx13",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 13,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 834,
+      "displayName": "BlazeX96",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 15,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 835,
+      "displayName": "Swift_27",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 11,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 836,
+      "displayName": "Brandon38",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 13,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 837,
+      "displayName": "Blake30",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 838,
+      "displayName": "Phantom_96",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 13,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 839,
+      "displayName": "Shadow_63",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 3,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 840,
+      "displayName": "Chris89",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 5,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 841,
+      "displayName": "HawkFox8",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 14,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 842,
+      "displayName": "OmegaKid40",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 7,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 843,
+      "displayName": "SteelShot27",
+      "countryCode": "CA",
+      "homeLeague": 9,
+      "avatarIndex": 12,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 844,
+      "displayName": "xXFrostFox23Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 1,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 845,
+      "displayName": "Megan30",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 2,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 846,
+      "displayName": "Flash_66",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 12,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 847,
+      "displayName": "Neon_28",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 13,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 848,
+      "displayName": "Austin20",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 11,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 849,
+      "displayName": "SwiftMaster49",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 5,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 850,
+      "displayName": "FrostX15",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 9,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 851,
+      "displayName": "Carlos32",
+      "countryCode": "MX",
+      "homeLeague": 9,
+      "avatarIndex": 8,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 852,
+      "displayName": "Cole79",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 15,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 853,
+      "displayName": "Dylan47",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 0,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 854,
+      "displayName": "xXHawkKid43Xx",
+      "countryCode": "GB",
+      "homeLeague": 9,
+      "avatarIndex": 10,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 855,
+      "displayName": "Striker_99",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 3,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 856,
+      "displayName": "Austin71",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 857,
+      "displayName": "Blake55",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 1,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 858,
+      "displayName": "Hannah26",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 2,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 859,
+      "displayName": "xXNovaMaster18Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 860,
+      "displayName": "Laser_27",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 10,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 861,
+      "displayName": "CoinPro23",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 13,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 862,
+      "displayName": "Frost_3788",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 2,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 863,
+      "displayName": "xXRocketShot79Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 864,
+      "displayName": "Alpha_46",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 15,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 865,
+      "displayName": "Mason47",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 5,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 866,
+      "displayName": "Jason80",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 2,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 867,
+      "displayName": "Kayla97",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 8,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 868,
+      "displayName": "xXCobraStrike39Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 15,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 869,
+      "displayName": "Adam43",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 870,
+      "displayName": "LegendBoss72",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 2,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 871,
+      "displayName": "Cobra_71",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 1,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 872,
+      "displayName": "NeonMaster89",
+      "countryCode": "MX",
+      "homeLeague": 9,
+      "avatarIndex": 0,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 873,
+      "displayName": "Carter20",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 5,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 874,
+      "displayName": "NovaFox16",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 2,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 875,
+      "displayName": "Ashley66",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 14,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 876,
+      "displayName": "Lauren30",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 12,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 877,
+      "displayName": "Hawk_32",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 2,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 878,
+      "displayName": "Chase84",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 15,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 879,
+      "displayName": "Chris65",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 880,
+      "displayName": "xXFrostBoss25Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 1,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 881,
+      "displayName": "xXNeonBoss55Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 15,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 882,
+      "displayName": "Jake34",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 13,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 883,
+      "displayName": "Ethan88",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 884,
+      "displayName": "Derek9863",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 6,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 885,
+      "displayName": "Bolt_40",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 2,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 886,
+      "displayName": "xXCoinPro61Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 6,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 887,
+      "displayName": "Blake60",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 5,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 888,
+      "displayName": "xXStrikerX62Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 0,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 889,
+      "displayName": "CrimsonShot83",
+      "countryCode": "GB",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 890,
+      "displayName": "Mike47",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 14,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 891,
+      "displayName": "xXPennyShot70Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 13,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 892,
+      "displayName": "Mike99",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 4,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 893,
+      "displayName": "PrimeShot88",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 6,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 894,
+      "displayName": "Elite_2858",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 11,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 895,
+      "displayName": "Hannah31",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 0,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 896,
+      "displayName": "SwiftPro53",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 3,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 897,
+      "displayName": "Dynamo_90",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 13,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 898,
+      "displayName": "BearKid76",
+      "countryCode": "MX",
+      "homeLeague": 9,
+      "avatarIndex": 3,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 899,
+      "displayName": "xXBearBoss65Xx",
+      "countryCode": "US",
+      "homeLeague": 9,
+      "avatarIndex": 5,
+      "difficultyLevel": 8
+    },
+    {
+      "id": 900,
+      "displayName": "ThunderFox55",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 9,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 901,
+      "displayName": "Turbo_19",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 2,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 902,
+      "displayName": "WolfShot85",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 3,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 903,
+      "displayName": "PrimeKing71",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 9,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 904,
+      "displayName": "xXNovaGuy34Xx",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 12,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 905,
+      "displayName": "Cody67",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 14,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 906,
+      "displayName": "HawkKing89",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 7,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 907,
+      "displayName": "RaptorPro41",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 7,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 908,
+      "displayName": "Chris60",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 0,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 909,
+      "displayName": "Tyler54",
+      "countryCode": "CA",
+      "homeLeague": 10,
+      "avatarIndex": 10,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 910,
+      "displayName": "Connor80",
+      "countryCode": "CA",
+      "homeLeague": 10,
+      "avatarIndex": 12,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 911,
+      "displayName": "Adam89",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 13,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 912,
+      "displayName": "Eric88",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 5,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 913,
+      "displayName": "NitroStrike47",
+      "countryCode": "MX",
+      "homeLeague": 10,
+      "avatarIndex": 7,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 914,
+      "displayName": "Colton23",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 12,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 915,
+      "displayName": "Raptor_87",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 5,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 916,
+      "displayName": "xXTurboShot33Xx",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 13,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 917,
+      "displayName": "Logan82",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 2,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 918,
+      "displayName": "GhostGuy10",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 11,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 919,
+      "displayName": "Lucas90",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 6,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 920,
+      "displayName": "RushPro38",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 1,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 921,
+      "displayName": "Emily25",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 3,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 922,
+      "displayName": "Cody83",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 4,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 923,
+      "displayName": "Dylan30",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 15,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 924,
+      "displayName": "Hawk_33",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 15,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 925,
+      "displayName": "PixelMaster8797",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 12,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 926,
+      "displayName": "xXCobraStrike88Xx",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 9,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 927,
+      "displayName": "Madison29",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 1,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 928,
+      "displayName": "Brian50",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 0,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 929,
+      "displayName": "Cody39",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 0,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 930,
+      "displayName": "LaserStrike73",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 11,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 931,
+      "displayName": "Dylan3598",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 8,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 932,
+      "displayName": "Dylan32",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 9,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 933,
+      "displayName": "BearKid70",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 6,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 934,
+      "displayName": "Hannah32",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 8,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 935,
+      "displayName": "xXPrimeX20Xx",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 5,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 936,
+      "displayName": "BearX6444",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 3,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 937,
+      "displayName": "CrimsonX61",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 11,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 938,
+      "displayName": "xXCobraStrike15Xx",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 8,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 939,
+      "displayName": "EliteKid44",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 12,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 940,
+      "displayName": "Ryan30",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 5,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 941,
+      "displayName": "FrostBoss16",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 4,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 942,
+      "displayName": "Shadow_22",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 0,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 943,
+      "displayName": "Dynamo_34",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 10,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 944,
+      "displayName": "xXPixelFox78Xx",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 6,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 945,
+      "displayName": "AlphaPro20",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 2,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 946,
+      "displayName": "WolfFox89",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 10,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 947,
+      "displayName": "Chase13",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 1,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 948,
+      "displayName": "xXStormShot60Xx",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 5,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 949,
+      "displayName": "RushMaster82",
+      "countryCode": "GB",
+      "homeLeague": 10,
+      "avatarIndex": 0,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 950,
+      "displayName": "Cole89",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 14,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 951,
+      "displayName": "Chris58",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 1,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 952,
+      "displayName": "Brandon9",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 3,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 953,
+      "displayName": "Phantom_60",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 10,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 954,
+      "displayName": "Turbo_58",
+      "countryCode": "MX",
+      "homeLeague": 10,
+      "avatarIndex": 10,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 955,
+      "displayName": "HawkPro13",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 14,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 956,
+      "displayName": "StormBoss89",
+      "countryCode": "MX",
+      "homeLeague": 10,
+      "avatarIndex": 3,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 957,
+      "displayName": "Mike13",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 3,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 958,
+      "displayName": "xXBearMaster95Xx",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 2,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 959,
+      "displayName": "Tanner54",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 1,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 960,
+      "displayName": "Cody12",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 9,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 961,
+      "displayName": "Sarah49",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 12,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 962,
+      "displayName": "Hunter28",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 14,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 963,
+      "displayName": "Logan47",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 13,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 964,
+      "displayName": "StormKid92",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 7,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 965,
+      "displayName": "RocketPro91",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 15,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 966,
+      "displayName": "Kayla40",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 2,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 967,
+      "displayName": "FrostShot38",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 15,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 968,
+      "displayName": "Madison8",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 14,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 969,
+      "displayName": "Rocket_31",
+      "countryCode": "GB",
+      "homeLeague": 10,
+      "avatarIndex": 10,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 970,
+      "displayName": "PhantomGuy4793",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 3,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 971,
+      "displayName": "xXSniperFox35Xx",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 6,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 972,
+      "displayName": "Pixel_31",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 13,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 973,
+      "displayName": "Cole46",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 3,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 974,
+      "displayName": "Megan20",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 7,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 975,
+      "displayName": "Ethan65",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 0,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 976,
+      "displayName": "CobraBoss74",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 3,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 977,
+      "displayName": "xXStrikerFox17Xx",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 4,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 978,
+      "displayName": "LaserBoss62",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 14,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 979,
+      "displayName": "Tyler19",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 12,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 980,
+      "displayName": "Ethan5886",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 15,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 981,
+      "displayName": "NeonMaster20",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 7,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 982,
+      "displayName": "Cole11",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 7,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 983,
+      "displayName": "Jayden19",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 12,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 984,
+      "displayName": "NovaPro19",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 6,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 985,
+      "displayName": "Brian33",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 9,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 986,
+      "displayName": "Shadow_43",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 5,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 987,
+      "displayName": "LegendGuy96",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 9,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 988,
+      "displayName": "xXViperStrike95Xx",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 2,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 989,
+      "displayName": "Trevor49",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 0,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 990,
+      "displayName": "Coin_61",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 5,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 991,
+      "displayName": "xXAceKing16Xx",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 11,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 992,
+      "displayName": "xXShadowGuy81Xx",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 15,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 993,
+      "displayName": "Cole9",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 9,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 994,
+      "displayName": "Laser_74",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 4,
+      "difficultyLevel": 9
+    },
+    {
+      "id": 995,
+      "displayName": "Phantom_19",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 10,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 996,
+      "displayName": "ZeroPro51",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 15,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 997,
+      "displayName": "Mike65",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 9,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 998,
+      "displayName": "Elite_73",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 3,
+      "difficultyLevel": 10
+    },
+    {
+      "id": 999,
+      "displayName": "Lauren73",
+      "countryCode": "US",
+      "homeLeague": 10,
+      "avatarIndex": 0,
+      "difficultyLevel": 10
+    }
+  ]
+}

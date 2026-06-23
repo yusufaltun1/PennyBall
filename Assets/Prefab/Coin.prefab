@@ -144,7 +144,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1dfe6c2a517047ee9c5be975eab32fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinVisualState
-  _passiveColorMultiplier: 0.55
+  _playerPassiveColorMultiplier: 0.55
+  _opponentColor: {r: 0, g: 0, b: 0, a: 1}
+  _opponentPassiveColor: {r: 0.35, g: 0.35, b: 0.35, a: 1}
 --- !u!1 &6853097355249902552
 GameObject:
   m_ObjectHideFlags: 0

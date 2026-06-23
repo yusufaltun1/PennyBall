@@ -1,14 +1,20 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class UIManager : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    public void OnPlayButtonPressed ()
+    public void OnPlayButtonPressed()
     {
-        Debug.Log("Oyna butonuna basıldı!");
+        if (!OnboardingProgress.IsCompleted)
+        {
+            SceneManager.LoadScene(OnboardingSceneNames.Onboarding);
+            return;
+        }
+
+        MatchLauncher.StartLeagueMatch();
     }
 
-    public void OnAntremanButtonPressed ()
+    public void OnAntremanButtonPressed()
     {
         Debug.Log("Antreman yapılacak!");
     }
