@@ -1,0 +1,27 @@
+---
+description: Enforces code quality, architectural rules, and API optimization for Unity C# development.
+globs: "*.cs"
+alwaysApply: true
+---
+
+# Unity C# Development Standards
+
+## Core Principles
+- Prioritize high-performance, modular, and component-based architecture.
+- Enforce strict separation of concerns; decouple systems using UnityEvents, C# Actions, or ScriptableObject architecture.
+- Always implement clean, descriptive naming conventions (`_camelCase` for private fields, `PascalCase` for public methods/properties).
+
+## Unity-Specific Optimization Rules
+- **Cache Component References**: Avoid using `GetComponent()` in `Update()`, `FixedUpdate()`, or `LateUpdate()`. Cache references in `Awake()` or `Start()`.
+- **String Vector Optimizations**: Avoid using string-based method invocations like `Invoke()`, `StartCoroutine("Name")`, or `SendMessage()`. Use `nameof()` or direct reference types.
+- **Tag Checking**: Never use `gameObject.tag == "Tag"`. Always use `gameObject.CompareTag("Tag")` to eliminate memory allocations.
+- **Null Comparison**: Be conscious of Unity's lifecycle for `UnityEngine.Object`. Do not use null-coalescing (`??`) or null-conditional (`?.`) operators on types inheriting from `MonoBehaviour` or `ScriptableObject`, as they bypass Unity's native lifecycle null checks.
+
+## Modern Unity API Conventions (Unity 6+)
+- **Async Workflows**: Prefer `Awaitable` (Unity 6+) or `UniTask` over traditional coroutines for complex asynchronous loops and timing mechanisms.
+- **Input System**: Utilize the modern `UnityEngine.InputSystem` package instead of legacy `UnityEngine.Input` methods.
+- **UI Toolkit**: Prioritize UI Toolkit (`UIElements`) over legacy IMGUI or canvas-based uGUI for tool development and modern UI architectures.
+
+## Memory & Physics Performance
+- **Object Pooling**: Enforce the use of `UnityEngine.Pool` for high-frequency instantiated objects like projectiles, particles, and damage numbers.
+- **Physics Queries**: Always use non-allocating physics APIs (e.g., `Physics.RaycastNonAlloc`, `Physics.OverlapSphereNonAlloc`) and pass a pre-allocated array buffer to avoid Garbage Collection spikes.
