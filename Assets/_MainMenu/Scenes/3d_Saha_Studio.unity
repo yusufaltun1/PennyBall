@@ -301,7 +301,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -7853120362946791194, guid: 25266b4aabb53450c8c917dd30dc4648, type: 3}
       propertyPath: m_Intensity
-      value: 0.5
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: -7853120362946791194, guid: 25266b4aabb53450c8c917dd30dc4648, type: 3}
       propertyPath: m_Lightmapping
@@ -357,7 +357,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -2601552257854514524, guid: 25266b4aabb53450c8c917dd30dc4648, type: 3}
       propertyPath: m_Intensity
-      value: 0.5
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: -2601552257854514524, guid: 25266b4aabb53450c8c917dd30dc4648, type: 3}
       propertyPath: m_Lightmapping
@@ -413,7 +413,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2303480242577709337, guid: 25266b4aabb53450c8c917dd30dc4648, type: 3}
       propertyPath: m_Intensity
-      value: 0.5
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 2303480242577709337, guid: 25266b4aabb53450c8c917dd30dc4648, type: 3}
       propertyPath: m_Lightmapping
@@ -445,7 +445,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5733911823876726600, guid: 25266b4aabb53450c8c917dd30dc4648, type: 3}
       propertyPath: m_Intensity
-      value: 0.5
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 5733911823876726600, guid: 25266b4aabb53450c8c917dd30dc4648, type: 3}
       propertyPath: m_Lightmapping
