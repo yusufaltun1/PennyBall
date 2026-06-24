@@ -14,6 +14,10 @@ public static class OpponentBotBrain
         public bool RespectsRules;
     }
 
+    // Fiziğe dayalı sabit: pull * 18 (forceMultiplier) * 0.4 (damping) ≈ 7.2
+    // Yani 1 birim pull → ~7.2 birim durma mesafesi
+    const float kDistancePerPull = 7.2f;
+
     public static bool TryChooseShot(
         TeamRoundState state,
         OpponentBotDifficulty difficulty,
@@ -23,28 +27,60 @@ public static class OpponentBotBrain
     {
         plan = default;
 
+        Vector3 goalCenter = ResolvePlayerGoalCenter();
+        if (goalCenter == Vector3.zero)
+        {
+            goalCenter = new Vector3(1.52f, 0.14f, 2.235f);
+        }
+
         var candidates = new List<ShotPlan>(12);
-        CollectCandidateShots(state, difficulty, isResolvingMove, gateMargin, candidates);
+        CollectCandidateShots(state, difficulty, isResolvingMove, gateMargin, goalCenter, candidates);
 
         if (candidates.Count == 0)
         {
             return false;
         }
 
-        candidates.Sort((a, b) => b.PullDistance.CompareTo(a.PullDistance));
+        // Rule-respecting adaylar arasından kaleye en iyi hizalanmış olanı seç.
+        ShotPlan bestPlan = default;
+        float bestScore = float.MinValue;
+        bool hasRuleRespecting = false;
 
         for (int i = 0; i < candidates.Count; i++)
         {
             ShotPlan candidate = candidates[i];
-            if (candidate.RespectsRules && Random.value <= difficulty.RuleCompliance)
+            float goalAlignment = ComputeGoalAlignment(candidate, goalCenter);
+
+            if (candidate.RespectsRules)
             {
-                plan = ApplyNoise(candidate, difficulty);
-                return true;
+                if (!hasRuleRespecting || goalAlignment > bestScore)
+                {
+                    bestScore = goalAlignment;
+                    bestPlan = candidate;
+                    hasRuleRespecting = true;
+                }
+            }
+            else if (!hasRuleRespecting && goalAlignment > bestScore)
+            {
+                bestScore = goalAlignment;
+                bestPlan = candidate;
             }
         }
 
-        plan = ApplyNoise(candidates[0], difficulty);
+        plan = ApplyNoise(bestPlan, difficulty);
         return true;
+    }
+
+    static float ComputeGoalAlignment(in ShotPlan candidate, Vector3 goalCenter)
+    {
+        Vector3 toGoal = goalCenter - candidate.Coin.transform.position;
+        toGoal.y = 0f;
+        if (toGoal.sqrMagnitude < 0.0001f)
+        {
+            return 0f;
+        }
+
+        return Vector3.Dot(candidate.Direction, toGoal.normalized);
     }
 
     static void CollectCandidateShots(
@@ -52,14 +88,9 @@ public static class OpponentBotBrain
         OpponentBotDifficulty difficulty,
         bool isResolvingMove,
         float gateMargin,
+        Vector3 goalCenter,
         List<ShotPlan> output)
     {
-        Vector3 goalCenter = ResolvePlayerGoalCenter();
-        if (goalCenter == Vector3.zero)
-        {
-            goalCenter = new Vector3(1.52f, 0.14f, 2.235f);
-        }
-
         for (int i = 0; i < state.Coins.Count; i++)
         {
             CoinIdentity coin = state.Coins[i];
@@ -68,12 +99,12 @@ public static class OpponentBotBrain
                 continue;
             }
 
-            bool isOpening = state.IsFirstMove;
             Vector3 origin = coin.transform.position;
+            bool isOpening = state.IsFirstMove;
 
             if (isOpening)
             {
-                TryAddShot(state, coin, origin, goalCenter - origin, gateMargin, isOpening, true, output);
+                TryAddShot(state, coin, origin, goalCenter - origin, goalCenter, gateMargin, true, output);
                 continue;
             }
 
@@ -83,20 +114,21 @@ public static class OpponentBotBrain
             }
 
             Vector3 gateCenter = (gateA.transform.position + gateB.transform.position) * 0.5f;
-            Vector3 throughGate = (gateCenter - origin);
+            Vector3 throughGate = gateCenter - origin;
             throughGate.y = 0f;
 
             Vector3 toGoal = goalCenter - origin;
             toGoal.y = 0f;
 
+            // Kapı merkezi + kale yönü karışımı
             Vector3 blended = Vector3.Lerp(throughGate.normalized, toGoal.normalized, difficulty.GoalFocus);
-            TryAddShot(state, coin, origin, blended, gateMargin, false, true, output);
+            TryAddShot(state, coin, origin, blended, goalCenter, gateMargin, false, output);
 
-            TryAddShot(state, coin, origin, throughGate, gateMargin, false, true, output);
-            TryAddShot(state, coin, origin, toGoal, gateMargin, false, true, output);
+            // Sadece kapı yönü
+            TryAddShot(state, coin, origin, throughGate, goalCenter, gateMargin, false, output);
 
-            Vector3 randomDir = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, -0.2f));
-            TryAddShot(state, coin, origin, randomDir, gateMargin, false, false, output);
+            // Sadece kale yönü (kural ihlal edebilir ama alternatif)
+            TryAddShot(state, coin, origin, toGoal, goalCenter, gateMargin, false, output);
         }
     }
 
@@ -105,9 +137,9 @@ public static class OpponentBotBrain
         CoinIdentity coin,
         Vector3 origin,
         Vector3 direction,
+        Vector3 goalCenter,
         float gateMargin,
         bool isOpening,
-        bool checkRules,
         List<ShotPlan> output)
     {
         direction.y = 0f;
@@ -116,21 +148,46 @@ public static class OpponentBotBrain
             return;
         }
 
-        float pull = Mathf.Lerp(coin.DragController.MinPullDistance, coin.DragController.MaxPullDistance, Random.Range(0.45f, 1f));
-        Vector3 end = origin + direction.normalized * (pull * 2.5f);
-        var path = new List<Vector3> { origin, end };
+        direction = direction.normalized;
 
+        // Kural doğrulaması için uzun sabit yol — yön kontrolü, fiziksel erişim değil
+        var validationPath = new List<Vector3> { origin, origin + direction * 5f };
         bool respectsRules = isOpening
-            || !checkRules
-            || TeamRulesService.ValidatePassBetween(state, coin, path, gateMargin);
+            || TeamRulesService.ValidatePassBetween(state, coin, validationPath, gateMargin);
+
+        float pull = ComputeIdealPull(coin, origin, goalCenter, isOpening);
 
         output.Add(new ShotPlan
         {
             Coin = coin,
-            Direction = direction.normalized,
+            Direction = direction,
             PullDistance = pull,
             RespectsRules = respectsRules
         });
+    }
+
+    /// <summary>
+    /// Hedefe ulaşmak için gereken pull değerini fizik tabanlı hesaplar.
+    /// Durma mesafesi ≈ pull × kDistancePerPull, bu yüzden pull = dist / kDistancePerPull.
+    /// </summary>
+    static float ComputeIdealPull(CoinIdentity coin, Vector3 origin, Vector3 goalCenter, bool isOpening)
+    {
+        float minPull = coin.DragController.MinPullDistance;
+        float maxPull = coin.DragController.MaxPullDistance;
+
+        if (isOpening)
+        {
+            // Açılış: hafif-orta güç (ilk hamle, gol şartı yok)
+            return Mathf.Lerp(minPull, maxPull, Random.Range(0.35f, 0.55f));
+        }
+
+        float distToGoal = Mathf.Max((goalCenter - origin).magnitude, 0.1f);
+
+        // Coin'in kaleye rahatça ulaşması için %20 fazla güç
+        const float reachFactor = 1.2f;
+        float idealPull = distToGoal * reachFactor / kDistancePerPull;
+
+        return Mathf.Clamp(idealPull, minPull, maxPull);
     }
 
     static ShotPlan ApplyNoise(ShotPlan plan, OpponentBotDifficulty difficulty)

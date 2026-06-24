@@ -14,6 +14,8 @@ public class OnboardingController : MonoBehaviour
     [SerializeField] OnboardingStepDefinition[] _steps;
     [SerializeField] float _gateMargin = 0.09f;
     [SerializeField] float _resetDuration = 0.45f;
+    [SerializeField] float _goalMargin = 0.38f;
+    [SerializeField] float _goalSettleSeconds = 1.2f;
     [SerializeField] Color _inactiveCoinColor = new(0.45f, 0.45f, 0.45f, 1f);
 
     readonly List<Vector3> _pathSamples = new(64);
@@ -28,6 +30,7 @@ public class OnboardingController : MonoBehaviour
     bool _goalEnteredDuringShot;
     bool _isCompletingOnboarding;
     bool _scoreGoalFinishConsumed;
+    bool _thirdCoinShotInProgress;
     Vector3 _shotStartPosition;
     Coroutine _resolveRoutine;
 
@@ -70,6 +73,11 @@ public class OnboardingController : MonoBehaviour
     {
         CacheInitialPositions();
         SubscribeLaunchHandlers();
+
+        if (_goalDetector == null)
+        {
+            _goalDetector = FindFirstObjectByType<OnboardingGoalDetector>();
+        }
 
         if (_goalDetector != null)
         {
@@ -223,6 +231,8 @@ public class OnboardingController : MonoBehaviour
 
         _shotStartPosition = coin.transform.position;
         _scoreGoalFinishConsumed = false;
+        _thirdCoinShotInProgress = _currentStepIndex == ThirdCoinGoalStepIndex
+            && coin.CoinIndex == OnboardingDefaultSteps.ThirdCoinIndex;
         SetInactiveCoinsFrozen(true);
 
         if (step != null && step.stepType == OnboardingStepType.GuidedShot)
@@ -262,32 +272,11 @@ public class OnboardingController : MonoBehaviour
 
         if (previousActiveCoinIndex != nextStep.activeCoinIndex)
         {
-            PrepareActiveCoinAtHome(nextStep.activeCoinIndex);
+            UnfreezeAllCoins();
         }
 
         ApplyCoinStates(nextStep);
         ShowGuideForStep(nextStep);
-    }
-
-    void PrepareActiveCoinAtHome(int activeCoinIndex)
-    {
-        ResetCoinToHome(activeCoinIndex);
-    }
-
-    void ResetCoinToHome(int coinIndex)
-    {
-        OnboardingCoin coin = GetCoinByIndex(coinIndex);
-        if (coin == null)
-        {
-            return;
-        }
-
-        if (!_initialPositions.TryGetValue(coin, out Vector3 homePosition))
-        {
-            return;
-        }
-
-        coin.DragController.ResetToPosition(homePosition);
     }
 
     IEnumerator ResolveShotRoutine(OnboardingCoin coin, OnboardingCoinDragController dragController)
@@ -304,25 +293,30 @@ public class OnboardingController : MonoBehaviour
         while (dragController.IsSliding)
         {
             _pathSamples.Add(coin.transform.position);
-
-            if (step != null && step.stepType == OnboardingStepType.ScoreGoal)
-            {
-                TrackGoalDuringShot(coin);
-
-                if (_goalEnteredDuringShot)
-                {
-                    FinishScoreGoalStep();
-                    SetInactiveCoinsFrozen(false);
-                    yield break;
-                }
-            }
-
+            TryMarkGoalDuringShot(coin);
             yield return null;
         }
 
         _pathSamples.Add(coin.transform.position);
-        yield return new WaitForSeconds(0.1f);
-        _pathSamples.Add(coin.transform.position);
+
+        float elapsed = 0f;
+        while (elapsed < _goalSettleSeconds)
+        {
+            TryMarkGoalDuringShot(coin);
+            if (_goalEnteredDuringShot)
+            {
+                break;
+            }
+
+            elapsed += 0.1f;
+            yield return new WaitForSeconds(0.1f);
+            _pathSamples.Add(coin.transform.position);
+        }
+
+        if (!_goalEnteredDuringShot)
+        {
+            TryMarkGoalFromPath(coin, shotStepIndex);
+        }
 
         if (_currentStepIndex != shotStepIndex)
         {
@@ -334,19 +328,13 @@ public class OnboardingController : MonoBehaviour
 
         if (step != null && step.stepType == OnboardingStepType.ScoreGoal)
         {
-            TrackGoalDuringShot(coin);
-
-            if (!_goalEnteredDuringShot)
+            if (shotStepIndex == ThirdCoinGoalStepIndex)
             {
-                yield return new WaitForSeconds(0.2f);
-                TrackGoalDuringShot(coin);
+                ForceFirstCoinGoalStep();
             }
-
-            if (_goalEnteredDuringShot)
+            else if (_goalEnteredDuringShot || IsScoringCoinInGoal(coin))
             {
-                FinishScoreGoalStep();
-                SetInactiveCoinsFrozen(false);
-                yield break;
+                FinishScoreGoalStep(shotStepIndex);
             }
 
             _isBusy = false;
@@ -388,8 +376,20 @@ public class OnboardingController : MonoBehaviour
 
     void EnterThirdCoinGoalStep()
     {
-        ResetAllCoinsToHome();
+        UnfreezeAllCoins();
         EnterStep(ThirdCoinGoalStepIndex);
+    }
+
+    void ForceFirstCoinGoalStep()
+    {
+        _thirdCoinShotInProgress = false;
+        _scoreGoalFinishConsumed = true;
+        _goalEnteredDuringShot = false;
+        _isBusy = false;
+        _resolveRoutine = null;
+
+        UnfreezeAllCoins();
+        EnterStep(FirstCoinGoalStepIndex);
     }
 
     void EnterStep(int stepIndex)
@@ -404,6 +404,7 @@ public class OnboardingController : MonoBehaviour
         _currentStepIndex = stepIndex;
         _goalEnteredDuringShot = false;
         _scoreGoalFinishConsumed = false;
+        _thirdCoinShotInProgress = false;
 
         OnboardingStepDefinition step = GetCurrentStep();
         if (step == null)
@@ -415,7 +416,7 @@ public class OnboardingController : MonoBehaviour
         ShowGuideForStep(step);
     }
 
-    void ResetAllCoinsToHome()
+    void UnfreezeAllCoins()
     {
         if (_coins == null)
         {
@@ -424,7 +425,19 @@ public class OnboardingController : MonoBehaviour
 
         for (int i = 0; i < _coins.Length; i++)
         {
-            ResetCoinToHome(i);
+            OnboardingCoin coin = _coins[i];
+            if (coin == null)
+            {
+                continue;
+            }
+
+            Rigidbody rigidbody = coin.DragController.GetComponent<Rigidbody>();
+            if (rigidbody != null)
+            {
+                rigidbody.isKinematic = false;
+            }
+
+            SetCoinCollidersSolid(coin, true);
         }
     }
 
@@ -459,6 +472,20 @@ public class OnboardingController : MonoBehaviour
             }
 
             rigidbody.isKinematic = frozen;
+            SetCoinCollidersSolid(coin, !frozen);
+        }
+    }
+
+    static void SetCoinCollidersSolid(OnboardingCoin coin, bool solid)
+    {
+        Collider[] colliders = coin.GetComponentsInChildren<Collider>();
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            Collider collider = colliders[i];
+            if (collider != null)
+            {
+                collider.isTrigger = !solid;
+            }
         }
     }
 
@@ -477,11 +504,7 @@ public class OnboardingController : MonoBehaviour
 
         if (previousActiveCoinIndex != step.activeCoinIndex)
         {
-            OnboardingCoin activeCoin = GetCoinByIndex(step.activeCoinIndex);
-            if (activeCoin != null && _initialPositions.TryGetValue(activeCoin, out Vector3 homePosition))
-            {
-                yield return ResetCoinRoutine(activeCoin, homePosition);
-            }
+            UnfreezeAllCoins();
         }
 
         ApplyCoinStates(step);
@@ -545,100 +568,125 @@ public class OnboardingController : MonoBehaviour
 
         _goalEnteredDuringShot = true;
 
-        if (_isBusy && !_scoreGoalFinishConsumed)
+        if (_thirdCoinShotInProgress && coin.CoinIndex == OnboardingDefaultSteps.ThirdCoinIndex)
         {
-            FinishScoreGoalStep();
+            ForceFirstCoinGoalStep();
+            return;
+        }
+
+        if (_isBusy && !_scoreGoalFinishConsumed && !_isCompletingOnboarding)
+        {
+            FinishScoreGoalStep(_currentStepIndex);
         }
     }
 
-    void TrackGoalDuringShot(OnboardingCoin coin)
+    void TryMarkGoalDuringShot(OnboardingCoin coin)
     {
-        if (coin == null)
+        if (_goalEnteredDuringShot || coin == null)
         {
             return;
         }
 
-        if (IsCoinInGoal(coin))
+        if (IsScoringCoinInGoal(coin))
         {
             _goalEnteredDuringShot = true;
         }
     }
 
-    bool IsCoinInGoal(OnboardingCoin coin)
+    void TryMarkGoalFromPath(OnboardingCoin coin, int shotStepIndex)
     {
-        if (_goalDetector != null && _goalDetector.ContainsCoin(coin, 0.75f))
+        if (_goalEnteredDuringShot || coin == null || _pathSamples.Count < 2)
+        {
+            return;
+        }
+
+        Collider goalCollider = GetGoalTriggerCollider();
+        if (goalCollider == null)
+        {
+            return;
+        }
+
+        if (OnboardingGoalValidator.DidPathEnterGoal(_pathSamples, goalCollider, _goalMargin))
+        {
+            _goalEnteredDuringShot = true;
+            return;
+        }
+
+        if (shotStepIndex != ThirdCoinGoalStepIndex)
+        {
+            return;
+        }
+
+        GameObject kaleE = GameObject.Find("Kale_E");
+        if (kaleE == null)
+        {
+            return;
+        }
+
+        Vector3 goalPosition = kaleE.transform.position;
+        float startDistance = HorizontalDistanceSqr(_pathSamples[0], goalPosition);
+        float endDistance = HorizontalDistanceSqr(coin.transform.position, goalPosition);
+        if (endDistance < startDistance && endDistance < 2.8f * 2.8f)
+        {
+            _goalEnteredDuringShot = true;
+        }
+    }
+
+    static float HorizontalDistanceSqr(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return (a - b).sqrMagnitude;
+    }
+
+    bool IsScoringCoinInGoal(OnboardingCoin coin)
+    {
+        if (coin == null)
+        {
+            return false;
+        }
+
+        if (_goalDetector != null && _goalDetector.ContainsCoin(coin, _goalMargin))
         {
             return true;
         }
 
         Collider goalCollider = GetGoalTriggerCollider();
-        if (goalCollider != null)
-        {
-            if (OnboardingGoalValidator.IsCoinInsideGoal(coin.transform.position, goalCollider, 0.85f))
-            {
-                return true;
-            }
-
-            if (OnboardingGoalValidator.DidPathEnterGoal(_pathSamples, goalCollider, 0.85f))
-            {
-                return true;
-            }
-
-            Collider[] coinColliders = coin.GetComponentsInChildren<Collider>();
-            for (int i = 0; i < coinColliders.Length; i++)
-            {
-                Collider coinCollider = coinColliders[i];
-                if (coinCollider == null || coinCollider.isTrigger)
-                {
-                    continue;
-                }
-
-                Vector3 sample = coinCollider.bounds.center;
-                if (OnboardingGoalValidator.IsCoinInsideGoal(sample, goalCollider, 0.85f))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return IsNearGoalArea(coin.transform.position);
-    }
-
-    static bool IsNearGoalArea(Vector3 worldPosition)
-    {
-        GameObject kaleE = GameObject.Find("Kale_E");
-        if (kaleE == null)
+        if (goalCollider == null)
         {
             return false;
         }
 
-        Transform goalTrigger = kaleE.transform.Find("GoalTrigger");
-        if (goalTrigger != null)
+        Bounds goalBounds = goalCollider.bounds;
+        goalBounds.Expand(_goalMargin);
+
+        Collider[] coinColliders = coin.GetComponentsInChildren<Collider>();
+        for (int i = 0; i < coinColliders.Length; i++)
         {
-            Collider collider = goalTrigger.GetComponent<Collider>();
-            if (collider != null)
+            Collider coinCollider = coinColliders[i];
+            if (coinCollider == null)
             {
-                Bounds bounds = collider.bounds;
-                bounds.Expand(0.55f);
-                if (bounds.Contains(worldPosition))
-                {
-                    return true;
-                }
+                continue;
+            }
+
+            if (goalBounds.Contains(coinCollider.bounds.center)
+                || goalBounds.Intersects(coinCollider.bounds))
+            {
+                return true;
+            }
+
+            if (OnboardingGoalValidator.IsCoinInsideGoal(coinCollider.bounds.center, goalCollider, _goalMargin))
+            {
+                return true;
             }
         }
 
-        Vector3 goalCenter = goalTrigger != null ? goalTrigger.position : kaleE.transform.position;
-        Vector3 delta = worldPosition - goalCenter;
-        delta.y = 0f;
-        return delta.sqrMagnitude <= 1.1f * 1.1f;
+        return OnboardingGoalValidator.IsCoinInsideGoal(coin.transform.position, goalCollider, _goalMargin);
     }
 
     void EnsureStepsCatalog()
     {
-        if (_steps == null || _steps.Length < OnboardingDefaultSteps.Count)
-        {
-            _steps = OnboardingDefaultSteps.Create();
-        }
+        _steps = OnboardingDefaultSteps.Create();
     }
 
     OnboardingStepDefinition GetStepAtIndex(int stepIndex)
@@ -652,27 +700,31 @@ public class OnboardingController : MonoBehaviour
         return _steps[stepIndex];
     }
 
-    void FinishScoreGoalStep()
+    void FinishScoreGoalStep(int completedStepIndex)
     {
         if (_isCompletingOnboarding || _scoreGoalFinishConsumed)
         {
             return;
         }
 
+        if (completedStepIndex != _currentStepIndex)
+        {
+            return;
+        }
+
         EnsureStepsCatalog();
 
-        OnboardingStepDefinition step = GetCurrentStep();
+        OnboardingStepDefinition step = GetStepAtIndex(completedStepIndex);
         if (step == null || step.stepType != OnboardingStepType.ScoreGoal)
         {
             return;
         }
 
         _scoreGoalFinishConsumed = true;
-        StopShotCoroutines();
         _isBusy = false;
         SetInactiveCoinsFrozen(false);
 
-        if (step.isFinalStep || _currentStepIndex >= FirstCoinGoalStepIndex)
+        if (step.isFinalStep)
         {
             _isCompletingOnboarding = true;
             ShowStepSuccess("Gol!");
@@ -680,15 +732,16 @@ public class OnboardingController : MonoBehaviour
             return;
         }
 
-        ShowStepSuccess("Gol!");
-        if (_currentStepIndex == ThirdCoinGoalStepIndex)
+        if (completedStepIndex == ThirdCoinGoalStepIndex)
         {
-            ResetAllCoinsToHome();
+            ShowStepSuccess("Gol!");
+            UnfreezeAllCoins();
             EnterStep(FirstCoinGoalStepIndex);
             return;
         }
 
-        EnterStep(_currentStepIndex + 1);
+        ShowStepSuccess("Gol!");
+        EnterStep(completedStepIndex + 1);
     }
 
     void StopShotCoroutines()

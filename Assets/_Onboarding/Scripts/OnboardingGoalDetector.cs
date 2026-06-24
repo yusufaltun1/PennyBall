@@ -24,6 +24,11 @@ public class OnboardingGoalDetector : MonoBehaviour
         OnboardingCoin coin = other.GetComponentInParent<OnboardingCoin>();
         if (coin == null)
         {
+            coin = other.GetComponent<OnboardingCoin>();
+        }
+
+        if (coin == null)
+        {
             return;
         }
 

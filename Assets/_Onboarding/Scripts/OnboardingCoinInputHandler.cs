@@ -71,12 +71,19 @@ public class OnboardingCoinInputHandler : MonoBehaviour
         {
             if (TryGetTablePosition(screenPosition, out Vector3 worldPosition))
             {
+                _activeCoin.UpdateAim(worldPosition, default);
                 _controller.ValidateAim(_activeCoin, out OnboardingAimFeedback feedback);
                 if (feedback.IsFullyValid)
                 {
                     _lastValidFeedback = feedback;
                     _lastValidPullPosition = worldPosition;
                     _hasLastValidPull = true;
+                }
+                else
+                {
+                    _lastValidFeedback = feedback;
+                    _lastValidPullPosition = worldPosition;
+                    _hasLastValidPull = false;
                 }
 
                 _activeCoin.UpdateAim(worldPosition, feedback);
@@ -85,6 +92,16 @@ public class OnboardingCoinInputHandler : MonoBehaviour
         else if (releasedThisFrame && _activeCoin != null)
         {
             OnboardingCoinDragController releasedCoin = _activeCoin;
+
+            if (TryGetTablePosition(screenPosition, out Vector3 releasePosition))
+            {
+                releasedCoin.UpdateAim(releasePosition, default);
+                _controller.ValidateAim(releasedCoin, out OnboardingAimFeedback releaseFeedback);
+                _lastValidFeedback = releaseFeedback;
+                _lastValidPullPosition = releasePosition;
+                _hasLastValidPull = releaseFeedback.IsFullyValid;
+                releasedCoin.UpdateAim(releasePosition, releaseFeedback);
+            }
 
             bool canRelease = _hasLastValidPull && _lastValidFeedback.IsFullyValid;
             if (canRelease)
