@@ -11,7 +11,6 @@ public class OnboardingSceneBootstrap : MonoBehaviour
 
     void Awake()
     {
-        OnboardingSceneRuntimeInstaller.Install();
         DestroyGameObjectIfExists("OpponentBot");
         DestroyGameObjectIfExists("MatchTurnCoordinator");
         DestroyGameObjectIfExists("TurnController");

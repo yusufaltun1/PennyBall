@@ -12,14 +12,6 @@ public static class OnboardingSceneRuntimeInstaller
     {
         Scene activeScene = SceneManager.GetActiveScene();
 
-        if (!OnboardingProgress.IsCompleted
-            && activeScene.name != OnboardingSceneNames.Onboarding
-            && (activeScene.name == OnboardingSceneNames.MainMenu || activeScene.name == GameSceneNames.Game))
-        {
-            SceneManager.LoadScene(OnboardingSceneNames.Onboarding);
-            return;
-        }
-
         if (activeScene.name == OnboardingSceneNames.Onboarding)
         {
             EnsureEarlySetupRunner();
@@ -42,19 +34,16 @@ public static class OnboardingSceneRuntimeInstaller
         RemoveGameOnlyObjects();
         DisableAll<CoinInputHandler>();
         DestroyAll<GoalZone>();
-
-        GameRulesManager rulesManager = Object.FindFirstObjectByType<GameRulesManager>();
-        if (rulesManager != null)
-        {
-            Object.Destroy(rulesManager.gameObject);
-        }
+        DestroyAllGameRulesManagers();
+        DestroyAll<TurnController>();
+        DestroyAll<MatchTurnCoordinator>();
+        DestroyAll<OpponentBotController>();
 
         OnboardingCoin[] coins = PreparePlayerCoins();
         OnboardingGoalDetector goalDetector = EnsureGoalDetector();
         OnboardingGuideView guideView = EnsureGuideView();
         OnboardingController controller = EnsureController(coins, goalDetector, guideView);
         EnsureInputHandler(controller);
-        DestroyAllGameRulesManagers();
     }
 
     static void DestroyAllGameRulesManagers()

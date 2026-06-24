@@ -96,18 +96,32 @@ public class OnboardingController : MonoBehaviour
             }
 
             OnboardingCoinDragController dragController = coin.DragController;
-            dragController.LaunchCommitted -= HandleCoinLaunched;
-            dragController.LaunchCommitted += HandleCoinLaunched;
+            dragController.BindController(this);
         }
     }
 
-    void HandleCoinLaunched(OnboardingCoin coin, OnboardingCoinDragController dragController)
+    static OnboardingController _activeController;
+
+    public static OnboardingController ActiveController => _activeController;
+
+    void Awake()
     {
-        OnShotReleased(coin, dragController);
+        if (_activeController != null && _activeController != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        _activeController = this;
     }
 
     void OnDestroy()
     {
+        if (_activeController == this)
+        {
+            _activeController = null;
+        }
+
         if (_goalDetector != null)
         {
             _goalDetector.GoalScored -= OnGoalScored;
@@ -131,7 +145,7 @@ public class OnboardingController : MonoBehaviour
                 continue;
             }
 
-            coin.DragController.LaunchCommitted -= HandleCoinLaunched;
+            coin.DragController.BindController(null);
         }
     }
 
@@ -196,7 +210,7 @@ public class OnboardingController : MonoBehaviour
 
     public void OnShotReleased(OnboardingCoin coin, OnboardingCoinDragController dragController)
     {
-        if (_isBusy || coin == null || dragController == null)
+        if (_activeController != this || _isBusy || coin == null || dragController == null)
         {
             return;
         }
@@ -209,10 +223,12 @@ public class OnboardingController : MonoBehaviour
 
         _shotStartPosition = coin.transform.position;
         _scoreGoalFinishConsumed = false;
+        SetInactiveCoinsFrozen(true);
 
         if (step != null && step.stepType == OnboardingStepType.GuidedShot)
         {
             AdvanceFromGuidedShot();
+            SetInactiveCoinsFrozen(false);
             return;
         }
 
@@ -278,7 +294,8 @@ public class OnboardingController : MonoBehaviour
     {
         _isBusy = true;
         _goalEnteredDuringShot = false;
-        OnboardingStepDefinition step = GetCurrentStep();
+        int shotStepIndex = _currentStepIndex;
+        OnboardingStepDefinition step = GetStepAtIndex(shotStepIndex);
         _pathSamples.Clear();
         _pathSamples.Add(coin.transform.position);
 
@@ -295,6 +312,7 @@ public class OnboardingController : MonoBehaviour
                 if (_goalEnteredDuringShot)
                 {
                     FinishScoreGoalStep();
+                    SetInactiveCoinsFrozen(false);
                     yield break;
                 }
             }
@@ -305,6 +323,14 @@ public class OnboardingController : MonoBehaviour
         _pathSamples.Add(coin.transform.position);
         yield return new WaitForSeconds(0.1f);
         _pathSamples.Add(coin.transform.position);
+
+        if (_currentStepIndex != shotStepIndex)
+        {
+            _isBusy = false;
+            _resolveRoutine = null;
+            SetInactiveCoinsFrozen(false);
+            yield break;
+        }
 
         if (step != null && step.stepType == OnboardingStepType.ScoreGoal)
         {
@@ -319,11 +345,13 @@ public class OnboardingController : MonoBehaviour
             if (_goalEnteredDuringShot)
             {
                 FinishScoreGoalStep();
+                SetInactiveCoinsFrozen(false);
                 yield break;
             }
 
             _isBusy = false;
             _resolveRoutine = null;
+            SetInactiveCoinsFrozen(false);
             yield break;
         }
 
@@ -332,6 +360,16 @@ public class OnboardingController : MonoBehaviour
         {
             yield return ResetCoinRoutine(coin, _shotStartPosition);
             _isBusy = false;
+            SetInactiveCoinsFrozen(false);
+            yield break;
+        }
+
+        if (shotStepIndex == 1)
+        {
+            EnterThirdCoinGoalStep();
+            _isBusy = false;
+            _resolveRoutine = null;
+            SetInactiveCoinsFrozen(false);
             yield break;
         }
 
@@ -343,6 +381,84 @@ public class OnboardingController : MonoBehaviour
         {
             _isBusy = false;
             CompleteOnboarding();
+        }
+
+        SetInactiveCoinsFrozen(false);
+    }
+
+    void EnterThirdCoinGoalStep()
+    {
+        ResetAllCoinsToHome();
+        EnterStep(ThirdCoinGoalStepIndex);
+    }
+
+    void EnterStep(int stepIndex)
+    {
+        EnsureStepsCatalog();
+
+        if (stepIndex < 0 || stepIndex >= _steps.Length)
+        {
+            return;
+        }
+
+        _currentStepIndex = stepIndex;
+        _goalEnteredDuringShot = false;
+        _scoreGoalFinishConsumed = false;
+
+        OnboardingStepDefinition step = GetCurrentStep();
+        if (step == null)
+        {
+            return;
+        }
+
+        ApplyCoinStates(step);
+        ShowGuideForStep(step);
+    }
+
+    void ResetAllCoinsToHome()
+    {
+        if (_coins == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < _coins.Length; i++)
+        {
+            ResetCoinToHome(i);
+        }
+    }
+
+    void SetInactiveCoinsFrozen(bool frozen)
+    {
+        if (_coins == null)
+        {
+            return;
+        }
+
+        OnboardingStepDefinition step = GetCurrentStep();
+        int activeCoinIndex = step != null ? step.activeCoinIndex : -1;
+
+        for (int i = 0; i < _coins.Length; i++)
+        {
+            OnboardingCoin coin = _coins[i];
+            if (coin == null || coin.CoinIndex == activeCoinIndex)
+            {
+                continue;
+            }
+
+            Rigidbody rigidbody = coin.DragController.GetComponent<Rigidbody>();
+            if (rigidbody == null)
+            {
+                continue;
+            }
+
+            if (frozen)
+            {
+                rigidbody.linearVelocity = Vector3.zero;
+                rigidbody.angularVelocity = Vector3.zero;
+            }
+
+            rigidbody.isKinematic = frozen;
         }
     }
 
@@ -519,7 +635,21 @@ public class OnboardingController : MonoBehaviour
 
     void EnsureStepsCatalog()
     {
-        _steps = OnboardingDefaultSteps.Create();
+        if (_steps == null || _steps.Length < OnboardingDefaultSteps.Count)
+        {
+            _steps = OnboardingDefaultSteps.Create();
+        }
+    }
+
+    OnboardingStepDefinition GetStepAtIndex(int stepIndex)
+    {
+        EnsureStepsCatalog();
+        if (stepIndex < 0 || stepIndex >= _steps.Length)
+        {
+            return null;
+        }
+
+        return _steps[stepIndex];
     }
 
     void FinishScoreGoalStep()
@@ -540,6 +670,7 @@ public class OnboardingController : MonoBehaviour
         _scoreGoalFinishConsumed = true;
         StopShotCoroutines();
         _isBusy = false;
+        SetInactiveCoinsFrozen(false);
 
         if (step.isFinalStep || _currentStepIndex >= FirstCoinGoalStepIndex)
         {
@@ -550,10 +681,14 @@ public class OnboardingController : MonoBehaviour
         }
 
         ShowStepSuccess("Gol!");
-        int nextStepIndex = _currentStepIndex == ThirdCoinGoalStepIndex
-            ? FirstCoinGoalStepIndex
-            : _currentStepIndex + 1;
-        GoToStep(nextStepIndex);
+        if (_currentStepIndex == ThirdCoinGoalStepIndex)
+        {
+            ResetAllCoinsToHome();
+            EnterStep(FirstCoinGoalStepIndex);
+            return;
+        }
+
+        EnterStep(_currentStepIndex + 1);
     }
 
     void StopShotCoroutines()
@@ -563,38 +698,6 @@ public class OnboardingController : MonoBehaviour
             StopCoroutine(_resolveRoutine);
             _resolveRoutine = null;
         }
-    }
-
-    void GoToStep(int stepIndex)
-    {
-        EnsureStepsCatalog();
-
-        if (stepIndex < 0 || stepIndex >= _steps.Length)
-        {
-            return;
-        }
-
-        OnboardingStepDefinition previousStep = GetCurrentStep();
-        int previousActiveCoinIndex = previousStep != null ? previousStep.activeCoinIndex : -1;
-
-        _currentStepIndex = stepIndex;
-        _goalEnteredDuringShot = false;
-        _scoreGoalFinishConsumed = false;
-
-        OnboardingStepDefinition step = GetCurrentStep();
-        if (step == null)
-        {
-            return;
-        }
-
-        if (previousActiveCoinIndex != step.activeCoinIndex)
-        {
-            ResetCoinToHome(previousActiveCoinIndex);
-            PrepareActiveCoinAtHome(step.activeCoinIndex);
-        }
-
-        ApplyCoinStates(step);
-        ShowGuideForStep(step);
     }
 
     IEnumerator CompleteOnboardingAfterDelay(float delaySeconds)
@@ -627,16 +730,8 @@ public class OnboardingController : MonoBehaviour
     void BeginStep(int stepIndex)
     {
         EnsureStepsCatalog();
-        _currentStepIndex = Mathf.Clamp(stepIndex, 0, _steps.Length - 1);
-        OnboardingStepDefinition step = GetCurrentStep();
-        if (step == null)
-        {
-            return;
-        }
-
         _hasBegunFirstStep = true;
-        ApplyCoinStates(step);
-        ShowGuideForStep(step);
+        EnterStep(Mathf.Clamp(stepIndex, 0, _steps.Length - 1));
     }
 
     void ApplyCoinStates(OnboardingStepDefinition step)

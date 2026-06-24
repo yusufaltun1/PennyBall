@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -32,7 +31,12 @@ public class OnboardingCoinDragController : MonoBehaviour
         && !_rigidbody.isKinematic
         && _rigidbody.linearVelocity.sqrMagnitude > _stopSpeedThreshold * _stopSpeedThreshold;
 
-    public event Action<OnboardingCoin, OnboardingCoinDragController> LaunchCommitted;
+    OnboardingController _boundController;
+
+    public void BindController(OnboardingController controller)
+    {
+        _boundController = controller;
+    }
 
     void Awake()
     {
@@ -231,7 +235,7 @@ public class OnboardingCoinDragController : MonoBehaviour
         if (launched)
         {
             OnboardingCoin coin = GetComponent<OnboardingCoin>();
-            LaunchCommitted?.Invoke(coin, this);
+            _boundController?.OnShotReleased(coin, this);
         }
 
         return launched;
