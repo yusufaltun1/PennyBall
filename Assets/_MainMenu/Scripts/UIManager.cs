@@ -11,6 +11,17 @@ public class UIManager : MonoBehaviour
         {
             SceneManager.LoadScene("3d_Saha_Studio", LoadSceneMode.Additive);
         }
+
+        // Hide Matching_Panel at start of the game
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas != null)
+        {
+            Transform matchingPanelTrans = canvas.transform.Find("Matching_Panel");
+            if (matchingPanelTrans != null)
+            {
+                matchingPanelTrans.gameObject.SetActive(false);
+            }
+        }
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -22,7 +33,22 @@ public class UIManager : MonoBehaviour
             return;
         }
 
-        MatchLauncher.StartLeagueMatch();
+        Canvas canvas = GetComponentInParent<Canvas>();
+        Transform matchingPanelTrans = null;
+        if (canvas != null)
+        {
+            matchingPanelTrans = canvas.transform.Find("Matching_Panel");
+        }
+
+        if (matchingPanelTrans != null)
+        {
+            matchingPanelTrans.gameObject.SetActive(true);
+        }
+        else
+        {
+            // Fallback in case Matching_Panel was deleted or not found
+            MatchLauncher.StartLeagueMatch();
+        }
     }
 
     public void OnAntremanButtonPressed()
