@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using TMPro;
 using System.Collections;
 
@@ -20,7 +21,10 @@ public class MatchingPanelController : MonoBehaviour
 
     [Header("Settings")]
     [SerializeField] private float rotateSpeed = 360f;
-    private bool isShuffling = false;
+    [SerializeField] private float slideDuration = 0.5f;
+
+    private bool isShuffling;
+    private bool isRunning;
     private Coroutine matchmakingCoroutine;
     private RectTransform rectTransform;
 
@@ -36,46 +40,6 @@ public class MatchingPanelController : MonoBehaviour
         rectTransform = GetComponent<RectTransform>();
     }
 
-    private void OnEnable()
-    {
-        if (rectTransform == null)
-        {
-            rectTransform = GetComponent<RectTransform>();
-        }
-
-        // Set starting position: top edge at bottom of Canvas (offscreen)
-        if (rectTransform != null)
-        {
-            rectTransform.anchoredPosition = new Vector2(0f, 0f);
-        }
-
-        if (matchmakingCoroutine != null)
-        {
-            StopCoroutine(matchmakingCoroutine);
-        }
-        
-        // Reset states
-        if (loopImage != null)
-        {
-            loopImage.gameObject.SetActive(true);
-        }
-        if (findingObject != null)
-        {
-            findingObject.SetActive(true);
-        }
-        if (sayacObject != null)
-        {
-            sayacObject.SetActive(false);
-        }
-        if (findingText != null)
-        {
-            findingText.fontSize = 64f;
-            findingText.text = "Finding a match...";
-        }
-
-        matchmakingCoroutine = StartCoroutine(DoMatchmakingSequence());
-    }
-
     private void OnDisable()
     {
         if (matchmakingCoroutine != null)
@@ -83,81 +47,100 @@ public class MatchingPanelController : MonoBehaviour
             StopCoroutine(matchmakingCoroutine);
             matchmakingCoroutine = null;
         }
+
         isShuffling = false;
+        isRunning = false;
     }
 
     private void Update()
     {
         if (isShuffling && loopImage != null)
         {
-            // Rotate the loop image (using standard negative rotate speed to rotate clockwise)
             loopImage.rectTransform.Rotate(0f, 0f, -rotateSpeed * Time.deltaTime);
+        }
+    }
+
+    public void BeginMatchFlow()
+    {
+        if (isRunning)
+        {
+            return;
+        }
+
+        isRunning = true;
+        ResetUiState();
+
+        if (matchmakingCoroutine != null)
+        {
+            StopCoroutine(matchmakingCoroutine);
+        }
+
+        if (!gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+        }
+
+        matchmakingCoroutine = StartCoroutine(DoMatchmakingSequence());
+    }
+
+    private void ResetUiState()
+    {
+        if (rectTransform == null)
+        {
+            rectTransform = GetComponent<RectTransform>();
+        }
+
+        if (rectTransform != null)
+        {
+            rectTransform.anchoredPosition = new Vector2(0f, 0f);
+        }
+
+        if (loopImage != null)
+        {
+            loopImage.gameObject.SetActive(true);
+        }
+
+        if (findingObject != null)
+        {
+            findingObject.SetActive(true);
+        }
+
+        if (sayacObject != null)
+        {
+            sayacObject.SetActive(false);
+        }
+
+        if (findingText != null)
+        {
+            findingText.fontSize = 64f;
+            findingText.text = "Finding a match...";
         }
     }
 
     private IEnumerator DoMatchmakingSequence()
     {
-        // 0. Slide Up Animation (Ease-In-Out Popup Transition)
-        if (rectTransform != null)
-        {
-            Canvas canvas = GetComponentInParent<Canvas>();
-            float canvasHeight = 2340f; // safe fallback
-            if (canvas != null)
-            {
-                RectTransform canvasRt = canvas.GetComponent<RectTransform>();
-                if (canvasRt != null)
-                {
-                    canvasHeight = canvasRt.rect.height;
-                }
-            }
-
-            float elapsed = 0f;
-            float duration = 0.5f; // Fast, punchy and extremely smooth
-
-            while (elapsed < duration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
-                
-                // Ease-In-Out cubic/smoothstep curve
-                float easedT = t * t * (3f - 2f * t);
-                
-                float currentY = Mathf.Lerp(0f, canvasHeight, easedT);
-                rectTransform.anchoredPosition = new Vector2(0f, currentY);
-                
-                yield return null;
-            }
-            rectTransform.anchoredPosition = new Vector2(0f, canvasHeight);
-        }
+        yield return SlidePanelUp();
 
         isShuffling = true;
 
-        if (avatarSprites == null || avatarSprites.Length == 0)
+        float shuffleElapsed = 0f;
+        while (shuffleElapsed < 3.0f)
         {
-            Debug.LogWarning("[Matchmaking] No avatar sprites assigned!");
-            isShuffling = false;
-            yield break;
-        }
+            shuffleElapsed += 0.25f;
 
-        // 1. Shuffle avatars, names, and scores 30 times
-        for (int i = 0; i < 30; i++)
-        {
-            // Select random avatar
-            Sprite randomAvatar = avatarSprites[UnityEngine.Random.Range(0, avatarSprites.Length)];
-            if (opponentAvatarImage != null)
+            if (avatarSprites != null && avatarSprites.Length > 0 && opponentAvatarImage != null)
             {
-                opponentAvatarImage.sprite = randomAvatar;
+                int randomAvatarIndex = Random.Range(0, avatarSprites.Length);
+                opponentAvatarImage.sprite = avatarSprites[randomAvatarIndex];
             }
 
-            // Select random name
-            string randomName = playerNames[UnityEngine.Random.Range(0, playerNames.Length)];
+            string randomName = playerNames[Random.Range(0, playerNames.Length)];
             if (opponentNameText != null)
             {
                 opponentNameText.text = randomName;
             }
 
-            // Select random score between 138 and 1342
-            int randomScore = UnityEngine.Random.Range(138, 1343); // 1342 inclusive
+            int randomScore = Random.Range(138, 1343);
             if (scoreText != null)
             {
                 scoreText.text = randomScore.ToString();
@@ -168,35 +151,78 @@ public class MatchingPanelController : MonoBehaviour
 
         isShuffling = false;
 
-        // 2. Hide Loop object
         if (loopImage != null)
         {
             loopImage.gameObject.SetActive(false);
         }
 
-        // 3. Hide Finding Object completely and Show Sayac Object completely
         if (findingObject != null)
         {
             findingObject.SetActive(false);
         }
+
         if (sayacObject != null)
         {
             sayacObject.SetActive(true);
         }
 
-        // 4. Count down from 5 to 0 on sayacText
         for (int count = 5; count >= 0; count--)
         {
             if (sayacText != null)
             {
-                sayacText.fontSize = 96f; // Scale up to 1.5x of 64
+                sayacText.fontSize = 96f;
                 sayacText.text = count.ToString();
             }
+
             yield return new WaitForSeconds(1.0f);
         }
 
-        // 5. Matchmaking complete, load GameUI via MatchLauncher
-        Debug.Log("[Matchmaking] Countdown finished, launching game match!");
+        isRunning = false;
+        matchmakingCoroutine = null;
+
+        if (!OnboardingProgress.IsCompleted)
+        {
+            SceneManager.LoadScene(OnboardingSceneNames.Onboarding);
+            yield break;
+        }
+
         MatchLauncher.StartLeagueMatch();
+    }
+
+    private IEnumerator SlidePanelUp()
+    {
+        if (rectTransform == null)
+        {
+            yield break;
+        }
+
+        float canvasHeight = 2340f;
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas != null)
+        {
+            RectTransform canvasRt = canvas.GetComponent<RectTransform>();
+            if (canvasRt != null && canvasRt.rect.height > 0f)
+            {
+                canvasHeight = canvasRt.rect.height;
+            }
+        }
+
+        const float hiddenY = 0f;
+        float targetY = canvasHeight;
+
+        rectTransform.anchoredPosition = new Vector2(0f, hiddenY);
+
+        float elapsed = 0f;
+        while (elapsed < slideDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / slideDuration);
+            float easedT = t * t * (3f - 2f * t);
+            float currentY = Mathf.Lerp(hiddenY, targetY, easedT);
+            rectTransform.anchoredPosition = new Vector2(0f, currentY);
+            yield return null;
+        }
+
+        rectTransform.anchoredPosition = new Vector2(0f, targetY);
     }
 }
