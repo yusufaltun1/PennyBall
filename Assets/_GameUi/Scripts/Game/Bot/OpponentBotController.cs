@@ -106,6 +106,11 @@ public class OpponentBotController : MonoBehaviour
         }
     }
 
+    public void FreezeMatch()
+    {
+        StopPlayLoop();
+    }
+
     IEnumerator PlayLoopRoutine()
     {
         while (true)

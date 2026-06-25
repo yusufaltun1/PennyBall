@@ -9,4 +9,5 @@ public static class LeagueConfig
 
     public const string SaveKey = "pennyball.league.save";
     public const string BotDatabaseResourcePath = "League/BotPlayers";
+    public const string AvatarLibraryResourcePath = "AvatarSpriteLibrary";
 }

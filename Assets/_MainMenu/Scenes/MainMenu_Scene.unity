@@ -4359,19 +4359,7 @@ MonoBehaviour:
   findingText: {fileID: 1181909930}
   sayacObject: {fileID: 1383766425}
   sayacText: {fileID: 1334078}
-  avatarSprites:
-  - {fileID: 21300000, guid: b29090dc660c3402cba090f6af806149, type: 3}
-  - {fileID: 21300000, guid: 77ea96b4e5f2042979b3e3ab84584026, type: 3}
-  - {fileID: 21300000, guid: 21ce4331efc474759b8045b791804c47, type: 3}
-  - {fileID: 21300000, guid: f1fcdc46e3e6d487ba1c55b6c15b8b1f, type: 3}
-  - {fileID: 21300000, guid: bb6f71995b7b944bf9ab5331ef0ef757, type: 3}
-  - {fileID: 21300000, guid: aa3a6d25ba5c84db781f1fa66873cce0, type: 3}
-  - {fileID: 21300000, guid: ec53cb317ee25476e83ab39ae3b85d29, type: 3}
-  - {fileID: 21300000, guid: 9f2179d059ee94ad2b8135c5bafcf513, type: 3}
-  - {fileID: 21300000, guid: f275527d0100f468cbdb13ee54a21ce5, type: 3}
-  - {fileID: 21300000, guid: f4c068abd771a406f8ab60990828d46b, type: 3}
-  - {fileID: 21300000, guid: e955e00f755274969898ed29f79520fe, type: 3}
-  - {fileID: 21300000, guid: 097e348f5db1a4d038a6c9d02a28921d, type: 3}
+  avatarLibrary: {fileID: 11400000, guid: 2fe4099fc7466474aaea067f524ac73f, type: 2}
   rotateSpeed: 100
   slideDuration: 0.25
 --- !u!1 &1299671899

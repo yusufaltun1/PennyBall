@@ -18,7 +18,7 @@ public class MatchingPanelController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI sayacText;
 
     [Header("Avatars")]
-    [SerializeField] private Sprite[] avatarSprites;
+    [SerializeField] private AvatarSpriteLibrary avatarLibrary;
 
     [Header("Settings")]
     [SerializeField] private float rotateSpeed = 360f;
@@ -137,11 +137,11 @@ public class MatchingPanelController : MonoBehaviour
         isRunning = false;
         matchmakingCoroutine = null;
 
-        if (!OnboardingProgress.IsCompleted)
-        {
-            SceneManager.LoadScene(OnboardingSceneNames.Onboarding);
-            yield break;
-        }
+        //if (!OnboardingProgress.IsCompleted)
+        //{
+          //  SceneManager.LoadScene(OnboardingSceneNames.Onboarding);
+            //yield break;
+        //}
 
         // Rakip zaten MatchSessionContext'te — direkt sahneyi yükle
         SceneManager.LoadScene(GameSceneNames.Game);
@@ -191,13 +191,10 @@ public class MatchingPanelController : MonoBehaviour
 
     private void SetAvatar(int avatarIndex)
     {
-        if (opponentAvatarImage == null || avatarSprites == null || avatarSprites.Length == 0)
-        {
+        if (opponentAvatarImage == null || avatarLibrary == null)
             return;
-        }
 
-        int safeIndex = Mathf.Clamp(avatarIndex, 0, avatarSprites.Length - 1);
-        opponentAvatarImage.sprite = avatarSprites[safeIndex];
+        opponentAvatarImage.sprite = avatarLibrary.Get(avatarIndex);
     }
 
     private int GetOpponentStandingPoints(BotPlayerEntry bot)
