@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: AvatarSpriteLibrary
   m_EditorClassIdentifier: Assembly-CSharp::AvatarSpriteLibrary
   _sprites:
+  - {fileID: 21300000, guid: 1025e2c82af664679801e55200ccdf33, type: 3}
   - {fileID: 21300000, guid: 097e348f5db1a4d038a6c9d02a28921d, type: 3}
   - {fileID: 21300000, guid: e955e00f755274969898ed29f79520fe, type: 3}
   - {fileID: 21300000, guid: f4c068abd771a406f8ab60990828d46b, type: 3}

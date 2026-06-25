@@ -173,15 +173,11 @@ public class LeagueService : MonoBehaviour
 
     LeagueSaveData CreateNewSave()
     {
-        AvatarSpriteLibrary library = AvatarSpriteLibrary.Load();
-        int avatarCount = library != null ? library.Count : 1;
-        int randomAvatar = UnityEngine.Random.Range(0, avatarCount);
-
         var save = new LeagueSaveData
         {
             playerLeague = 1,
             playerDisplayName = "Player",
-            playerAvatarIndex = randomAvatar,
+            playerAvatarIndex = 0,
             seasonStartUtcTicks = DateTime.UtcNow.Ticks,
             lastSimulationDateUtc = DateTime.UtcNow.Date.ToString("yyyy-MM-dd")
         };
