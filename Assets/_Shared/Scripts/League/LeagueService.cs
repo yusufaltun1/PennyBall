@@ -89,13 +89,33 @@ public class LeagueService : MonoBehaviour
     {
         EnsureSeasonActive();
 
-        IReadOnlyList<BotPlayerEntry> pool = BotPlayerCatalog.GetBotsForLeague(_save.playerLeague);
-        if (pool.Count == 0)
+        // Standings'deki bot girişlerini topla (player hariç)
+        var botEntries = new System.Collections.Generic.List<LeagueStandingEntry>(20);
+        if (_save?.standings != null)
         {
-            return null;
+            for (int i = 0; i < _save.standings.Length; i++)
+            {
+                LeagueStandingEntry e = _save.standings[i];
+                if (!e.isPlayer && e.botId >= 0)
+                    botEntries.Add(e);
+            }
         }
 
-        BotPlayerEntry opponent = pool[UnityEngine.Random.Range(0, pool.Count)];
+        BotPlayerEntry opponent = null;
+        if (botEntries.Count > 0)
+        {
+            LeagueStandingEntry picked = botEntries[UnityEngine.Random.Range(0, botEntries.Count)];
+            BotPlayerCatalog.TryGetById(picked.botId, out opponent);
+        }
+
+        // Standings boşsa tam havuza düş
+        if (opponent == null)
+        {
+            IReadOnlyList<BotPlayerEntry> pool = BotPlayerCatalog.GetBotsForLeague(_save.playerLeague);
+            if (pool.Count == 0) return null;
+            opponent = pool[UnityEngine.Random.Range(0, pool.Count)];
+        }
+
         _save.currentOpponentBotId = opponent.id;
         LeagueRepository.Save(_save);
         MatchSessionContext.SetOpponent(opponent);

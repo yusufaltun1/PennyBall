@@ -1,8 +1,9 @@
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.SceneManagement;
-using TMPro;
 using System.Collections;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class MatchingPanelController : MonoBehaviour
 {
@@ -27,13 +28,6 @@ public class MatchingPanelController : MonoBehaviour
     private bool isRunning;
     private Coroutine matchmakingCoroutine;
     private RectTransform rectTransform;
-
-    private readonly string[] playerNames = new string[]
-    {
-        "Alperen", "Batuhan", "Cem", "Doruk", "Emre", "Furkan", "Gökhan", "Hakan", "Kerem", "Mert",
-        "Oğuz", "Onur", "Selin", "Zeynep", "Ece", "Buse", "Burak", "Yiğit", "Kaan", "Volkan",
-        "Can", "Arda", "Serkan", "Melisa", "Seda", "Defne", "Gamze", "Tufan", "Bora", "Murat"
-    };
 
     private void Awake()
     {
@@ -85,30 +79,13 @@ public class MatchingPanelController : MonoBehaviour
 
     private void ResetUiState()
     {
-        if (rectTransform == null)
-        {
-            rectTransform = GetComponent<RectTransform>();
-        }
-
+        rectTransform ??= GetComponent<RectTransform>();
         if (rectTransform != null)
-        {
             rectTransform.anchoredPosition = new Vector2(0f, 0f);
-        }
 
-        if (loopImage != null)
-        {
-            loopImage.gameObject.SetActive(true);
-        }
-
-        if (findingObject != null)
-        {
-            findingObject.SetActive(true);
-        }
-
-        if (sayacObject != null)
-        {
-            sayacObject.SetActive(false);
-        }
+        loopImage?.gameObject.SetActive(true);
+        findingObject?.SetActive(true);
+        sayacObject?.SetActive(false);
 
         if (findingText != null)
         {
@@ -119,6 +96,11 @@ public class MatchingPanelController : MonoBehaviour
 
     private IEnumerator DoMatchmakingSequence()
     {
+        // Gerçek rakibi seç — MatchSessionContext'e de otomatik yazılır
+        BotPlayerEntry opponent = LeagueService.Instance?.PickOpponentForNextMatch();
+
+        IReadOnlyList<BotPlayerEntry> shufflePool = GetShufflePool();
+
         yield return SlidePanelUp();
 
         isShuffling = true;
@@ -127,44 +109,19 @@ public class MatchingPanelController : MonoBehaviour
         while (shuffleElapsed < 3.0f)
         {
             shuffleElapsed += 0.25f;
-
-            if (avatarSprites != null && avatarSprites.Length > 0 && opponentAvatarImage != null)
-            {
-                int randomAvatarIndex = Random.Range(0, avatarSprites.Length);
-                opponentAvatarImage.sprite = avatarSprites[randomAvatarIndex];
-            }
-
-            string randomName = playerNames[Random.Range(0, playerNames.Length)];
-            if (opponentNameText != null)
-            {
-                opponentNameText.text = randomName;
-            }
-
-            int randomScore = Random.Range(138, 1343);
-            if (scoreText != null)
-            {
-                scoreText.text = randomScore.ToString();
-            }
-
+            ShowRandomBotFromPool(shufflePool);
             yield return new WaitForSeconds(0.25f);
         }
 
         isShuffling = false;
 
-        if (loopImage != null)
-        {
-            loopImage.gameObject.SetActive(false);
-        }
+        loopImage?.gameObject.SetActive(false);
+        findingObject?.SetActive(false);
 
-        if (findingObject != null)
-        {
-            findingObject.SetActive(false);
-        }
+        // Shuffle bitti — gerçek rakibi kilitle
+        ShowOpponent(opponent);
 
-        if (sayacObject != null)
-        {
-            sayacObject.SetActive(true);
-        }
+        sayacObject?.SetActive(true);
 
         for (int count = 5; count >= 0; count--)
         {
@@ -186,7 +143,87 @@ public class MatchingPanelController : MonoBehaviour
             yield break;
         }
 
-        MatchLauncher.StartLeagueMatch();
+        // Rakip zaten MatchSessionContext'te — direkt sahneyi yükle
+        SceneManager.LoadScene(GameSceneNames.Game);
+    }
+
+    private IReadOnlyList<BotPlayerEntry> GetShufflePool()
+    {
+        if (LeagueService.Instance == null)
+        {
+            return System.Array.Empty<BotPlayerEntry>();
+        }
+
+        return BotPlayerCatalog.GetBotsForLeague(LeagueService.Instance.PlayerLeague);
+    }
+
+    private void ShowRandomBotFromPool(IReadOnlyList<BotPlayerEntry> pool)
+    {
+        if (pool == null || pool.Count == 0)
+        {
+            ShowPlaceholder();
+            return;
+        }
+
+        BotPlayerEntry bot = pool[Random.Range(0, pool.Count)];
+
+        opponentNameText?.SetText(bot.displayName);
+
+        SetAvatar(bot.avatarIndex);
+
+        scoreText?.SetText(Random.Range(50, 600).ToString());
+    }
+
+    private void ShowOpponent(BotPlayerEntry opponent)
+    {
+        if (opponent == null)
+        {
+            ShowPlaceholder();
+            return;
+        }
+
+        opponentNameText?.SetText(opponent.displayName);
+
+        SetAvatar(opponent.avatarIndex);
+
+        scoreText?.SetText(GetOpponentStandingPoints(opponent).ToString());
+    }
+
+    private void SetAvatar(int avatarIndex)
+    {
+        if (opponentAvatarImage == null || avatarSprites == null || avatarSprites.Length == 0)
+        {
+            return;
+        }
+
+        int safeIndex = Mathf.Clamp(avatarIndex, 0, avatarSprites.Length - 1);
+        opponentAvatarImage.sprite = avatarSprites[safeIndex];
+    }
+
+    private int GetOpponentStandingPoints(BotPlayerEntry bot)
+    {
+        LeagueSaveData save = LeagueService.Instance?.Save;
+        if (save?.standings == null)
+        {
+            return 0;
+        }
+
+        for (int i = 0; i < save.standings.Length; i++)
+        {
+            LeagueStandingEntry entry = save.standings[i];
+            if (!entry.isPlayer && entry.botId == bot.id)
+            {
+                return entry.points;
+            }
+        }
+
+        return 0;
+    }
+
+    private void ShowPlaceholder()
+    {
+        opponentNameText?.SetText("---");
+        scoreText?.SetText("0");
     }
 
     private IEnumerator SlidePanelUp()
@@ -218,8 +255,7 @@ public class MatchingPanelController : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / slideDuration);
             float easedT = t * t * (3f - 2f * t);
-            float currentY = Mathf.Lerp(hiddenY, targetY, easedT);
-            rectTransform.anchoredPosition = new Vector2(0f, currentY);
+            rectTransform.anchoredPosition = new Vector2(0f, Mathf.Lerp(hiddenY, targetY, easedT));
             yield return null;
         }
 
