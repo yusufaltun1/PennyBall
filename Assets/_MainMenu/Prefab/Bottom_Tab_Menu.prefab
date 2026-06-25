@@ -1059,25 +1059,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2609f2a88544478d957b3e5548b5eef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BottomTabMenu
+  panelsContainer: {fileID: 0}
+  panelWidth: 1080
+  homeTabIndex: 1
+  animationDuration: 0.45
   tabs:
   - button: {fileID: 1651473979047391227}
     bgObject: {fileID: 2970687687734001023}
     iconImage: {fileID: 7885946812193301893}
     defaultSprite: {fileID: 21300000, guid: 1bc0a83ae77aa41509e327ef6bbf89a1, type: 3}
     pressedSprite: {fileID: 21300000, guid: 6e1337792674444568968cb7f6be1225, type: 3}
-    panelObject: {fileID: 0}
   - button: {fileID: 6035579477884838264}
     bgObject: {fileID: 2705288728713829268}
     iconImage: {fileID: 1217619423933023579}
     defaultSprite: {fileID: 21300000, guid: e2a330e64d9604ad7adccf431cf7578a, type: 3}
     pressedSprite: {fileID: 21300000, guid: 7da3f42771cf140e5b1789515020a3ac, type: 3}
-    panelObject: {fileID: 0}
   - button: {fileID: 3982043829104094696}
     bgObject: {fileID: 4442255550580621336}
     iconImage: {fileID: 6583410775436871539}
     defaultSprite: {fileID: 21300000, guid: b66785bd896714736a40554ee00f178a, type: 3}
     pressedSprite: {fileID: 21300000, guid: 1d7eda869fd544000ab390d6fc1de64a, type: 3}
-    panelObject: {fileID: 0}
   initialActiveIndex: 1
 --- !u!1 &8001470585218020587
 GameObject:
