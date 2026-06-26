@@ -135,7 +135,7 @@ public static class TeamRulesService
         for (int i = 0; i < state.Coins.Count; i++)
         {
             CoinIdentity waitingCoin = state.Coins[i];
-            if (waitingCoin == movedCoin || waitingCoin.IsPassive)
+            if (waitingCoin == movedCoin || !waitingCoin.IsPassive)
             {
                 continue;
             }

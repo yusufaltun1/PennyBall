@@ -176,6 +176,12 @@ public static class OnboardingSceneRuntimeInstaller
         OnboardingGoalDetector existing = Object.FindFirstObjectByType<OnboardingGoalDetector>();
         if (existing != null)
         {
+            Collider existingCollider = existing.GetComponent<Collider>();
+            if (existingCollider != null)
+            {
+                existingCollider.isTrigger = true;
+            }
+
             return existing;
         }
 

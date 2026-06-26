@@ -34,13 +34,8 @@ public class GoalZone : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (_goalOwner != CoinTeam.Opponent)
-        {
-            return;
-        }
-
         CoinIdentity coin = other.GetComponentInParent<CoinIdentity>();
-        if (coin == null || coin.Team != CoinTeam.Player)
+        if (coin == null)
         {
             return;
         }
@@ -53,9 +48,13 @@ public class GoalZone : MonoBehaviour
 
         _coinsInside.Add(coinId);
 
-        if (GameRulesManager.Instance != null)
+        if (_goalOwner == CoinTeam.Opponent && coin.Team == CoinTeam.Player)
         {
-            GameRulesManager.Instance.NotifyCoinEnteredGoal(coin);
+            GameRulesManager.Instance?.NotifyCoinEnteredGoal(coin);
+        }
+        else if (_goalOwner == CoinTeam.Player && coin.Team == CoinTeam.Opponent)
+        {
+            OpponentBotController.Instance?.NotifyGoalEntered(coin);
         }
     }
 

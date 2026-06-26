@@ -13,7 +13,7 @@ public class OpponentBotController : MonoBehaviour
     [SerializeField] OpponentBotDifficulty _difficulty = new() { Level = 5 };
     [SerializeField] float _gateMargin = 0.09f;
     [SerializeField] float _rollbackDuration = 0.45f;
-    [SerializeField] float _interShotDelay = 0.35f;
+    [SerializeField] float _coinStopTimeout = 8f;
 
     readonly TeamRoundState _state = new();
     readonly List<Vector3> _pathSamples = new(64);
@@ -106,6 +106,11 @@ public class OpponentBotController : MonoBehaviour
         }
     }
 
+    public void FreezeMatch()
+    {
+        StopPlayLoop();
+    }
+
     IEnumerator PlayLoopRoutine()
     {
         while (true)
@@ -115,16 +120,18 @@ public class OpponentBotController : MonoBehaviour
                 yield return null;
             }
 
-            yield return new WaitForSeconds(_interShotDelay);
+            yield return new WaitForSeconds(_difficulty.ThinkDelaySeconds);
 
             if (!OpponentBotBrain.TryChooseShot(_state, _difficulty, _isResolving, _gateMargin, out OpponentBotBrain.ShotPlan plan))
             {
+                yield return new WaitForSeconds(0.5f);
                 continue;
             }
 
             if (!CoinShotLauncher.TryLaunch(plan.Coin.DragController, plan.Direction, plan.PullDistance)
                 || !plan.Coin.DragController.IsSliding)
             {
+                yield return new WaitForSeconds(0.5f);
                 continue;
             }
 
@@ -212,9 +219,17 @@ public class OpponentBotController : MonoBehaviour
 
         yield return new WaitForSeconds(0.05f);
 
+        float elapsed = 0f;
         while (coin.IsSliding)
         {
             pathSamples.Add(coin.transform.position);
+            elapsed += Time.deltaTime;
+            if (elapsed >= _coinStopTimeout)
+            {
+                Debug.LogWarning($"[Bot] {coin.gameObject.name} timeout — coin durduruluyor");
+                break;
+            }
+
             yield return null;
         }
 
