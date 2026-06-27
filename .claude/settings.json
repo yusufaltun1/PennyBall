@@ -3,7 +3,9 @@
     "allow": [
       "Bash(sed -i '' 's/            if \\(waitingCoin == movedCoin || waitingCoin.IsPassive\\)/            if \\(waitingCoin == movedCoin || !waitingCoin.IsPassive\\)/' /Users/ysfaltn/development-games/PennyBall/Assets/_GameUi/Scripts/Game/Rules/TeamRulesService.cs)",
       "Bash(python3 -c ' *)",
-      "Bash(python3 -)"
+      "Bash(python3 -)",
+      "Bash(git checkout *)",
+      "Bash(grep \"\\\\.cs$\")"
     ],
     "additionalDirectories": [
       "/Users/ysfaltn/development-games/PennyBall/Assets/_GameUi/Scripts/Game/Rules"
