@@ -69,6 +69,18 @@ public class ResultPanelController : MonoBehaviour
     private bool previousDraw;
     private Coroutine playCoroutine;
 
+    public void ShowResult(MatchResultType result)
+    {
+        won  = result == MatchResultType.Win;
+        lost = result == MatchResultType.Loss;
+        draw = result == MatchResultType.Draw;
+
+        if (!gameObject.activeSelf)
+            gameObject.SetActive(true);  // OnEnable fires → HandleOutcomeChange çalışır
+        else
+            HandleOutcomeChange();
+    }
+
     private struct RectState
     {
         public Vector2 AnchoredPosition;

@@ -57,13 +57,24 @@ public class MatchScoreboardPresenter : MonoBehaviour
 
     void OnTimerExpired()
     {
-        // Oyuncu inputunu durdur
         CoinInputHandler[] inputs = FindObjectsByType<CoinInputHandler>(FindObjectsSortMode.None);
         for (int i = 0; i < inputs.Length; i++)
             inputs[i].enabled = false;
 
-        // Botu durdur
         OpponentBotController.Instance?.FreezeMatch();
+
+        MatchResultType result;
+        if (_playerScore > _opponentScore)
+            result = MatchResultType.Win;
+        else if (_playerScore < _opponentScore)
+            result = MatchResultType.Loss;
+        else
+            result = MatchResultType.Draw;
+
+        LeagueService.Instance?.RegisterMatchResult(result);
+
+        ResultPanelController resultPanel = FindAnyObjectByType<ResultPanelController>(FindObjectsInactive.Include);
+        resultPanel?.ShowResult(result);
     }
 
     void UpdateDisplay()

@@ -82,7 +82,8 @@ public class CoinInputHandler : MonoBehaviour
         out bool releasedThisFrame)
     {
         Touchscreen touchscreen = Touchscreen.current;
-        if (touchscreen != null && touchscreen.primaryTouch.press.isPressed)
+        if (touchscreen != null &&
+            (touchscreen.primaryTouch.press.isPressed || touchscreen.primaryTouch.press.wasReleasedThisFrame))
         {
             var touch = touchscreen.primaryTouch;
             screenPosition = touch.position.ReadValue();
