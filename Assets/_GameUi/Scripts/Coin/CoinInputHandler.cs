@@ -6,6 +6,7 @@ public class CoinInputHandler : MonoBehaviour
     [SerializeField] Camera _camera;
     [SerializeField] float _tableHeight = 0.139f;
     [SerializeField] float _maxPickDistance = 50f;
+    [SerializeField] CameraAimZoom _cameraZoom;
 
     readonly RaycastHit[] _raycastHits = new RaycastHit[8];
 
@@ -37,23 +38,34 @@ public class CoinInputHandler : MonoBehaviour
     {
         if (!TryReadPointer(out Vector2 screenPosition, out bool isPressed, out bool pressedThisFrame, out bool releasedThisFrame))
         {
+            _cameraZoom?.SetDragState(0f);
             return;
         }
+
+        float pullRatio = 0f;
+        float sideRatio = 0f;
 
         if (pressedThisFrame)
         {
-        if (GameRulesManager.Instance != null && GameRulesManager.Instance.IsResolvingMove)
-        {
-            return;
-        }
+            if (GameRulesManager.Instance != null && GameRulesManager.Instance.IsResolvingMove)
+            {
+                return;
+            }
 
-        TryBeginAim(screenPosition);
+            TryBeginAim(screenPosition);
         }
         else if (isPressed && _activeCoin != null)
         {
             if (TryGetTablePosition(screenPosition, out Vector3 worldPosition))
             {
                 _activeCoin.UpdateAim(worldPosition);
+                Vector3 pullVec = worldPosition - _activeCoin.transform.position;
+                float   pull    = pullVec.magnitude;
+                pullRatio = Mathf.Clamp01(pull / _activeCoin.MaxPullDistance);
+                // X ekseni = sağ/sol; ne kadar yataysa sideRatio o kadar büyük
+                Vector3 pullFlat = new Vector3(pullVec.x, 0f, pullVec.z);
+                if (pullFlat.sqrMagnitude > 0.0001f)
+                    sideRatio = Mathf.Abs(pullFlat.normalized.x);
             }
         }
         else if (releasedThisFrame && _activeCoin != null)
@@ -73,6 +85,8 @@ public class CoinInputHandler : MonoBehaviour
 
             _activeCoin = null;
         }
+
+        _cameraZoom?.SetDragState(pullRatio, sideRatio);
     }
 
     static bool TryReadPointer(

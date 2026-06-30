@@ -191,10 +191,16 @@ public class MatchingPanelController : MonoBehaviour
 
     private void SetAvatar(int avatarIndex)
     {
-        if (opponentAvatarImage == null || avatarLibrary == null)
-            return;
+        if (opponentAvatarImage == null) return;
 
-        opponentAvatarImage.sprite = avatarLibrary.Get(avatarIndex);
+        // Inspector'da atanmamışsa Resources'dan yükle
+        avatarLibrary ??= AvatarSpriteLibrary.Load();
+
+        if (avatarLibrary == null) return;
+
+        Sprite sprite = avatarLibrary.Get(avatarIndex);
+        if (sprite != null)
+            opponentAvatarImage.sprite = sprite;
     }
 
     private int GetOpponentStandingPoints(BotPlayerEntry bot)

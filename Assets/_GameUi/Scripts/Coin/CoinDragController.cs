@@ -9,7 +9,7 @@ public class CoinDragController : MonoBehaviour
 {
     [SerializeField] float _launchForceMultiplier = 18f;
     [SerializeField] float _maxLaunchSpeed = 10f;
-    [SerializeField] float _maxPullDistance = 0.35f;
+    [SerializeField] float _maxPullDistance = 0.40f;
     [SerializeField] float _minPullDistance = 0.025f;
     [SerializeField] float _stopSpeedThreshold = 0.05f;
     [SerializeField] float _linearDamping = 2.5f;
@@ -144,9 +144,10 @@ public class CoinDragController : MonoBehaviour
             return;
         }
 
-        if (Vector3.Dot(velocity, normal) > 0f)
+        // Only bounce if moving INTO the wall; if already moving away, skip.
+        if (Vector3.Dot(velocity, normal) >= 0f)
         {
-            normal = -normal;
+            return;
         }
 
         _rigidbody.linearVelocity = Vector3.Reflect(velocity, normal) * _wallBounceRetention;
