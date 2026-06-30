@@ -64,7 +64,12 @@ public class OnboardingCoinDragController : MonoBehaviour
             return;
         }
 
-        if (!IsBoundaryCollider(collision.collider) && !IsWallLikeSurface(collision))
+        if (IsBoundaryCollider(collision.collider))
+        {
+            return;
+        }
+
+        if (!IsWallLikeSurface(collision))
         {
             return;
         }

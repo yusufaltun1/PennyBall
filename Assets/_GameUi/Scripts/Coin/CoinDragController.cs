@@ -78,12 +78,14 @@ public class CoinDragController : MonoBehaviour
             return;
         }
 
-        if (!IsBoundaryCollider(collision.collider))
+        if (IsBoundaryCollider(collision.collider))
         {
-            if (!IsWallLikeSurface(collision))
-            {
-                return;
-            }
+            return;
+        }
+
+        if (!IsWallLikeSurface(collision))
+        {
+            return;
         }
 
         ApplyBilliardBounce(collision);
