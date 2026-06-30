@@ -15,6 +15,9 @@ public class LeagueStatusPresenter : MonoBehaviour
 
     void Awake()
     {
+        if (_continueButton == null)
+            _continueButton = GetComponentInChildren<Button>(true);
+
         if (_continueButton != null)
             _continueButton.onClick.AddListener(OnContinueClicked);
     }

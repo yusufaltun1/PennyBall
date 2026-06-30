@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -52,6 +53,8 @@ public class ResultPanelController : MonoBehaviour
     [SerializeField] private GameObject rewards;
     [SerializeField] private RectTransform rewardCoins;
     [SerializeField] private RectTransform rewardXp;
+    [SerializeField] private TextMeshProUGUI earnedCoinsLabel;
+    [SerializeField] private TextMeshProUGUI earnedXpLabel;
     [SerializeField] private float rewardsEntryOffset = 50f;
     [SerializeField] private float rewardsDuration = 0.5f;
 
@@ -94,6 +97,11 @@ public class ResultPanelController : MonoBehaviour
         lost = result == MatchResultType.Loss;
         draw = result == MatchResultType.Draw;
 
+        if (earnedCoinsLabel != null)
+            earnedCoinsLabel.text = $"+{MatchSessionContext.EarnedCoins}";
+        if (earnedXpLabel != null)
+            earnedXpLabel.text = $"+{MatchSessionContext.EarnedXp} XP";
+
         if (!gameObject.activeSelf)
             gameObject.SetActive(true);  // OnEnable fires → HandleOutcomeChange çalışır
         else
@@ -123,6 +131,15 @@ public class ResultPanelController : MonoBehaviour
 
         if (continueButton != null)
             continueButton.onClick.AddListener(OnContinueClicked);
+
+        // Inspector'da atanmamışsa sahnedeki LeagueStatusPresenter'ı bul
+        if (leagueStatusPanel == null)
+        {
+            LeagueStatusPresenter presenter =
+                FindFirstObjectByType<LeagueStatusPresenter>(FindObjectsInactive.Include);
+            if (presenter != null)
+                leagueStatusPanel = presenter.gameObject;
+        }
 
         coinsCanvasGroup = GetOrAddCanvasGroup(rewardCoins);
         xpCanvasGroup = GetOrAddCanvasGroup(rewardXp);

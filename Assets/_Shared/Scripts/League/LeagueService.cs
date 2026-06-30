@@ -9,6 +9,7 @@ public class LeagueService : MonoBehaviour
     public event Action SeasonChanged;
     public event Action StandingsUpdated;
     public event Action<int> PlayerPromoted;
+    public event Action AvatarChanged;
 
     LeagueSaveData _save;
 
@@ -127,6 +128,9 @@ public class LeagueService : MonoBehaviour
     {
         EnsureSeasonActive();
 
+        // Puanlar değişmeden ÖNCE mevcut sırayı yakala
+        MatchSessionContext.SetRankBefore(FindPlayerRankInArray());
+
         LeagueStandingEntry playerEntry = FindPlayerStanding();
         if (playerEntry != null)
         {
@@ -152,11 +156,25 @@ public class LeagueService : MonoBehaviour
             ApplyOpponentMirrorResult(botEntry, result);
         }
 
-        MatchSessionContext.SetRankBefore(GetPlayerRank());
         SortStandings();
-        MatchSessionContext.SetRankAfter(GetPlayerRank());
+        MatchSessionContext.SetRankAfter(FindPlayerRankInArray());
+
+        // Ödülleri hesapla ve kaydet
+        var (coins, xp) = WalletService.GetReward(result);
+        WalletService.AddReward(coins, xp);
+        MatchSessionContext.SetEarnedRewards(coins, xp);
+
         LeagueRepository.Save(_save);
         StandingsUpdated?.Invoke();
+    }
+
+    // Sort tetiklemeden mevcut dizi sırasından rank döndürür
+    int FindPlayerRankInArray()
+    {
+        if (_save?.standings == null) return -1;
+        for (int i = 0; i < _save.standings.Length; i++)
+            if (_save.standings[i].isPlayer) return i + 1;
+        return -1;
     }
 
     public int GetPlayerRank()
@@ -171,6 +189,21 @@ public class LeagueService : MonoBehaviour
         }
 
         return _save.standings.Length;
+    }
+
+    public void SetPlayerAvatar(int index)
+    {
+        if (_save == null) return;
+        AvatarSpriteLibrary lib = AvatarSpriteLibrary.Load();
+        int max = lib != null ? lib.Count - 1 : 0;
+        _save.playerAvatarIndex = Mathf.Clamp(index, 0, max);
+
+        LeagueStandingEntry player = FindPlayerStanding();
+        if (player != null)
+            player.avatarIndex = _save.playerAvatarIndex;
+
+        LeagueRepository.Save(_save);
+        AvatarChanged?.Invoke();
     }
 
     LeagueSaveData CreateNewSave()
