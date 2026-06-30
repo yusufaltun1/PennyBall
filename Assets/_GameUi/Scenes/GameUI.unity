@@ -966,7 +966,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3600200798398696661, guid: 61360997593f84f17a47d4c1e41b9a24, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2.715
+      value: 2.688
       objectReference: {fileID: 0}
     - target: {fileID: 3600200798398696661, guid: 61360997593f84f17a47d4c1e41b9a24, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2599,7 +2599,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3600200798398696661, guid: 61360997593f84f17a47d4c1e41b9a24, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2.715
+      value: 2.688
       objectReference: {fileID: 0}
     - target: {fileID: 3600200798398696661, guid: 61360997593f84f17a47d4c1e41b9a24, type: 3}
       propertyPath: m_LocalRotation.w
@@ -4682,7 +4682,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3600200798398696661, guid: 61360997593f84f17a47d4c1e41b9a24, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.744
+      value: 1.784
       objectReference: {fileID: 0}
     - target: {fileID: 3600200798398696661, guid: 61360997593f84f17a47d4c1e41b9a24, type: 3}
       propertyPath: m_LocalRotation.w
@@ -5692,6 +5692,7 @@ MonoBehaviour:
   _gateMargin: 0.09
   _rollbackDuration: 0.45
   _coinStopTimeout: 8
+  _coinBlockRadius: 0.07
 --- !u!4 &1560841845
 Transform:
   m_ObjectHideFlags: 0
@@ -6447,6 +6448,7 @@ MonoBehaviour:
   p3: {fileID: 438575386}
   btnContinue: {fileID: 35054505}
   confetti: {fileID: 1674004262}
+  continueButton: {fileID: 0}
   rewards: {fileID: 1027802090}
   rewardCoins: {fileID: 2073762809}
   rewardXp: {fileID: 740986062}
@@ -7371,7 +7373,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3600200798398696661, guid: 61360997593f84f17a47d4c1e41b9a24, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2.715
+      value: 2.688
       objectReference: {fileID: 0}
     - target: {fileID: 3600200798398696661, guid: 61360997593f84f17a47d4c1e41b9a24, type: 3}
       propertyPath: m_LocalRotation.w
@@ -7823,7 +7825,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3600200798398696661, guid: 61360997593f84f17a47d4c1e41b9a24, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.744
+      value: 1.784
       objectReference: {fileID: 0}
     - target: {fileID: 3600200798398696661, guid: 61360997593f84f17a47d4c1e41b9a24, type: 3}
       propertyPath: m_LocalRotation.w
@@ -7892,11 +7894,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3600200798398696661, guid: 61360997593f84f17a47d4c1e41b9a24, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.1393
+      value: 0.139
       objectReference: {fileID: 0}
     - target: {fileID: 3600200798398696661, guid: 61360997593f84f17a47d4c1e41b9a24, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.744
+      value: 1.781
       objectReference: {fileID: 0}
     - target: {fileID: 3600200798398696661, guid: 61360997593f84f17a47d4c1e41b9a24, type: 3}
       propertyPath: m_LocalRotation.w
@@ -8287,6 +8289,7 @@ GameObject:
   - component: {fileID: 7370277067935492232}
   - component: {fileID: 8808235878063149795}
   - component: {fileID: 8808235878063149796}
+  - component: {fileID: 8808235878063149797}
   m_Layer: 0
   m_Name: Camera
   m_TagString: Untagged
@@ -9055,6 +9058,22 @@ MonoBehaviour:
   _camera: {fileID: 7370277067935492232}
   _tableHeight: 0.139
   _maxPickDistance: 50
+  _cameraZoom: {fileID: 8808235878063149797}
+--- !u!114 &8808235878063149797
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 65702495022897742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62b8e73e47ae14690b92965dd1719ac7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraAimZoom
+  _maxPullBack: 0.8
+  _sideZoomBoost: 2
+  _lerpSpeed: 7
 --- !u!114 &9078750000982901856
 MonoBehaviour:
   m_ObjectHideFlags: 0

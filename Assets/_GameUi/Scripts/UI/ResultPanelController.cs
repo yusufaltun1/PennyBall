@@ -43,6 +43,7 @@ public class ResultPanelController : MonoBehaviour
     [SerializeField] private RectTransform p3;
     [SerializeField] private RectTransform btnContinue;
     [SerializeField] private ConfettiController confetti;
+    [SerializeField] private Button continueButton;
 
     [Header("Rewards")]
     [SerializeField] private GameObject rewards;
@@ -78,7 +79,6 @@ public class ResultPanelController : MonoBehaviour
 
     private CanvasGroup coinsCanvasGroup;
     private CanvasGroup xpCanvasGroup;
-    private Button continueButton;
 
     private bool previousWon;
     private bool previousLost;
@@ -113,18 +113,16 @@ public class ResultPanelController : MonoBehaviour
         p3Image = p3.GetComponent<Image>();
 
         if (confetti == null)
-        {
             confetti = GetComponentInChildren<ConfettiController>(true);
-        }
+
+        if (continueButton == null && btnContinue != null)
+            continueButton = btnContinue.GetComponent<Button>();
+
+        if (continueButton != null)
+            continueButton.onClick.AddListener(OnContinueClicked);
 
         coinsCanvasGroup = GetOrAddCanvasGroup(rewardCoins);
         xpCanvasGroup = GetOrAddCanvasGroup(rewardXp);
-
-        continueButton = btnContinue.GetComponent<Button>();
-        if (continueButton != null)
-        {
-            continueButton.onClick.AddListener(LoadMainMenu);
-        }
 
         CacheFinalStates();
     }
@@ -132,12 +130,10 @@ public class ResultPanelController : MonoBehaviour
     private void OnDestroy()
     {
         if (continueButton != null)
-        {
-            continueButton.onClick.RemoveListener(LoadMainMenu);
-        }
+            continueButton.onClick.RemoveListener(OnContinueClicked);
     }
 
-    private static void LoadMainMenu()
+    public void OnContinueClicked()
     {
         SceneManager.LoadScene(GameSceneNames.MainMenu);
     }

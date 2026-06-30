@@ -11,9 +11,10 @@ public class OpponentBotController : MonoBehaviour
     public static OpponentBotController Instance { get; private set; }
 
     [SerializeField] OpponentBotDifficulty _difficulty = new() { Level = 5 };
-    [SerializeField] float _gateMargin = 0.09f;
-    [SerializeField] float _rollbackDuration = 0.45f;
-    [SerializeField] float _coinStopTimeout = 8f;
+    [SerializeField] float _gateMargin        = 0.09f;
+    [SerializeField] float _rollbackDuration  = 0.45f;
+    [SerializeField] float _coinStopTimeout   = 8f;
+    [SerializeField] float _coinBlockRadius   = 0.07f;   // yol engeli tespiti için coin yarıçapı
 
     readonly TeamRoundState _state = new();
     readonly List<Vector3> _pathSamples = new(64);
@@ -23,6 +24,7 @@ public class OpponentBotController : MonoBehaviour
     bool _goalEnteredDuringShot;
     bool _isResolving;
     bool _isOpeningShot;
+    int  _roundShotNumber = 1;   // bu turdaki atış sırası (1, 2, 3, 4+)
     Coroutine _playLoopRoutine;
 
     public event Action OpponentGoalScored;
@@ -75,6 +77,7 @@ public class OpponentBotController : MonoBehaviour
     public void ResetRoundState()
     {
         StopPlayLoop();
+        _roundShotNumber = 1;
         TeamRulesService.BeginNewRound(_state);
         TeamRulesService.DiscoverCoins(_state, "_E");
         PrepareOpeningTurn();
@@ -115,16 +118,18 @@ public class OpponentBotController : MonoBehaviour
     {
         while (true)
         {
-            while (_isResolving)
-            {
-                yield return null;
-            }
+            while (_isResolving) yield return null;
 
             yield return new WaitForSeconds(_difficulty.ThinkDelaySeconds);
 
-            if (!OpponentBotBrain.TryChooseShot(_state, _difficulty, _isResolving, _gateMargin, out OpponentBotBrain.ShotPlan plan))
+            if (!OpponentBotBrain.TryChooseShot(
+                    _state, _difficulty, _isResolving, _gateMargin,
+                    _roundShotNumber, _coinBlockRadius,
+                    out OpponentBotBrain.ShotPlan plan,
+                    out bool pathBlocked))
             {
-                yield return new WaitForSeconds(0.5f);
+                // Yol doluysa 5 sn, değilse 0.5 sn bekle
+                yield return new WaitForSeconds(pathBlocked ? 5f : 0.5f);
                 continue;
             }
 
@@ -135,12 +140,12 @@ public class OpponentBotController : MonoBehaviour
                 continue;
             }
 
-            Debug.Log($"[Bot] {plan.Coin.gameObject.name} fırlatıldı | kuralUyumu={plan.RespectsRules}");
+            Debug.Log($"[Bot] {plan.Coin.name} fırlatıldı | atış#{_roundShotNumber}");
 
-            _resolvingCoin = plan.Coin;
-            _goalEnteredDuringShot = false;
-            _isOpeningShot = _state.IsFirstMove;
-            _shotStartPosition = plan.Coin.transform.position;
+            _resolvingCoin          = plan.Coin;
+            _goalEnteredDuringShot  = false;
+            _isOpeningShot          = _roundShotNumber <= 2;   // 1. ve 2. atış gate validation'dan muaf
+            _shotStartPosition      = plan.Coin.transform.position;
             TeamRulesService.LockCoinUntilOthersMoved(_state, plan.Coin, SetCoinPassive);
 
             yield return ResolveShotRoutine(plan.Coin);
@@ -149,12 +154,17 @@ public class OpponentBotController : MonoBehaviour
 
     void PrepareOpeningTurn()
     {
+        // Önce hepsini pasife al
         for (int i = 0; i < _state.Coins.Count; i++)
-        {
-            SetCoinPassive(_state.Coins[i], false);
-        }
+            SetCoinPassive(_state.Coins[i], true);
 
-        TeamRulesService.ApplyOpeningRestrictions(_state, SetCoinPassive);
+        if (_state.Coins.Count == 0) return;
+
+        // 1. atış: ortadaki coin (Coins[Count/2], X'e göre sıralı)
+        int midIdx = _state.Coins.Count / 2;
+        _state.OpeningCoin = _state.Coins[midIdx];
+        SetCoinPassive(_state.Coins[midIdx], false);
+        Debug.Log($"[Bot] OpeningCoin = {_state.Coins[midIdx].name} (ortadaki, idx={midIdx})");
     }
 
     IEnumerator ResolveShotRoutine(CoinIdentity coin)
@@ -176,10 +186,17 @@ public class OpponentBotController : MonoBehaviour
         }
         else
         {
+            TeamRulesService.TryGetGateCoins(_state, coin, out CoinIdentity dbgA, out CoinIdentity dbgB);
+            Debug.Log($"[Bot] Validasyon | atar={coin.name} " +
+                      $"gateA={dbgA?.name}@{(dbgA != null ? dbgA.transform.position.ToString("F2") : "null")} " +
+                      $"gateB={dbgB?.name}@{(dbgB != null ? dbgB.transform.position.ToString("F2") : "null")} " +
+                      $"pathSamples={_pathSamples.Count}");
+
             bool passedBetween = TeamRulesService.ValidatePassBetween(_state, coin, _pathSamples, _gateMargin);
             if (!passedBetween)
             {
-                Debug.Log($"[Bot] {coin.gameObject.name} geçersiz — kapıdan geçmedi");
+                Debug.Log($"[Bot] {coin.gameObject.name} GEÇERSİZ — kapıdan geçemedi | " +
+                          $"son pozisyon={coin.transform.position:F2}");
                 TeamRulesService.UnlockCoin(_state, coin, SetCoinPassive);
                 yield return RollbackCoin(coin, _shotStartPosition);
                 shotValid = false;
@@ -191,6 +208,8 @@ public class OpponentBotController : MonoBehaviour
                 Debug.Log($"[Bot] {coin.gameObject.name} geçerli — kapıdan geçti");
             }
         }
+
+        if (shotValid) _roundShotNumber++;
 
         bool inGoal = IsCoinInPlayerGoal(coin);
         if (shotValid && (_goalEnteredDuringShot || inGoal))
@@ -217,20 +236,38 @@ public class OpponentBotController : MonoBehaviour
         pathSamples.Clear();
         pathSamples.Add(coin.transform.position);
 
-        yield return new WaitForSeconds(0.05f);
-
+        // Her frame'de sample al — 0.05s gap yerine anlık başla
         float elapsed = 0f;
-        while (coin.IsSliding)
+        bool everSlid = false;
+        while (true)
         {
+            yield return null;
             pathSamples.Add(coin.transform.position);
-            elapsed += Time.deltaTime;
-            if (elapsed >= _coinStopTimeout)
+
+            if (coin.IsSliding)
             {
-                Debug.LogWarning($"[Bot] {coin.gameObject.name} timeout — coin durduruluyor");
+                everSlid = true;
+                elapsed += Time.deltaTime;
+                if (elapsed >= _coinStopTimeout)
+                {
+                    Debug.LogWarning($"[Bot] {coin.gameObject.name} timeout — coin durduruluyor");
+                    break;
+                }
+            }
+            else if (everSlid)
+            {
+                // Hareket etti ve durdu
                 break;
             }
-
-            yield return null;
+            else if (elapsed > 0.3f)
+            {
+                // Hiç kaymadı, 0.3s içinde başlamazsa vazgeç
+                break;
+            }
+            else
+            {
+                elapsed += Time.deltaTime;
+            }
         }
 
         pathSamples.Add(coin.transform.position);

@@ -146,7 +146,8 @@ public static class TeamRulesService
             }
 
             movedOthers.Add(movedCoin);
-            if (movedOthers.Count >= 2)
+            // Başka herhangi 1 coin hareket edince kilidi aç
+            if (movedOthers.Count >= 1)
             {
                 state.WaitingForOthers.Remove(waitingCoin);
                 setPassive(waitingCoin, false);
