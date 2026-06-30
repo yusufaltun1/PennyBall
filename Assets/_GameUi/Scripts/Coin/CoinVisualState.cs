@@ -1,18 +1,37 @@
+using System;
 using UnityEngine;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(CoinIdentity))]
 public class CoinVisualState : MonoBehaviour
 {
-    static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    [Serializable]
+    public struct DisabledColors
+    {
+        public Color outerColor;
+        public Color innerColor;
+    }
 
-    [SerializeField] float _playerPassiveColorMultiplier = 0.55f;
-    [SerializeField] Color _opponentColor = Color.black;
-    [SerializeField] Color _opponentPassiveColor = new Color(0.35f, 0.35f, 0.35f, 1f);
+    static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    static readonly int ColorId = Shader.PropertyToID("_Color");
+
+    [Header("Player")]
+    [SerializeField] DisabledColors _playerDisabled = new()
+    {
+        outerColor = new Color(0.8f, 0.8f, 0.8f, 1f),
+        innerColor = new Color(0.8f, 0.8f, 0.8f, 1f),
+    };
+
+    [Header("Enemy")]
+    [SerializeField] DisabledColors _enemyDisabled = new()
+    {
+        outerColor = new Color(0.8f, 0.8f, 0.8f, 1f),
+        innerColor = new Color(0.8f, 0.8f, 0.8f, 1f),
+    };
 
     MaterialPropertyBlock _propertyBlock;
     Renderer[] _renderers;
-    Color[][] _baseColors;
+    int[][] _materialColorPropertyIds;
     CoinIdentity _identity;
 
     void Awake()
@@ -20,70 +39,13 @@ public class CoinVisualState : MonoBehaviour
         _identity = GetComponent<CoinIdentity>();
         _propertyBlock = new MaterialPropertyBlock();
         CacheRenderers();
-        CacheBaseColors();
     }
 
     void Start()
     {
-        if (IsOpponentCoin())
+        if (_identity != null && _identity.IsPassive)
         {
-            ApplyColorToRenderers(_opponentColor);
-        }
-    }
-
-    bool IsOpponentCoin()
-    {
-        return _identity != null && _identity.Team == CoinTeam.Opponent;
-    }
-
-    void CacheRenderers()
-    {
-        Transform coinObject = transform.Find("Coin_Object");
-        if (coinObject == null)
-        {
-            _renderers = System.Array.Empty<Renderer>();
-            return;
-        }
-
-        _renderers = coinObject.GetComponentsInChildren<Renderer>();
-    }
-
-    void CacheBaseColors()
-    {
-        if (_renderers == null)
-        {
-            return;
-        }
-
-        _baseColors = new Color[_renderers.Length][];
-        for (int rendererIndex = 0; rendererIndex < _renderers.Length; rendererIndex++)
-        {
-            Renderer renderer = _renderers[rendererIndex];
-            if (renderer == null)
-            {
-                continue;
-            }
-
-            Material[] materials = renderer.sharedMaterials;
-            _baseColors[rendererIndex] = new Color[materials.Length];
-            for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
-            {
-                if (IsOpponentCoin())
-                {
-                    _baseColors[rendererIndex][materialIndex] = _opponentColor;
-                    continue;
-                }
-
-                Material material = materials[materialIndex];
-                if (material != null && material.HasProperty(BaseColorId))
-                {
-                    _baseColors[rendererIndex][materialIndex] = material.GetColor(BaseColorId);
-                }
-                else
-                {
-                    _baseColors[rendererIndex][materialIndex] = Color.white;
-                }
-            }
+            SetPassiveVisual(true);
         }
     }
 
@@ -97,7 +59,6 @@ public class CoinVisualState : MonoBehaviour
         if (_renderers == null || _renderers.Length == 0)
         {
             CacheRenderers();
-            CacheBaseColors();
         }
 
         if (_renderers == null || _renderers.Length == 0)
@@ -107,19 +68,68 @@ public class CoinVisualState : MonoBehaviour
 
         if (passive)
         {
-            ApplyPassiveVisual();
+            ApplyDisabledColors();
             return;
         }
 
-        ClearVisualOverride();
+        ClearOverride();
     }
 
-    void ApplyColorToRenderers(Color color)
+    void CacheRenderers()
     {
-        if (_propertyBlock == null || _renderers == null)
+        Transform coinObject = transform.Find("Coin_Object");
+        if (coinObject == null)
         {
+            _renderers = System.Array.Empty<Renderer>();
+            _materialColorPropertyIds = System.Array.Empty<int[]>();
             return;
         }
+
+        _renderers = coinObject.GetComponentsInChildren<Renderer>();
+        _materialColorPropertyIds = new int[_renderers.Length][];
+
+        for (int rendererIndex = 0; rendererIndex < _renderers.Length; rendererIndex++)
+        {
+            Renderer renderer = _renderers[rendererIndex];
+            if (renderer == null)
+            {
+                continue;
+            }
+
+            Material[] materials = renderer.sharedMaterials;
+            _materialColorPropertyIds[rendererIndex] = new int[materials.Length];
+            for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+            {
+                _materialColorPropertyIds[rendererIndex][materialIndex] =
+                    ResolveColorPropertyId(materials[materialIndex]);
+            }
+        }
+    }
+
+    static int ResolveColorPropertyId(Material material)
+    {
+        if (material == null)
+        {
+            return BaseColorId;
+        }
+
+        if (material.HasProperty(BaseColorId))
+        {
+            return BaseColorId;
+        }
+
+        if (material.HasProperty(ColorId))
+        {
+            return ColorId;
+        }
+
+        return BaseColorId;
+    }
+
+    void ApplyDisabledColors()
+    {
+        CoinTeam team = ResolveTeam();
+        DisabledColors colors = team == CoinTeam.Opponent ? _enemyDisabled : _playerDisabled;
 
         for (int rendererIndex = 0; rendererIndex < _renderers.Length; rendererIndex++)
         {
@@ -132,69 +142,28 @@ public class CoinVisualState : MonoBehaviour
             int materialCount = renderer.sharedMaterials.Length;
             for (int materialIndex = 0; materialIndex < materialCount; materialIndex++)
             {
+                int colorPropertyId = _materialColorPropertyIds[rendererIndex][materialIndex];
+                Color disabledColor = materialIndex == 1 ? colors.innerColor : colors.outerColor;
+
                 _propertyBlock.Clear();
-                _propertyBlock.SetColor(BaseColorId, color);
+                _propertyBlock.SetColor(colorPropertyId, disabledColor);
                 renderer.SetPropertyBlock(_propertyBlock, materialIndex);
             }
         }
     }
 
-    void ApplyPassiveVisual()
+    CoinTeam ResolveTeam()
     {
-        if (_propertyBlock == null || _renderers == null)
+        if (_identity != null)
         {
-            return;
+            return _identity.Team;
         }
 
-        for (int rendererIndex = 0; rendererIndex < _renderers.Length; rendererIndex++)
-        {
-            Renderer renderer = _renderers[rendererIndex];
-            if (renderer == null)
-            {
-                continue;
-            }
-
-            int materialCount = renderer.sharedMaterials.Length;
-            for (int materialIndex = 0; materialIndex < materialCount; materialIndex++)
-            {
-                Color baseColor = _baseColors[rendererIndex][materialIndex];
-                Color passiveColor = GetPassiveColor(baseColor);
-
-                _propertyBlock.Clear();
-                _propertyBlock.SetColor(BaseColorId, passiveColor);
-
-                renderer.SetPropertyBlock(_propertyBlock, materialIndex);
-            }
-        }
+        return CoinTeam.Player;
     }
 
-    Color GetPassiveColor(Color baseColor)
+    void ClearOverride()
     {
-        if (IsOpponentCoin())
-        {
-            return _opponentPassiveColor;
-        }
-
-        return new Color(
-            baseColor.r * _playerPassiveColorMultiplier,
-            baseColor.g * _playerPassiveColorMultiplier,
-            baseColor.b * _playerPassiveColorMultiplier,
-            baseColor.a);
-    }
-
-    void ClearVisualOverride()
-    {
-        if (_renderers == null)
-        {
-            return;
-        }
-
-        if (IsOpponentCoin())
-        {
-            ApplyColorToRenderers(_opponentColor);
-            return;
-        }
-
         for (int rendererIndex = 0; rendererIndex < _renderers.Length; rendererIndex++)
         {
             Renderer renderer = _renderers[rendererIndex];

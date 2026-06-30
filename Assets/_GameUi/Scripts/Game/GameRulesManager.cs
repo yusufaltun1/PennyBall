@@ -404,12 +404,6 @@ public class GameRulesManager : MonoBehaviour
     void SetCoinPassiveState(CoinIdentity coin, bool passive)
     {
         coin.SetPassive(passive);
-
-        CoinVisualState visualState = coin.GetComponent<CoinVisualState>();
-        if (visualState != null)
-        {
-            visualState.SetPassiveVisual(passive);
-        }
     }
 
     IEnumerator WaitUntilCoinStops(CoinDragController coin, List<Vector3> pathSamples)

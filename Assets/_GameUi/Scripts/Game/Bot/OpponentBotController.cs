@@ -305,11 +305,5 @@ public class OpponentBotController : MonoBehaviour
     void SetCoinPassive(CoinIdentity coin, bool passive)
     {
         coin.SetPassive(passive);
-
-        CoinVisualState visualState = coin.GetComponent<CoinVisualState>();
-        if (visualState != null)
-        {
-            visualState.SetPassiveVisual(passive);
-        }
     }
 }

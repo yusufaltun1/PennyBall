@@ -42,6 +42,12 @@ public class CoinIdentity : MonoBehaviour
     public void SetPassive(bool passive)
     {
         _isPassive = passive;
+
+        CoinVisualState visualState = GetComponent<CoinVisualState>();
+        if (visualState != null)
+        {
+            visualState.SetPassiveVisual(passive);
+        }
     }
 
     public bool CanBeSelectedByPlayer()

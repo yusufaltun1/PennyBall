@@ -144,9 +144,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1dfe6c2a517047ee9c5be975eab32fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinVisualState
-  _playerPassiveColorMultiplier: 0.55
-  _opponentColor: {r: 0, g: 0, b: 0, a: 1}
-  _opponentPassiveColor: {r: 0.35, g: 0.35, b: 0.35, a: 1}
+  _playerDisabled:
+    outerColor: {r: 0, g: 0.25, b: 0.5, a: 1}
+    innerColor: {r: 0.5, g: 0.41176474, b: 0, a: 1}
+  _enemyDisabled:
+    outerColor: {r: 1, g: 0.0625, b: 0, a: 1}
+    innerColor: {r: 1, g: 0.79607844, b: 0, a: 1}
 --- !u!1 &6853097355249902552
 GameObject:
   m_ObjectHideFlags: 0
