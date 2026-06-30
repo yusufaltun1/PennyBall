@@ -152,7 +152,9 @@ public class LeagueService : MonoBehaviour
             ApplyOpponentMirrorResult(botEntry, result);
         }
 
+        MatchSessionContext.SetRankBefore(GetPlayerRank());
         SortStandings();
+        MatchSessionContext.SetRankAfter(GetPlayerRank());
         LeagueRepository.Save(_save);
         StandingsUpdated?.Invoke();
     }
@@ -176,7 +178,7 @@ public class LeagueService : MonoBehaviour
         var save = new LeagueSaveData
         {
             playerLeague = 1,
-            playerDisplayName = "Player",
+            playerDisplayName = $"Player_{UnityEngine.Random.Range(100, 1000)}",
             playerAvatarIndex = 0,
             seasonStartUtcTicks = DateTime.UtcNow.Ticks,
             lastSimulationDateUtc = DateTime.UtcNow.Date.ToString("yyyy-MM-dd")

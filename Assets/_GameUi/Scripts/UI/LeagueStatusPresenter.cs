@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
@@ -10,6 +11,19 @@ public class LeagueStatusPresenter : MonoBehaviour
     [SerializeField] Text _rankLabel;
     [SerializeField] Text _pointsLabel;
     [SerializeField] Text _seasonTimeLabel;
+    [SerializeField] Button _continueButton;
+
+    void Awake()
+    {
+        if (_continueButton != null)
+            _continueButton.onClick.AddListener(OnContinueClicked);
+    }
+
+    void OnDestroy()
+    {
+        if (_continueButton != null)
+            _continueButton.onClick.RemoveListener(OnContinueClicked);
+    }
 
     void OnEnable()
     {
@@ -29,6 +43,11 @@ public class LeagueStatusPresenter : MonoBehaviour
             LeagueService.Instance.StandingsUpdated -= Refresh;
             LeagueService.Instance.SeasonChanged -= Refresh;
         }
+    }
+
+    void OnContinueClicked()
+    {
+        SceneManager.LoadScene(GameSceneNames.MainMenu);
     }
 
     void Update()

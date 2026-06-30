@@ -45,6 +45,9 @@ public class ResultPanelController : MonoBehaviour
     [SerializeField] private ConfettiController confetti;
     [SerializeField] private Button continueButton;
 
+    [Header("Navigation")]
+    [SerializeField] private GameObject leagueStatusPanel;
+
     [Header("Rewards")]
     [SerializeField] private GameObject rewards;
     [SerializeField] private RectTransform rewardCoins;
@@ -135,7 +138,15 @@ public class ResultPanelController : MonoBehaviour
 
     public void OnContinueClicked()
     {
-        SceneManager.LoadScene(GameSceneNames.MainMenu);
+        if (leagueStatusPanel != null)
+        {
+            gameObject.SetActive(false);
+            leagueStatusPanel.SetActive(true);
+        }
+        else
+        {
+            SceneManager.LoadScene(GameSceneNames.MainMenu);
+        }
     }
 
     private void OnEnable()

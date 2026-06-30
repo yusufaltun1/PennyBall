@@ -1856,7 +1856,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerProfilePresenter
   _avatarImage: {fileID: 2019356755}
   _avatarLibrary: {fileID: 11400000, guid: 2fe4099fc7466474aaea067f524ac73f, type: 2}
-  _nameLabelTMP: {fileID: 0}
+  _nameLabelTMP: {fileID: 411412350}
   _nameLabel: {fileID: 0}
 --- !u!1 &174333605
 GameObject:
