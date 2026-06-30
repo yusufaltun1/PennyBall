@@ -36,15 +36,6 @@ public static class PennyBallSceneSetup
             Object.DestroyImmediate(coinMesh.GetComponent<MeshCollider>());
         }
 
-        Transform existingPhysics = prefabRoot.transform.Find("Coin_Physics");
-        if (existingPhysics != null)
-        {
-            Object.DestroyImmediate(existingPhysics.gameObject);
-        }
-
-        CoinColliderFitter fitter = GetOrAddComponent<CoinColliderFitter>(prefabRoot);
-        fitter.RebuildCollider();
-
         GetOrAddComponent<CoinDragController>(prefabRoot);
         GetOrAddComponent<CoinAimIndicator>(prefabRoot);
         GetOrAddComponent<CoinIdentity>(prefabRoot);
@@ -54,19 +45,6 @@ public static class PennyBallSceneSetup
         PrefabUtility.UnloadPrefabContents(prefabRoot);
 
         Debug.Log("Coin prefab fizik ve surukleme bilesenleriyle guncellendi.");
-    }
-
-    [MenuItem("PennyBall/Rebuild Coin Colliders")]
-    static void RebuildCoinCollidersInScene()
-    {
-        CoinColliderFitter[] fitters = Object.FindObjectsByType<CoinColliderFitter>(FindObjectsSortMode.None);
-        for (int i = 0; i < fitters.Length; i++)
-        {
-            fitters[i].RebuildCollider();
-            EditorUtility.SetDirty(fitters[i]);
-        }
-
-        Debug.Log($"Coin collider'lari yenilendi: {fitters.Length} para");
     }
 
     [MenuItem("PennyBall/Setup Play Surface Collider")]

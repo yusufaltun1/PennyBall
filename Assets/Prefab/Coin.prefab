@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 7493714517531971334}
   - component: {fileID: 6696761547977650908}
   - component: {fileID: 6498795458950903796}
-  - component: {fileID: 3075832622915397146}
   - component: {fileID: 4829173640582937145}
   - component: {fileID: 5930284751693048256}
   m_Layer: 0
@@ -36,6 +35,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6075574771614398818}
+  - {fileID: 8837462518392847562}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
 --- !u!54 &7493714517531971334
@@ -103,21 +103,6 @@ MonoBehaviour:
   _lineWidth: 0.006
   _pullLineColor: {r: 1, g: 0.45, b: 0.2, a: 0}
   _aimLineColor: {r: 0.2, g: 0.95, b: 0.45, a: 0.95}
---- !u!114 &3075832622915397146
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 291418687983328524}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a045b69fb3c5e45248465ebbd0cd6478, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CoinColliderFitter
-  _radiusScale: 0.98
-  _heightScale: 1
-  _cylinderSegments: 24
 --- !u!114 &4829173640582937145
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -217,7 +202,7 @@ MeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: a3ee9868acffd473a9c6734531572823, type: 2}
-  - {fileID: 2100000, guid: 59903b0d78d40419480a7fc07b55a6cd, type: 2}
+  - {fileID: 2100000, guid: a1698853487214905bbed88464114c95, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -241,3 +226,66 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &8837462518392847561
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8837462518392847562}
+  - component: {fileID: 7315651577823593281}
+  - component: {fileID: 4305688374281749209}
+  m_Layer: 0
+  m_Name: Coin_Physics
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8837462518392847562
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8837462518392847561}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.0005921232, y: 0.00009501727, z: 0.0005921232}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3600200798398696661}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!33 &7315651577823593281
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8837462518392847561}
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!64 &4305688374281749209
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8837462518392847561}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
