@@ -2,7 +2,6 @@ using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CoinAimIndicator))]
-[RequireComponent(typeof(CoinColliderFitter))]
 [RequireComponent(typeof(CoinIdentity))]
 [RequireComponent(typeof(CoinVisualState))]
 public class CoinDragController : MonoBehaviour
