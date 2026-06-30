@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class ResultPanelController : MonoBehaviour
@@ -42,6 +43,7 @@ public class ResultPanelController : MonoBehaviour
     [SerializeField] private RectTransform p3;
     [SerializeField] private RectTransform btnContinue;
     [SerializeField] private ConfettiController confetti;
+    [SerializeField] private Button continueButton;
 
     [Header("Timing")]
     [SerializeField] private float labelDuration = 0.55f;
@@ -97,11 +99,26 @@ public class ResultPanelController : MonoBehaviour
         p3Image = p3.GetComponent<Image>();
 
         if (confetti == null)
-        {
             confetti = GetComponentInChildren<ConfettiController>(true);
-        }
+
+        if (continueButton == null && btnContinue != null)
+            continueButton = btnContinue.GetComponent<Button>();
+
+        if (continueButton != null)
+            continueButton.onClick.AddListener(OnContinueClicked);
 
         CacheFinalStates();
+    }
+
+    private void OnDestroy()
+    {
+        if (continueButton != null)
+            continueButton.onClick.RemoveListener(OnContinueClicked);
+    }
+
+    public void OnContinueClicked()
+    {
+        SceneManager.LoadScene(GameSceneNames.MainMenu);
     }
 
     private void OnEnable()

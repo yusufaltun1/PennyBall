@@ -25,6 +25,7 @@ public class GameRulesManager : MonoBehaviour
     bool _isResolvingMove;
     bool _isFirstPlayerMove = true;
     bool _isOpeningShot;
+    int  _playerShotNumber = 1;   // bu turdaki atış sırası; ilk 2 atış gate validation'dan muaf
     Coroutine _resolveRoutine;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -82,6 +83,7 @@ public class GameRulesManager : MonoBehaviour
     {
         _isFirstPlayerMove = true;
         _isOpeningShot = false;
+        _playerShotNumber = 1;
         _waitingForOthers.Clear();
         _shotCoin = null;
         _resolvingShotCoin = null;
@@ -266,7 +268,7 @@ public class GameRulesManager : MonoBehaviour
         _shotCoin = coin;
         _resolvingShotCoin = coin;
         _goalEnteredDuringShot = false;
-        _isOpeningShot = _isFirstPlayerMove;
+        _isOpeningShot = _playerShotNumber <= 2;   // ilk 2 atış gate validation'dan muaf
         _shotStartPosition = coin.transform.position;
         LockCoinUntilOthersMoved(coin);
 
@@ -307,7 +309,7 @@ public class GameRulesManager : MonoBehaviour
             shotValid = true;
             RegisterSuccessfulShot(coin);
             UnlockOpeningSideCoins();
-            Debug.Log($"[Shot] {coin.gameObject.name} açılış hamlesi geçerli");
+            Debug.Log($"[Shot] {coin.gameObject.name} açılış #{_playerShotNumber} geçerli");
         }
         else
         {
@@ -326,6 +328,8 @@ public class GameRulesManager : MonoBehaviour
                 Debug.Log($"[Shot] {coin.gameObject.name} geçerli — kapıdan geçti");
             }
         }
+
+        if (shotValid) _playerShotNumber++;
 
         bool inGoal = IsCoinInOpponentGoal(coin);
         if (shotValid && (_goalEnteredDuringShot || inGoal))
@@ -377,7 +381,8 @@ public class GameRulesManager : MonoBehaviour
             }
 
             movedOthers.Add(movedCoin);
-            if (movedOthers.Count >= 2)
+            // Başka herhangi 1 coin hareket edince kilidi aç (son atılan coin hariç özgür seçim)
+            if (movedOthers.Count >= 1)
             {
                 UnlockCoin(waitingCoin);
             }

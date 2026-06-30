@@ -5,7 +5,8 @@
       "Bash(python3 -c ' *)",
       "Bash(python3 -)",
       "Bash(git checkout *)",
-      "Bash(grep \"\\\\.cs$\")"
+      "Bash(grep \"\\\\.cs$\")",
+      "Bash(xargs cat)"
     ],
     "additionalDirectories": [
       "/Users/ysfaltn/development-games/PennyBall/Assets/_GameUi/Scripts/Game/Rules"
