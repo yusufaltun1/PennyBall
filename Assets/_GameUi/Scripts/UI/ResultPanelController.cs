@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class ResultPanelController : MonoBehaviour
@@ -43,10 +44,19 @@ public class ResultPanelController : MonoBehaviour
     [SerializeField] private RectTransform btnContinue;
     [SerializeField] private ConfettiController confetti;
 
+    [Header("Rewards")]
+    [SerializeField] private GameObject rewards;
+    [SerializeField] private RectTransform rewardCoins;
+    [SerializeField] private RectTransform rewardXp;
+    [SerializeField] private float rewardsEntryOffset = 50f;
+    [SerializeField] private float rewardsDuration = 0.5f;
+
     [Header("Timing")]
     [SerializeField] private float labelDuration = 0.55f;
     [SerializeField] private float peopleScaleDuration = 0.5f;
     [SerializeField] private float iconMoveDuration = 0.5f;
+    [SerializeField] private float resultHoldDuration = 0.5f;
+    [SerializeField] private float wonRewardsExtraDelay = 1f;
     [SerializeField] private float continueDelay = 1f;
     [SerializeField] private float continueDuration = 0.5f;
     [SerializeField] private float offscreenPadding = 120f;
@@ -63,6 +73,12 @@ public class ResultPanelController : MonoBehaviour
     private RectState peopleFinal;
     private readonly RectState[] personFinals = new RectState[3];
     private RectState continueFinal;
+    private RectState coinsFinal;
+    private RectState xpFinal;
+
+    private CanvasGroup coinsCanvasGroup;
+    private CanvasGroup xpCanvasGroup;
+    private Button continueButton;
 
     private bool previousWon;
     private bool previousLost;
@@ -101,7 +117,29 @@ public class ResultPanelController : MonoBehaviour
             confetti = GetComponentInChildren<ConfettiController>(true);
         }
 
+        coinsCanvasGroup = GetOrAddCanvasGroup(rewardCoins);
+        xpCanvasGroup = GetOrAddCanvasGroup(rewardXp);
+
+        continueButton = btnContinue.GetComponent<Button>();
+        if (continueButton != null)
+        {
+            continueButton.onClick.AddListener(LoadMainMenu);
+        }
+
         CacheFinalStates();
+    }
+
+    private void OnDestroy()
+    {
+        if (continueButton != null)
+        {
+            continueButton.onClick.RemoveListener(LoadMainMenu);
+        }
+    }
+
+    private static void LoadMainMenu()
+    {
+        SceneManager.LoadScene(GameSceneNames.MainMenu);
     }
 
     private void OnEnable()
@@ -195,11 +233,30 @@ public class ResultPanelController : MonoBehaviour
             _ => default
         };
 
-        resultLabelImage.sprite = sprites.resultLabel;
-        iconImage.sprite = sprites.icon;
-        p1Image.sprite = sprites.p1;
-        p2Image.sprite = sprites.p2;
-        p3Image.sprite = sprites.p3;
+        if (sprites.resultLabel != null)
+        {
+            resultLabelImage.sprite = sprites.resultLabel;
+        }
+
+        if (sprites.icon != null)
+        {
+            iconImage.sprite = sprites.icon;
+        }
+
+        if (sprites.p1 != null)
+        {
+            p1Image.sprite = sprites.p1;
+        }
+
+        if (sprites.p2 != null)
+        {
+            p2Image.sprite = sprites.p2;
+        }
+
+        if (sprites.p3 != null)
+        {
+            p3Image.sprite = sprites.p3;
+        }
     }
 
     private void StopPresentation()
@@ -222,6 +279,8 @@ public class ResultPanelController : MonoBehaviour
         personFinals[1] = Capture(p2);
         personFinals[2] = Capture(p3);
         continueFinal = Capture(btnContinue);
+        coinsFinal = Capture(rewardCoins);
+        xpFinal = Capture(rewardXp);
     }
 
     private static RectState Capture(RectTransform rect)
@@ -242,7 +301,7 @@ public class ResultPanelController : MonoBehaviour
         }
         while (loop && GetActiveOutcome() != ResultOutcome.None);
 
-        ApplyFinalState();
+        ApplyFinalState(includeResultElements: false);
         playCoroutine = null;
     }
 
@@ -270,18 +329,43 @@ public class ResultPanelController : MonoBehaviour
             continueFinal.AnchoredPosition.x,
             continueFinal.AnchoredPosition.y - canvasHalfHeight - btnContinue.rect.height - offscreenPadding);
         btnContinue.localScale = continueFinal.LocalScale;
+
+        if (rewards != null)
+        {
+            rewards.SetActive(false);
+        }
     }
 
-    private void ApplyFinalState()
+    private void ApplyFinalState(bool includeResultElements = true)
     {
-        Apply(resultLabel, labelFinal);
-        people.gameObject.SetActive(true);
-        Apply(people, peopleFinal);
-        Apply(p1, personFinals[0]);
-        Apply(p2, personFinals[1]);
-        Apply(p3, personFinals[2]);
-        icon.gameObject.SetActive(true);
-        Apply(icon, iconFinal);
+        if (includeResultElements)
+        {
+            resultLabel.gameObject.SetActive(true);
+            Apply(resultLabel, labelFinal);
+            people.gameObject.SetActive(true);
+            Apply(people, peopleFinal);
+            Apply(p1, personFinals[0]);
+            Apply(p2, personFinals[1]);
+            Apply(p3, personFinals[2]);
+            icon.gameObject.SetActive(true);
+            Apply(icon, iconFinal);
+        }
+        else
+        {
+            resultLabel.gameObject.SetActive(false);
+            people.gameObject.SetActive(false);
+            icon.gameObject.SetActive(false);
+        }
+
+        if (rewards != null)
+        {
+            rewards.SetActive(true);
+            Apply(rewardCoins, coinsFinal);
+            Apply(rewardXp, xpFinal);
+            SetCanvasGroupAlpha(coinsCanvasGroup, 1f);
+            SetCanvasGroupAlpha(xpCanvasGroup, 1f);
+        }
+
         btnContinue.gameObject.SetActive(true);
         Apply(btnContinue, continueFinal);
     }
@@ -320,6 +404,23 @@ public class ResultPanelController : MonoBehaviour
         if (GetActiveOutcome() == ResultOutcome.Won)
         {
             confetti?.Play();
+        }
+
+        yield return new WaitForSeconds(resultHoldDuration);
+
+        if (GetActiveOutcome() == ResultOutcome.Won)
+        {
+            yield return new WaitForSeconds(wonRewardsExtraDelay);
+        }
+
+        icon.gameObject.SetActive(false);
+        people.gameObject.SetActive(false);
+        resultLabel.gameObject.SetActive(false);
+
+        if (rewards != null)
+        {
+            rewards.SetActive(true);
+            yield return AnimateRewardsEntry();
         }
 
         yield return new WaitForSeconds(continueDelay);
@@ -399,6 +500,69 @@ public class ResultPanelController : MonoBehaviour
         p1.localScale = scale;
         p2.localScale = scale;
         p3.localScale = scale;
+    }
+
+    private IEnumerator AnimateRewardsEntry()
+    {
+        Vector2 coinsStart = GetRewardStartPosition(coinsFinal);
+        Vector2 xpStart = GetRewardStartPosition(xpFinal);
+
+        rewardCoins.anchoredPosition = coinsStart;
+        rewardXp.anchoredPosition = xpStart;
+        SetCanvasGroupAlpha(coinsCanvasGroup, 0f);
+        SetCanvasGroupAlpha(xpCanvasGroup, 0f);
+
+        float elapsed = 0f;
+
+        while (elapsed < rewardsDuration)
+        {
+            elapsed += Time.deltaTime;
+            float progress = Mathf.Clamp01(elapsed / rewardsDuration);
+            float moveT = EaseOutBack(progress);
+
+            rewardCoins.anchoredPosition = Vector2.LerpUnclamped(
+                coinsStart,
+                coinsFinal.AnchoredPosition,
+                moveT);
+            rewardXp.anchoredPosition = Vector2.LerpUnclamped(
+                xpStart,
+                xpFinal.AnchoredPosition,
+                moveT);
+            SetCanvasGroupAlpha(coinsCanvasGroup, progress);
+            SetCanvasGroupAlpha(xpCanvasGroup, progress);
+            yield return null;
+        }
+
+        Apply(rewardCoins, coinsFinal);
+        Apply(rewardXp, xpFinal);
+        SetCanvasGroupAlpha(coinsCanvasGroup, 1f);
+        SetCanvasGroupAlpha(xpCanvasGroup, 1f);
+    }
+
+    private Vector2 GetRewardStartPosition(RectState finalState)
+    {
+        return new Vector2(
+            finalState.AnchoredPosition.x,
+            finalState.AnchoredPosition.y - rewardsEntryOffset);
+    }
+
+    private static CanvasGroup GetOrAddCanvasGroup(RectTransform rect)
+    {
+        CanvasGroup group = rect.GetComponent<CanvasGroup>();
+        if (group == null)
+        {
+            group = rect.gameObject.AddComponent<CanvasGroup>();
+        }
+
+        return group;
+    }
+
+    private static void SetCanvasGroupAlpha(CanvasGroup group, float alpha)
+    {
+        if (group != null)
+        {
+            group.alpha = alpha;
+        }
     }
 
     private static void Apply(RectTransform rect, RectState state)
