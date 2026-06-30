@@ -8,7 +8,10 @@
       "Bash(grep \"\\\\.cs$\")",
       "Bash(xargs cat)",
       "Bash(git restore *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(xargs ls)",
+      "Bash(grep -n *)"
     ],
     "additionalDirectories": [
       "/Users/ysfaltn/development-games/PennyBall/Assets/_GameUi/Scripts/Game/Rules"

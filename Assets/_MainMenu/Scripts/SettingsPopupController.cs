@@ -30,7 +30,8 @@ public class SettingsPopupController : MonoBehaviour
             closeButton.onClick.AddListener(Close);
         }
 
-        gameObject.SetActive(false);
+        if (!isOpen)
+            gameObject.SetActive(false);
     }
 
     private void OnDestroy()
