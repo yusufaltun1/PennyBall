@@ -7,6 +7,9 @@ public class GameRulesManager : MonoBehaviour
 {
     public static GameRulesManager Instance { get; private set; }
 
+    /// <summary>Yalnızca 1. atış (orta para) gate kuralından muaftır.</summary>
+    public const int OpeningShotCount = 1;
+
     [SerializeField] float _gateMargin = 0.09f;
     [SerializeField] float _rollbackDuration = 0.45f;
     [SerializeField] float _goalResetDuration = 0.55f;
@@ -25,8 +28,9 @@ public class GameRulesManager : MonoBehaviour
     bool _isResolvingMove;
     bool _isFirstPlayerMove = true;
     bool _isOpeningShot;
-    int  _playerShotNumber = 1;   // bu turdaki atış sırası; ilk 2 atış gate validation'dan muaf
+    int  _playerShotNumber = 1;   // bu turdaki atış sırası; yalnızca 1. atış gate validation'dan muaf
     Coroutine _resolveRoutine;
+    Coroutine _roundResetRoutine;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void ResetSingleton()
@@ -36,6 +40,14 @@ public class GameRulesManager : MonoBehaviour
 
     public bool IsResolvingMove => _isResolvingMove;
     public int PlayerShotNumber => _playerShotNumber;
+
+    /// <summary>Sıradaki atış gate kuralına tabi mi (2. atış ve sonrası).</summary>
+    public bool RequiresGateValidationForNextShot => _playerShotNumber > OpeningShotCount;
+
+    /// <summary>GateIndicator 2. atıştan itibaren gösterilir.</summary>
+    public bool ShouldShowGateIndicatorForNextShot => RequiresGateValidationForNextShot;
+
+    public static bool IsOpeningShotNumber(int shotNumber) => shotNumber <= OpeningShotCount;
 
     public bool TryGetGateCoins(CoinIdentity shooter, out CoinIdentity gateA, out CoinIdentity gateB)
     {
@@ -113,11 +125,13 @@ public class GameRulesManager : MonoBehaviour
     {
         _isFirstPlayerMove = true;
         _isOpeningShot = false;
+        _isResolvingMove = false;
         _playerShotNumber = 1;
         _waitingForOthers.Clear();
         _shotCoin = null;
         _resolvingShotCoin = null;
         _goalEnteredDuringShot = false;
+        GateIndicator.Instance?.Hide();
     }
 
     void DiscoverPlayerCoins()
@@ -289,7 +303,7 @@ public class GameRulesManager : MonoBehaviour
         _shotCoin = coin;
         _resolvingShotCoin = coin;
         _goalEnteredDuringShot = false;
-        _isOpeningShot = _playerShotNumber <= 2;   // ilk 2 atış gate validation'dan muaf
+        _isOpeningShot = IsOpeningShotNumber(_playerShotNumber);
         _shotStartPosition = coin.transform.position;
         LockCoinUntilOthersMoved(coin);
 
@@ -353,7 +367,10 @@ public class GameRulesManager : MonoBehaviour
             }
         }
 
-        if (shotValid)
+        bool inGoal = IsCoinInOpponentGoal(coin);
+        bool scoredGoal = shotValid && (_goalEnteredDuringShot || inGoal);
+
+        if (shotValid && !scoredGoal)
         {
             if (!isOpeningShot)
             {
@@ -363,8 +380,7 @@ public class GameRulesManager : MonoBehaviour
             _playerShotNumber++;
         }
 
-        bool inGoal = IsCoinInOpponentGoal(coin);
-        if (shotValid && (_goalEnteredDuringShot || inGoal))
+        if (scoredGoal)
         {
             Debug.Log($"[Shot] {coin.gameObject.name} GOL | trigger={_goalEnteredDuringShot} | içerde={inGoal}");
             PlayerGoalScored?.Invoke();
@@ -625,11 +641,16 @@ public class GameRulesManager : MonoBehaviour
         else
         {
             _waitingForOthers.Clear();
+            _playerShotNumber = 1;
+            _isFirstPlayerMove = true;
+            _isOpeningShot = false;
+            GateIndicator.Instance?.Hide();
         }
 
         DiscoverPlayerCoins();
 
         _isResolvingMove = false;
+        _roundResetRoutine = null;
         RoundReset?.Invoke();
     }
 
@@ -646,7 +667,18 @@ public class GameRulesManager : MonoBehaviour
             _resolveRoutine = null;
         }
 
-        StartCoroutine(ResetRoundAfterGoalRoutine());
+        if (_roundResetRoutine != null)
+        {
+            StopCoroutine(_roundResetRoutine);
+            _roundResetRoutine = null;
+        }
+
+        _roundResetRoutine = StartCoroutine(RunRoundResetAfterGoal());
+    }
+
+    IEnumerator RunRoundResetAfterGoal()
+    {
+        yield return ResetRoundAfterGoalRoutine(resetMatchProgress: true);
     }
 
     public IEnumerator ResetAllCoinPositionsRoutine()

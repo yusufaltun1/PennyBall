@@ -200,9 +200,7 @@ public class CoinInputHandler : MonoBehaviour
             return;
         }
 
-        CoinGateIndicatorSettings settings = CoinGateIndicatorSettings.Resolve(shooterController);
-        int showFromShotNumber = settings != null ? settings.ShowFromShotNumber : 2;
-        if (rules.PlayerShotNumber < showFromShotNumber)
+        if (!rules.ShouldShowGateIndicatorForNextShot)
         {
             return;
         }
@@ -212,6 +210,7 @@ public class CoinInputHandler : MonoBehaviour
             return;
         }
 
+        CoinGateIndicatorSettings settings = CoinGateIndicatorSettings.Resolve(shooterController);
         Color lineColor = GetGateLineColor(shooterController);
         indicator.Show(
             gateA,
