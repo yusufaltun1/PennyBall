@@ -15,7 +15,6 @@ public class GameFeedback : MonoBehaviour
     [SerializeField] [Range(0f, 1f)] float _goalVolume = 0.5f;
     [SerializeField] [Range(0f, 1f)] float _musicVolume = 0.3f;
     [SerializeField] float _coinHitMinSpeed = 0.35f;
-    [SerializeField] bool _vibrationEnabled = true;
 
     [Header("Coin Hit Dust")]
     [SerializeField] CoinHitDustSettings _coinHitDust = new();
@@ -70,9 +69,11 @@ public class GameFeedback : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        SeedDefaultSettingsIfNeeded();
         EnsureAudioListener();
         SetupAudio();
         SetupDust();
+        ApplySettings();
     }
 
     void OnDestroy()
@@ -108,19 +109,56 @@ public class GameFeedback : MonoBehaviour
 
     void OnEnable()
     {
+        GameFeedbackSettingsService.Changed += ApplySettings;
         SubscribeEvents();
+        ApplySettings();
     }
 
     void OnDisable()
     {
+        GameFeedbackSettingsService.Changed -= ApplySettings;
         UnsubscribeEvents();
     }
 
     void Start()
     {
         SubscribeEvents();
+        ApplySettings();
         StartBackgroundMusic();
         PlayMatchStartBell();
+    }
+
+    void SeedDefaultSettingsIfNeeded()
+    {
+        GameFeedbackSettingsService.EnsureLoaded();
+    }
+
+    public void ApplySettings()
+    {
+        bool soundEnabled = GameFeedbackSettingsService.SoundEffectsEnabled;
+        bool musicEnabled = GameFeedbackSettingsService.MusicEnabled;
+
+        if (_sfxSource != null)
+        {
+            _sfxSource.mute = !soundEnabled;
+        }
+
+        if (_goalSource != null)
+        {
+            _goalSource.mute = !soundEnabled;
+        }
+
+        if (_musicSource != null)
+        {
+            if (!musicEnabled)
+            {
+                _musicSource.Stop();
+            }
+            else
+            {
+                StartBackgroundMusic();
+            }
+        }
     }
 
     void SubscribeEvents()
@@ -153,7 +191,7 @@ public class GameFeedback : MonoBehaviour
     public void PlayShot(float power01)
     {
         power01 = Mathf.Clamp01(power01);
-        if (power01 < 0.04f || _kickClip == null)
+        if (power01 < 0.04f || _kickClip == null || !GameFeedbackSettingsService.SoundEffectsEnabled)
         {
             return;
         }
@@ -170,7 +208,7 @@ public class GameFeedback : MonoBehaviour
 
     public void PlayWallHit(float intensity01, Vector3 position)
     {
-        if (_wallClip == null)
+        if (_wallClip == null || !GameFeedbackSettingsService.SoundEffectsEnabled)
         {
             return;
         }
@@ -193,7 +231,7 @@ public class GameFeedback : MonoBehaviour
 
     public bool TryPlayCoinHit(int selfId, int otherId, float impactSpeed, Vector3 position)
     {
-        if (impactSpeed < _coinHitMinSpeed || _coinClip == null)
+        if (impactSpeed < _coinHitMinSpeed || _coinClip == null || !GameFeedbackSettingsService.SoundEffectsEnabled)
         {
             return false;
         }
@@ -221,7 +259,7 @@ public class GameFeedback : MonoBehaviour
 
     public void PlayGoal()
     {
-        if (_goalSource == null || _goalClip == null)
+        if (_goalSource == null || _goalClip == null || !GameFeedbackSettingsService.SoundEffectsEnabled)
         {
             return;
         }
@@ -240,7 +278,7 @@ public class GameFeedback : MonoBehaviour
 
     public void PlayMatchStartBell()
     {
-        if (_wallClip == null)
+        if (_wallClip == null || !GameFeedbackSettingsService.SoundEffectsEnabled)
         {
             return;
         }
@@ -250,7 +288,12 @@ public class GameFeedback : MonoBehaviour
 
     public void StartBackgroundMusic()
     {
-        if (_musicSource == null || _musicClip == null || _musicSource.isPlaying)
+        if (_musicSource == null || _musicClip == null || !GameFeedbackSettingsService.MusicEnabled)
+        {
+            return;
+        }
+
+        if (_musicSource.isPlaying)
         {
             return;
         }
@@ -350,7 +393,7 @@ public class GameFeedback : MonoBehaviour
     void Vibrate(float now, float cooldown, ref float lastTime)
     {
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
-        if (!_vibrationEnabled || now - lastTime < cooldown)
+        if (!GameFeedbackSettingsService.VibrationEnabled || now - lastTime < cooldown)
         {
             return;
         }

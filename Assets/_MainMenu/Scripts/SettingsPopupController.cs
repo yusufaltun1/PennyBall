@@ -13,12 +13,14 @@ public class SettingsPopupController : MonoBehaviour
     private float openY;
     private Coroutine animationCoroutine;
     private bool isOpen;
+    private bool _settingsBound;
 
     private void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
         CachePositions();
         SetClosedPosition();
+        BindFeedbackSettings();
 
         if (openButton != null)
         {
@@ -32,6 +34,52 @@ public class SettingsPopupController : MonoBehaviour
 
         if (!isOpen)
             gameObject.SetActive(false);
+    }
+
+    void BindFeedbackSettings()
+    {
+        if (_settingsBound)
+        {
+            RefreshAllToggles();
+            return;
+        }
+
+        GameFeedbackSettingsService.EnsureLoaded();
+        BindToggle("Container/Wrapper/Control-Music/Button", SettingsToggleControl.SettingKind.Music);
+        BindToggle("Container/Wrapper/Control-SoundEffects/Button", SettingsToggleControl.SettingKind.SoundEffects);
+        BindToggle("Container/Wrapper/Control-Vibrations/Button", SettingsToggleControl.SettingKind.Vibration);
+        _settingsBound = true;
+    }
+
+    void RefreshAllToggles()
+    {
+        SettingsToggleControl[] toggles = GetComponentsInChildren<SettingsToggleControl>(true);
+        for (int i = 0; i < toggles.Length; i++)
+        {
+            toggles[i].RefreshFromService();
+        }
+    }
+
+    void BindToggle(string path, SettingsToggleControl.SettingKind kind)
+    {
+        Transform toggleTransform = transform.Find(path);
+        if (toggleTransform == null)
+        {
+            Debug.LogWarning($"[Settings] Toggle bulunamadı: {path}");
+            return;
+        }
+
+        SettingsToggleControl[] existing = toggleTransform.GetComponents<SettingsToggleControl>();
+        for (int i = 1; i < existing.Length; i++)
+        {
+            Destroy(existing[i]);
+        }
+
+        SettingsToggleControl toggle = existing.Length > 0
+            ? existing[0]
+            : toggleTransform.gameObject.AddComponent<SettingsToggleControl>();
+
+        toggle.Initialize(kind);
     }
 
     private void OnDestroy()
@@ -56,6 +104,7 @@ public class SettingsPopupController : MonoBehaviour
 
         isOpen = true;
         gameObject.SetActive(true);
+        RefreshAllToggles();
 
         if (animationCoroutine != null)
         {
