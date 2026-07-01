@@ -19,7 +19,7 @@ public class PlayerGoalEffectController : MonoBehaviour
 
     [Header("Burst Particles")]
     [SerializeField] int _particleCount = 28;
-    [SerializeField] float _burstRadius = 220f;
+    [SerializeField, Range(0.3f, 1f)] float _burstCoverage = 0.92f;
     [SerializeField] Vector2 _particleSizeRange = new(18f, 42f);
     [SerializeField] float _fallDuration = 1.35f;
     [SerializeField] float _gravity = 1450f;
@@ -152,6 +152,7 @@ public class PlayerGoalEffectController : MonoBehaviour
             _particleBurstRoot = transform as RectTransform;
         }
 
+        EnsureParticleArea();
         gameObject.SetActive(true);
         transform.SetAsLastSibling();
         _goalImg.localScale = _goalTargetScale * _goalStartScale;
@@ -201,6 +202,48 @@ public class PlayerGoalEffectController : MonoBehaviour
         onComplete?.Invoke();
     }
 
+    void EnsureParticleArea()
+    {
+        RectTransform container = transform as RectTransform;
+        if (container == null)
+        {
+            return;
+        }
+
+        if (_particleBurstRoot == null)
+        {
+            _particleBurstRoot = container;
+        }
+
+        _particleBurstRoot.anchorMin = Vector2.zero;
+        _particleBurstRoot.anchorMax = Vector2.one;
+        _particleBurstRoot.offsetMin = Vector2.zero;
+        _particleBurstRoot.offsetMax = Vector2.zero;
+        _particleBurstRoot.pivot = new Vector2(0.5f, 0.5f);
+        _particleBurstRoot.anchoredPosition = Vector2.zero;
+
+        if (GetComponent<RectMask2D>() == null)
+        {
+            gameObject.AddComponent<RectMask2D>();
+        }
+
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(container);
+    }
+
+    Vector2 GetBurstExtents()
+    {
+        RectTransform root = _particleBurstRoot != null ? _particleBurstRoot : transform as RectTransform;
+        if (root == null)
+        {
+            return Vector2.one * 220f;
+        }
+
+        Rect rect = root.rect;
+        float coverage = Mathf.Clamp01(_burstCoverage);
+        return new Vector2(rect.width * 0.5f * coverage, rect.height * 0.5f * coverage);
+    }
+
     void SpawnBurstParticles()
     {
         RectTransform root = _particleBurstRoot != null ? _particleBurstRoot : transform as RectTransform;
@@ -209,12 +252,17 @@ public class PlayerGoalEffectController : MonoBehaviour
             return;
         }
 
+        Vector2 burstExtents = GetBurstExtents();
+
         for (int i = 0; i < _particleCount; i++)
         {
             float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-            float radius = UnityEngine.Random.Range(_burstRadius * 0.25f, _burstRadius);
-            Vector2 burstOffset = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+            float spread = Mathf.Sqrt(UnityEngine.Random.Range(0.12f, 1f));
+            Vector2 burstOffset = new Vector2(
+                Mathf.Cos(angle) * burstExtents.x * spread,
+                Mathf.Sin(angle) * burstExtents.y * spread);
             float size = UnityEngine.Random.Range(_particleSizeRange.x, _particleSizeRange.y);
+            burstOffset = ClampOffsetToContainer(burstOffset, burstExtents, size);
             ParticleShape shape = (ParticleShape)UnityEngine.Random.Range(0, Enum.GetValues(typeof(ParticleShape)).Length);
             Color color = _particleColors.Length > 0
                 ? _particleColors[UnityEngine.Random.Range(0, _particleColors.Length)]
@@ -247,6 +295,14 @@ public class PlayerGoalEffectController : MonoBehaviour
         }
     }
 
+    static Vector2 ClampOffsetToContainer(Vector2 offset, Vector2 extents, float particleSize)
+    {
+        float margin = particleSize * 0.5f;
+        return new Vector2(
+            Mathf.Clamp(offset.x, -extents.x + margin, extents.x - margin),
+            Mathf.Clamp(offset.y, -extents.y + margin, extents.y - margin));
+    }
+
     void UpdateBurstParticles(float eased)
     {
         for (int i = 0; i < _activeParticles.Count; i++)
@@ -271,8 +327,10 @@ public class PlayerGoalEffectController : MonoBehaviour
             yield break;
         }
 
-        RectTransform canvasRect = GetComponentInParent<Canvas>()?.transform as RectTransform;
-        float fallLimit = canvasRect != null ? -canvasRect.rect.height * 0.65f : -1400f;
+        RectTransform root = _particleBurstRoot != null ? _particleBurstRoot : transform as RectTransform;
+        float fallLimit = root != null
+            ? -root.rect.height * 0.5f - _particleSizeRange.y
+            : -1400f;
 
         for (int i = 0; i < _activeParticles.Count; i++)
         {

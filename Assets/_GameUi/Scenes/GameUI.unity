@@ -8397,7 +8397,7 @@ MonoBehaviour:
   _goalScaleAnimationDuration: 1
   _goalStartScale: 0.05
   _particleCount: 28
-  _burstRadius: 220
+  _burstCoverage: 0.92
   _particleSizeRange: {x: 18, y: 42}
   _fallDuration: 1.35
   _gravity: 1450
