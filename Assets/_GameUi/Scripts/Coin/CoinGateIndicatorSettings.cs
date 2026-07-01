@@ -12,7 +12,7 @@ public class CoinGateIndicatorSettings : MonoBehaviour
     [SerializeField] float _glowAlpha = 0.28f;
     [SerializeField] float _glowPulseSpeed = 2.5f;
     [SerializeField] [Range(0f, 0.35f)] float _glowPulseAmount = 0.12f;
-    [SerializeField] [Min(1)] int _showFromShotNumber = 2;
+    [SerializeField] [Min(2)] int _showFromShotNumber = 2;
 
     public float LineHeightOffset => _lineHeightOffset;
     public float LineWidth => _lineWidth;
@@ -27,7 +27,7 @@ public class CoinGateIndicatorSettings : MonoBehaviour
 
     public bool ShouldShowForShot(int currentShotNumber)
     {
-        return currentShotNumber >= _showFromShotNumber;
+        return currentShotNumber > GameRulesManager.OpeningShotCount;
     }
 
     public static CoinGateIndicatorSettings Resolve(Component coinRoot)

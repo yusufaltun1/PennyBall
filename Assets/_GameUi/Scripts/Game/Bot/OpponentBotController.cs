@@ -10,7 +10,20 @@ public class OpponentBotController : MonoBehaviour
 {
     public static OpponentBotController Instance { get; private set; }
 
-    [SerializeField] OpponentBotDifficulty _difficulty = new() { Level = 5 };
+    [Header("AI Gücü")]
+    [Tooltip("1 = zayıf, 10 = güçlü. Test için buradan ayarla.")]
+    [SerializeField] [Range(1, 10)] int _aiStrength = 7;
+    [Tooltip("Açıksa lig rakibinin zorluğu yerine yukarıdaki güç kullanılır.")]
+    [SerializeField] bool _useInspectorAiStrength = true;
+
+    [Header("Hamle Tempo")]
+    [Tooltip("Her atıştan önce beklenecek süre (saniye). AI gücünden bağımsız.")]
+    [SerializeField] [Min(0f)] float _turnThinkDelaySeconds = 2f;
+    [Tooltip("Açıksa yukarıdaki süre kullanılır; kapalıysa zorluk seviyesine göre otomatik.")]
+    [SerializeField] bool _useInspectorTurnDelay = true;
+
+    [Header("Oyun Kuralları")]
+    [SerializeField] OpponentBotDifficulty _difficulty = new() { Level = 7 };
     [SerializeField] float _gateMargin        = 0.09f;
     [SerializeField] float _rollbackDuration  = 0.45f;
     [SerializeField] float _coinStopTimeout   = 8f;
@@ -59,20 +72,46 @@ public class OpponentBotController : MonoBehaviour
 
     void Start()
     {
-        ApplySessionOpponentDifficulty();
+        SyncAiStrength();
     }
+
+#if UNITY_EDITOR
+    void OnValidate()
+    {
+        SyncAiStrength();
+    }
+#endif
 
     public void ApplySessionOpponentDifficulty()
     {
-        if (!MatchSessionContext.HasOpponent)
+        if (!_useInspectorAiStrength && MatchSessionContext.HasOpponent)
+        {
+            _aiStrength = Mathf.Clamp(MatchSessionContext.CurrentOpponent.difficultyLevel, 1, 10);
+        }
+
+        SyncAiStrength();
+    }
+
+    void SyncAiStrength()
+    {
+        _aiStrength = Mathf.Clamp(_aiStrength, 1, 10);
+        _difficulty.Level = _aiStrength;
+
+        if (!Application.isPlaying)
         {
             return;
         }
 
-        _difficulty.Level = Mathf.Clamp(MatchSessionContext.CurrentOpponent.difficultyLevel, 1, 10);
         Debug.Log(
-            $"[Bot] Ayarlar uygulandı | Rakip={OpponentDisplayName} | Zorluk={_difficulty.Level} | " +
-            $"AimNoise={_difficulty.AimNoiseDegrees:F1} | RuleCompliance={_difficulty.RuleCompliance:F2}");
+            $"[Bot] AI gücü={_aiStrength} | Think={GetTurnThinkDelay():F2}s | " +
+            $"AimNoise={_difficulty.AimNoiseDegrees:F1}° | GoalFocus={_difficulty.GoalFocus:F2} | " +
+            $"Kaynak={(_useInspectorAiStrength ? "Inspector" : "Lig")} | " +
+            $"Tempo={(_useInspectorTurnDelay ? "Inspector" : "Zorluk")}");
+    }
+
+    float GetTurnThinkDelay()
+    {
+        return _useInspectorTurnDelay ? _turnThinkDelaySeconds : _difficulty.ThinkDelaySeconds;
     }
 
     void OnDestroy()
@@ -138,7 +177,9 @@ public class OpponentBotController : MonoBehaviour
         {
             while (_isResolving) yield return null;
 
-            yield return new WaitForSeconds(_difficulty.ThinkDelaySeconds);
+            yield return new WaitForSeconds(GetTurnThinkDelay());
+
+            SyncAiStrength();
 
             if (!OpponentBotBrain.TryChooseShot(
                     _state, _difficulty, _isResolving, _gateMargin,
@@ -146,23 +187,29 @@ public class OpponentBotController : MonoBehaviour
                     out OpponentBotBrain.ShotPlan plan,
                     out bool pathBlocked))
             {
-                // Yol doluysa 5 sn, değilse 0.5 sn bekle
                 yield return new WaitForSeconds(pathBlocked ? 5f : 0.5f);
                 continue;
             }
 
-            if (!CoinShotLauncher.TryLaunch(plan.Coin.DragController, plan.Direction, plan.PullDistance)
+            float launchPull = plan.PullDistance;
+            if (plan.Kind == OpponentBotBrain.ShotKind.MandatoryGatePass)
+            {
+                launchPull = plan.Coin.DragController.MaxPullDistance;
+            }
+
+            if (!CoinShotLauncher.TryLaunch(plan.Coin.DragController, plan.Direction, launchPull)
                 || !plan.Coin.DragController.IsSliding)
             {
                 yield return new WaitForSeconds(0.5f);
                 continue;
             }
 
-            Debug.Log($"[Bot] {plan.Coin.name} fırlatıldı | atış#{_roundShotNumber}");
+            Debug.Log($"[Bot] {plan.Coin.name} fırlatıldı | atış#{_roundShotNumber} | {plan.Kind} | " +
+                      $"+{plan.GoalAdvanceMeters:F2}m | pull={launchPull:F3}/{plan.Coin.DragController.MaxPullDistance:F3} | skor={plan.Score:F2}");
 
             _resolvingCoin          = plan.Coin;
             _goalEnteredDuringShot  = false;
-            _isOpeningShot          = _roundShotNumber <= 2;   // 1. ve 2. atış gate validation'dan muaf
+            _isOpeningShot          = _roundShotNumber == 1;   // yalnızca 1. atış gate validation'dan muaf
             _shotStartPosition      = plan.Coin.transform.position;
             TeamRulesService.LockCoinUntilOthersMoved(_state, plan.Coin, SetCoinPassive);
 
