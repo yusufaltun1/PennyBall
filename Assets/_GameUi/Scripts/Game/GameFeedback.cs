@@ -299,6 +299,24 @@ public class GameFeedback : MonoBehaviour
         _musicSource.Play();
     }
 
+    public void StopBackgroundMusic()
+    {
+        if (_musicSource != null)
+        {
+            _musicSource.Stop();
+        }
+    }
+
+    public void PlayWhistle()
+    {
+        if (_audioLibrary == null || _audioLibrary.whistle == null || _sfxSource == null)
+        {
+            return;
+        }
+
+        _sfxSource.PlayOneShot(_audioLibrary.whistle, _masterVolume);
+    }
+
     void SetupAudio()
     {
         _sfxSource = gameObject.AddComponent<AudioSource>();

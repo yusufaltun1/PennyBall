@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -10,8 +11,16 @@ public class MatchTurnCoordinator : MonoBehaviour
     void Start()
     {
         Subscribe();
-
         GameRulesManager.Instance?.PrepareForNewMatch();
+        StartCoroutine(StartOpponentWhenReady());
+    }
+
+    IEnumerator StartOpponentWhenReady()
+    {
+        while (MatchBeginningCountdownController.IsActive)
+        {
+            yield return null;
+        }
 
         if (_enableOpponentBot && OpponentBotController.Instance != null)
         {

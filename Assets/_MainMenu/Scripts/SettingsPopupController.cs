@@ -54,6 +54,7 @@ public class SettingsPopupController : MonoBehaviour
             return;
         }
 
+        MainMenuClickSound.Play();
         isOpen = true;
         gameObject.SetActive(true);
 
@@ -72,6 +73,7 @@ public class SettingsPopupController : MonoBehaviour
             return;
         }
 
+        MainMenuClickSound.Play();
         isOpen = false;
 
         if (animationCoroutine != null)

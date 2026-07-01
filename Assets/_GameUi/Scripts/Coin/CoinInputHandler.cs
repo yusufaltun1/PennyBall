@@ -36,6 +36,12 @@ public class CoinInputHandler : MonoBehaviour
 
     void Update()
     {
+        if (MatchBeginningCountdownController.IsActive)
+        {
+            _cameraZoom?.SetDragState(0f);
+            return;
+        }
+
         if (!TryReadPointer(out Vector2 screenPosition, out bool isPressed, out bool pressedThisFrame, out bool releasedThisFrame))
         {
             _cameraZoom?.SetDragState(0f);

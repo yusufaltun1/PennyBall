@@ -26,8 +26,18 @@ public class MatchTimerPresenter : MonoBehaviour
     {
         _remaining = _totalSeconds;
         UpdateDisplay(Mathf.CeilToInt(_remaining));
-        StartCoroutine(CountdownRoutine());
+        StartCoroutine(StartCountdownWhenReady());
         StartCoroutine(BindWhenReady());
+    }
+
+    IEnumerator StartCountdownWhenReady()
+    {
+        while (MatchBeginningCountdownController.IsActive)
+        {
+            yield return null;
+        }
+
+        yield return CountdownRoutine();
     }
 
     void OnDestroy()

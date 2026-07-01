@@ -149,6 +149,11 @@ public class LeagueMatchController : MonoBehaviour
 
     IEnumerator MatchTimerRoutine()
     {
+        while (MatchBeginningCountdownController.IsActive)
+        {
+            yield return null;
+        }
+
         while (_matchActive && !_matchReported && _matchTimeRemaining > 0f)
         {
             if (!_matchTimerPaused)

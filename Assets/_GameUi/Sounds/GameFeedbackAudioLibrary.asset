@@ -12,9 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7a2b8c14e5d4a6f9b0c1d2e3f4a5b6c, type: 3}
   m_Name: GameFeedbackAudioLibrary
   m_EditorClassIdentifier: Assembly-CSharp::GameFeedbackAudioLibrary
+  buttonClick: {fileID: 8300000, guid: 5c4327d18c5044af5885580c27f0427e, type: 3}
   kickClip: {fileID: 8300000, guid: 1edebe1d198814d29b67a86efc7f75ad, type: 3}
   wallHitClip: {fileID: 8300000, guid: bd4849ae93e6b445e85b2aca474be65a, type: 3}
   coinHitClip: {fileID: 8300000, guid: 4c376884c75e9436b8a89bd5bb3db58e, type: 3}
   goalCelebrationClip: {fileID: 8300000, guid: 20dfaac09faec488db15da643bfd112b, type: 3}
   enemyGoalCelebrationClip: {fileID: 8300000, guid: b43843ae6cff0404aaa44d45ad9f667d, type: 3}
-  backgroundMusicClip: {fileID: 8300000, guid: 5ac87aeafac904eb0ae6f0e511e79d88, type: 3}
+  finding: {fileID: 8300000, guid: 90440c518f44142bbb876ec4d02a2d6f, type: 3}
+  backgroundMusicClip: {fileID: 8300000, guid: 42f93acaaa85e4bfda72f3c1688edd7c, type: 3}
+  horn: {fileID: 8300000, guid: 0ba19eecf3fff44a1a9997f52d6ab204, type: 3}
+  whistle: {fileID: 8300000, guid: df8600ecb52004975afff88f74f251ee, type: 3}
+  mainTheme: {fileID: 8300000, guid: 6a44f2f1450454316a76ca1e131bd163, type: 3}
