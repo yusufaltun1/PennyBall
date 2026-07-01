@@ -10,6 +10,7 @@ public class LeagueService : MonoBehaviour
     public event Action StandingsUpdated;
     public event Action<int> PlayerPromoted;
     public event Action AvatarChanged;
+    public event Action<MatchResultType, string, string, int> MatchResultRegistered;
 
     LeagueSaveData _save;
 
@@ -124,8 +125,18 @@ public class LeagueService : MonoBehaviour
         return opponent;
     }
 
-    public void RegisterMatchResult(MatchResultType result)
+    public bool RegisterMatchResult(MatchResultType result, string abandonReason = null)
     {
+        if (!MatchSessionTracker.TryConsumeResult(out string matchId, out string trackedAbandonReason, out int durationSeconds))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(abandonReason))
+        {
+            abandonReason = trackedAbandonReason;
+        }
+
         EnsureSeasonActive();
 
         // Puanlar değişmeden ÖNCE mevcut sırayı yakala
@@ -161,11 +172,14 @@ public class LeagueService : MonoBehaviour
 
         // Ödülleri hesapla ve kaydet
         var (coins, xp) = WalletService.GetReward(result);
+        int levelBefore = WalletService.Level;
         WalletService.AddReward(coins, xp);
-        MatchSessionContext.SetEarnedRewards(coins, xp);
+        MatchSessionContext.SetEarnedRewards(coins, xp, levelBefore, WalletService.Level);
 
         LeagueRepository.Save(_save);
         StandingsUpdated?.Invoke();
+        MatchResultRegistered?.Invoke(result, abandonReason, matchId, durationSeconds);
+        return true;
     }
 
     // Sort tetiklemeden mevcut dizi sırasından rank döndürür

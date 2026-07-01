@@ -2,9 +2,8 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class WalletPresenter : MonoBehaviour
+public class PlayerLevelPresenter : MonoBehaviour
 {
-    [SerializeField] TextMeshProUGUI coinsLabel;
     [SerializeField] TextMeshProUGUI levelLabel;
     [SerializeField] Image progressFillImage;
 
@@ -21,9 +20,6 @@ public class WalletPresenter : MonoBehaviour
 
     void Refresh()
     {
-        if (coinsLabel != null)
-            coinsLabel.text = WalletService.TotalCoins.ToString();
-
         if (levelLabel != null)
             levelLabel.text = WalletService.Level.ToString();
 

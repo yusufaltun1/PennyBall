@@ -6,6 +6,7 @@ public class LeagueMatchController : MonoBehaviour
     public static LeagueMatchController Instance { get; private set; }
 
     public event System.Action<MatchResultType> MatchCompleted;
+    public event System.Action MatchStarted;
 
     int _playerGoals;
     int _opponentGoals;
@@ -108,6 +109,7 @@ public class LeagueMatchController : MonoBehaviour
         _matchTimeRemaining = LeagueConfig.MatchDurationSeconds;
         _matchActive = true;
         _matchReported = false;
+        MatchSessionTracker.BeginMatch();
 
         if (LeagueService.Instance == null)
         {
@@ -127,6 +129,18 @@ public class LeagueMatchController : MonoBehaviour
         }
 
         _matchTimerRoutine = StartCoroutine(MatchTimerRoutine());
+        MatchStarted?.Invoke();
+    }
+
+    public void AbandonActiveMatch(string reason)
+    {
+        if (!_matchActive || _matchReported)
+        {
+            return;
+        }
+
+        MatchSessionTracker.MarkAbandon(reason);
+        CompleteMatch(ResolveResultByScore(), startNextMatch: false);
     }
 
     IEnumerator MatchTimerRoutine()
@@ -183,7 +197,7 @@ public class LeagueMatchController : MonoBehaviour
         return ResolveResultByScore(_playerGoals, _opponentGoals);
     }
 
-    void CompleteMatch(MatchResultType result)
+    void CompleteMatch(MatchResultType result, bool startNextMatch = true)
     {
         if (_matchReported)
         {
@@ -196,8 +210,15 @@ public class LeagueMatchController : MonoBehaviour
 
         if (LeagueService.Instance != null)
         {
-            LeagueService.Instance.RegisterMatchResult(result);
-            LeagueService.Instance.PickOpponentForNextMatch();
+            bool registered = LeagueService.Instance.RegisterMatchResult(result);
+            if (registered)
+            {
+                LeagueService.Instance.PickOpponentForNextMatch();
+            }
+            else
+            {
+                return;
+            }
         }
 
         if (OpponentBotController.Instance != null)
@@ -206,7 +227,11 @@ public class LeagueMatchController : MonoBehaviour
         }
 
         MatchCompleted?.Invoke(result);
-        BeginMatch();
+
+        if (startNextMatch)
+        {
+            BeginMatch();
+        }
     }
 
     void StopMatchTimer()

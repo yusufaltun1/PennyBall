@@ -256,9 +256,12 @@ public class OnboardingController : MonoBehaviour
 
         if (_currentStepIndex + 1 >= _steps.Length)
         {
+            NotifyStepCompleted(_currentStepIndex);
             CompleteOnboarding();
             return;
         }
+
+        NotifyStepCompleted(_currentStepIndex);
 
         OnboardingStepDefinition previousStep = GetCurrentStep();
         int previousActiveCoinIndex = previousStep != null ? previousStep.activeCoinIndex : -1;
@@ -354,6 +357,7 @@ public class OnboardingController : MonoBehaviour
 
         if (shotStepIndex == 1)
         {
+            NotifyStepCompleted(shotStepIndex);
             EnterThirdCoinGoalStep();
             _isBusy = false;
             _resolveRoutine = null;
@@ -363,6 +367,7 @@ public class OnboardingController : MonoBehaviour
 
         if (_currentStepIndex + 1 < (_steps?.Length ?? 0))
         {
+            NotifyStepCompleted(shotStepIndex);
             yield return AdvanceToStepRoutine(_currentStepIndex + 1);
         }
         else
@@ -724,6 +729,8 @@ public class OnboardingController : MonoBehaviour
         _isBusy = false;
         SetInactiveCoinsFrozen(false);
 
+        NotifyStepCompleted(completedStepIndex);
+
         if (step.isFinalStep)
         {
             _isCompletingOnboarding = true;
@@ -784,6 +791,12 @@ public class OnboardingController : MonoBehaviour
     {
         EnsureStepsCatalog();
         _hasBegunFirstStep = true;
+
+        if (stepIndex == 0)
+        {
+            NotifyOnboardingStarted();
+        }
+
         EnterStep(Mathf.Clamp(stepIndex, 0, _steps.Length - 1));
     }
 
@@ -973,7 +986,32 @@ public class OnboardingController : MonoBehaviour
 
     void CompleteOnboarding()
     {
+        NotifyOnboardingCompleted();
         OnboardingProgress.MarkCompleted();
         SceneManager.LoadScene(OnboardingSceneNames.MainMenu);
+    }
+
+    static void NotifyOnboardingStarted()
+    {
+        GameAnalytics.Track("onboarding_started");
+    }
+
+    static void NotifyStepCompleted(int stepIndex)
+    {
+        OnboardingStepDefinition[] steps = OnboardingDefaultSteps.Create();
+        string stepType = stepIndex >= 0 && stepIndex < steps.Length
+            ? steps[stepIndex].stepType.ToString().ToLowerInvariant()
+            : "unknown";
+
+        GameAnalytics.Track("onboarding_step_completed", new Dictionary<string, string>
+        {
+            { "step_index", stepIndex.ToString() },
+            { "step_type", stepType }
+        });
+    }
+
+    static void NotifyOnboardingCompleted()
+    {
+        GameAnalytics.Track("onboarding_completed");
     }
 }

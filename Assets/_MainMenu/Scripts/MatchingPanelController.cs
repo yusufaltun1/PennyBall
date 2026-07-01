@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -63,6 +64,12 @@ public class MatchingPanelController : MonoBehaviour
 
         isRunning = true;
         ResetUiState();
+
+        GameAnalytics.Track("matchmaking_started", new Dictionary<string, string>
+        {
+            { "league", LeagueService.Instance != null ? LeagueService.Instance.PlayerLeague.ToString() : "1" },
+            { "player_level", WalletService.Level.ToString() }
+        });
 
         if (matchmakingCoroutine != null)
         {

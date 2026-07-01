@@ -11,6 +11,7 @@ public static class WalletService
     static WalletData _data;
 
     public static event Action Changed;
+    public static event Action<int, int> LevelChanged;
 
     public static WalletData Data
     {
@@ -23,6 +24,11 @@ public static class WalletService
 
     public static int TotalCoins => Data.totalCoins;
     public static int TotalXp    => Data.totalXp;
+    public static int Level      => PlayerLevelProgression.GetLevelFromTotalXp(TotalXp);
+    public static int XpInCurrentLevel => PlayerLevelProgression.GetXpInCurrentLevel(TotalXp);
+    public static int XpToNextLevel    => PlayerLevelProgression.GetXpRequiredForNextLevel(Level);
+    public static float LevelProgress  => PlayerLevelProgression.GetProgressInCurrentLevel(TotalXp);
+    public static bool IsMaxLevel      => Level >= PlayerLevelProgression.MaxLevel;
 
     public static (int coins, int xp) GetReward(MatchResultType result)
     {
@@ -37,9 +43,15 @@ public static class WalletService
 
     public static void AddReward(int coins, int xp)
     {
+        int levelBefore = Level;
+
         Data.totalCoins += coins;
         Data.totalXp    += xp;
         WalletRepository.Save(Data);
         Changed?.Invoke();
+
+        int levelAfter = Level;
+        if (levelAfter > levelBefore)
+            LevelChanged?.Invoke(levelBefore, levelAfter);
     }
 }

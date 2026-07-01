@@ -100,7 +100,11 @@ public class ResultPanelController : MonoBehaviour
         if (earnedCoinsLabel != null)
             earnedCoinsLabel.text = $"+{MatchSessionContext.EarnedCoins}";
         if (earnedXpLabel != null)
-            earnedXpLabel.text = $"+{MatchSessionContext.EarnedXp} XP";
+        {
+            earnedXpLabel.text = MatchSessionContext.LeveledUp
+                ? $"+{MatchSessionContext.EarnedXp} XP  Seviye {MatchSessionContext.LevelAfter}!"
+                : $"+{MatchSessionContext.EarnedXp} XP";
+        }
 
         if (!gameObject.activeSelf)
             gameObject.SetActive(true);  // OnEnable fires → HandleOutcomeChange çalışır

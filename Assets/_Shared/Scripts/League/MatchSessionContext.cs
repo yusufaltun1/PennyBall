@@ -9,6 +9,9 @@ public static class MatchSessionContext
     public static int RankAfter   { get; private set; } = -1;
     public static int EarnedCoins { get; private set; } = 0;
     public static int EarnedXp    { get; private set; } = 0;
+    public static int LevelBefore { get; private set; } = 1;
+    public static int LevelAfter  { get; private set; } = 1;
+    public static bool LeveledUp  => LevelAfter > LevelBefore;
 
     public static void SetOpponent(BotPlayerEntry opponent)
     {
@@ -17,7 +20,13 @@ public static class MatchSessionContext
 
     public static void SetRankBefore(int rank)  => RankBefore  = rank;
     public static void SetRankAfter(int rank)   => RankAfter   = rank;
-    public static void SetEarnedRewards(int coins, int xp) { EarnedCoins = coins; EarnedXp = xp; }
+    public static void SetEarnedRewards(int coins, int xp, int levelBefore, int levelAfter)
+    {
+        EarnedCoins = coins;
+        EarnedXp = xp;
+        LevelBefore = levelBefore;
+        LevelAfter = levelAfter;
+    }
 
     public static void Clear()
     {
@@ -26,5 +35,7 @@ public static class MatchSessionContext
         RankAfter   = -1;
         EarnedCoins = 0;
         EarnedXp    = 0;
+        LevelBefore = 1;
+        LevelAfter  = 1;
     }
 }
