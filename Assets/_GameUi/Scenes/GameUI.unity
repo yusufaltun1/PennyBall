@@ -5221,7 +5221,7 @@ MonoBehaviour:
   _invalidMoveRoot: {fileID: 972722222}
   _counterText: {fileID: 286802105}
   _resettingGameRoot: {fileID: 1824388318}
-  _hideDelayAfterRollback: 1
+  _hideDelayAfterRollback: 0.5
   _resettingGameDisplayDuration: 1
 --- !u!1 &1128411230
 GameObject:
@@ -9862,7 +9862,7 @@ MonoBehaviour:
   _wallHitVolume: 0.85
   _coinHitVolume: 0.85
   _goalVolume: 0.5
-  _musicVolume: 0.3
+  _musicVolume: 0.75
   _coinHitMinSpeed: 0.35
   _vibrationEnabled: 1
   _coinHitDust:

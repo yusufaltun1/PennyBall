@@ -13,7 +13,7 @@ public class GameFeedback : MonoBehaviour
     [SerializeField] [Range(0f, 1f)] float _wallHitVolume = 0.85f;
     [SerializeField] [Range(0f, 1f)] float _coinHitVolume = 0.85f;
     [SerializeField] [Range(0f, 1f)] float _goalVolume = 0.5f;
-    [SerializeField] [Range(0f, 1f)] float _musicVolume = 0.3f;
+    [SerializeField] [Range(0f, 1f)] float _musicVolume = 0.45f;
     [SerializeField] float _coinHitMinSpeed = 0.35f;
     [SerializeField] bool _vibrationEnabled = true;
 
