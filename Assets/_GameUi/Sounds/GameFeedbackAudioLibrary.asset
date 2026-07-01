@@ -23,3 +23,6 @@ MonoBehaviour:
   horn: {fileID: 8300000, guid: 0ba19eecf3fff44a1a9997f52d6ab204, type: 3}
   whistle: {fileID: 8300000, guid: df8600ecb52004975afff88f74f251ee, type: 3}
   mainTheme: {fileID: 8300000, guid: 6a44f2f1450454316a76ca1e131bd163, type: 3}
+  Count1: {fileID: 8300000, guid: c23c43450a87449fc884d2fa6924e218, type: 3}
+  Count2: {fileID: 8300000, guid: b1940bfd808ed464a8861f2e362e0633, type: 3}
+  Count3: {fileID: 8300000, guid: f11bc1d9431f142a7943524b5769481c, type: 3}

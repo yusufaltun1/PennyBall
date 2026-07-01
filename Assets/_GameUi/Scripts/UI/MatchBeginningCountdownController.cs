@@ -13,6 +13,7 @@ public class MatchBeginningCountdownController : MonoBehaviour
     [SerializeField] Sprite _sprite3;
     [SerializeField] Sprite _sprite2;
     [SerializeField] Sprite _sprite1;
+    [SerializeField] Sprite _spriteWhistle;
     [SerializeField] GameFeedbackAudioLibrary _audioLibrary;
 
     [SerializeField] float _stepDuration = 1f;
@@ -119,6 +120,8 @@ public class MatchBeginningCountdownController : MonoBehaviour
                 _counterImage.sprite = sprites[i];
             }
 
+            PlayCountSound(3 - i);
+
             yield return AnimateBounce();
 
             float remaining = _stepDuration - _bounceDuration;
@@ -128,7 +131,21 @@ public class MatchBeginningCountdownController : MonoBehaviour
             }
         }
 
+        if (_counterImage != null && _spriteWhistle != null)
+        {
+            _counterImage.sprite = _spriteWhistle;
+        }
+
         PlayWhistle();
+
+        yield return AnimateBounce();
+
+        float whistleRemaining = _stepDuration - _bounceDuration;
+        if (whistleRemaining > 0f)
+        {
+            yield return new WaitForSecondsRealtime(whistleRemaining);
+        }
+
         HideBeginning();
 
         IsActive = false;
@@ -159,6 +176,28 @@ public class MatchBeginningCountdownController : MonoBehaviour
         }
 
         counterTransform.localScale = _counterBaseScale * _endScale;
+    }
+
+    void PlayCountSound(int count)
+    {
+        ResolveAudioLibrary();
+        if (_audioLibrary == null || _audioSource == null)
+        {
+            return;
+        }
+
+        AudioClip clip = count switch
+        {
+            3 => _audioLibrary.Count3,
+            2 => _audioLibrary.Count2,
+            1 => _audioLibrary.Count1,
+            _ => null
+        };
+
+        if (clip != null)
+        {
+            _audioSource.PlayOneShot(clip, 1f);
+        }
     }
 
     void PlayWhistle()

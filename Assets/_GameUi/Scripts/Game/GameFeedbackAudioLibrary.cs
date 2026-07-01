@@ -14,4 +14,7 @@ public class GameFeedbackAudioLibrary : ScriptableObject
     public AudioClip horn;
     public AudioClip whistle;
     public AudioClip mainTheme;
+    public AudioClip Count1;
+    public AudioClip Count2;
+    public AudioClip Count3;
 }

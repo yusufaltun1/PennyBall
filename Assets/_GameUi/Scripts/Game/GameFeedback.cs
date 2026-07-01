@@ -97,8 +97,6 @@ public class GameFeedback : MonoBehaviour
 
     void OnDestroy()
     {
-        UnsubscribeEvents();
-
         if (_dustMaterial != null && _coinHitDust.CustomMaterial == null)
         {
             Destroy(_dustMaterial);
@@ -126,48 +124,14 @@ public class GameFeedback : MonoBehaviour
         }
     }
 
-    void OnEnable()
-    {
-        SubscribeEvents();
-    }
-
-    void OnDisable()
-    {
-        UnsubscribeEvents();
-    }
-
     void Start()
     {
-        SubscribeEvents();
         StartBackgroundMusic();
-        PlayMatchStartBell();
-    }
-
-    void SubscribeEvents()
-    {
-        if (GameRulesManager.Instance != null)
-        {
-            GameRulesManager.Instance.RoundReset -= OnRoundReset;
-            GameRulesManager.Instance.RoundReset += OnRoundReset;
-        }
-    }
-
-    void UnsubscribeEvents()
-    {
-        if (GameRulesManager.Instance != null)
-        {
-            GameRulesManager.Instance.RoundReset -= OnRoundReset;
-        }
-    }
-
-    void OnRoundReset()
-    {
         PlayMatchStartBell();
     }
 
     public void RefreshEventSubscriptions()
     {
-        SubscribeEvents();
     }
 
     public void PlayShot(float power01)

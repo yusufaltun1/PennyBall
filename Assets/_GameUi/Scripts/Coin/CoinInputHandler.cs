@@ -36,7 +36,7 @@ public class CoinInputHandler : MonoBehaviour
 
     void Update()
     {
-        if (MatchBeginningCountdownController.IsActive)
+        if (MatchBeginningCountdownController.IsActive || MatchIntroCameraFlythrough.IsActive)
         {
             _cameraZoom?.SetDragState(0f);
             return;

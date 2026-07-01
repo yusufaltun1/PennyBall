@@ -105,6 +105,7 @@ public class MatchTimerPresenter : MonoBehaviour
         }
 
         UpdateDisplay(0);
+        GameFeedback.EnsureInstance()?.PlayWhistle();
         TimerExpired?.Invoke();
     }
 

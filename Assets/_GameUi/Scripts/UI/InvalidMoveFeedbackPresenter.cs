@@ -174,6 +174,8 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
         {
             _invalidMoveRoot.SetActive(true);
         }
+
+        PlayWhistle();
     }
 
     void HideInvalidMove()
@@ -190,6 +192,8 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
         {
             _resettingGameRoot.SetActive(true);
         }
+
+        PlayWhistle();
     }
 
     void HideResettingGame()
@@ -233,6 +237,14 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
             {
                 _resettingGameRoot = resettingGame;
             }
+        }
+    }
+
+    void PlayWhistle()
+    {
+        if (GameFeedback.Instance != null)
+        {
+            GameFeedback.Instance.PlayWhistle();
         }
     }
 }

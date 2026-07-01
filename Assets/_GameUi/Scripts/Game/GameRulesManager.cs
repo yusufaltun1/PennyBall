@@ -690,6 +690,11 @@ public class GameRulesManager : MonoBehaviour
         _isResolvingMove = false;
         _roundResetRoutine = null;
         RoundReset?.Invoke();
+
+        if (resetMatchProgress)
+        {
+            GameFeedback.EnsureInstance()?.PlayWhistle();
+        }
     }
 
     void PruneDestroyedRoundCoins()

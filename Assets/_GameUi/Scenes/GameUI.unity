@@ -6757,7 +6757,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OpponentBotController
   _aiStrength: 10
   _useInspectorAiStrength: 0
-  _turnThinkDelaySeconds: 1
+  _turnThinkDelaySeconds: 2.5
   _useInspectorTurnDelay: 1
   _difficulty:
     Level: 10
@@ -9350,6 +9350,7 @@ MonoBehaviour:
   _sprite3: {fileID: 21300000, guid: bff78508fb5134e16b95f332eab6a727, type: 3}
   _sprite2: {fileID: 21300000, guid: 29e6be949a2b649f58b653ba6a3cc520, type: 3}
   _sprite1: {fileID: 21300000, guid: 9466214b98f9e4e14be91dfe480cd38f, type: 3}
+  _spriteWhistle: {fileID: 21300000, guid: 4e1d20efb490e4a0abc64295f82b9b0e, type: 3}
   _audioLibrary: {fileID: 11400000, guid: c8d9e0f1a2b3c4d5e6f708192a3b4c5d, type: 2}
   _stepDuration: 1
   _bounceDuration: 0.45
@@ -9456,6 +9457,7 @@ GameObject:
   - component: {fileID: 8808235878063149795}
   - component: {fileID: 8808235878063149796}
   - component: {fileID: 8808235878063149797}
+  - component: {fileID: 8808235878063149799}
   m_Layer: 0
   m_Name: Camera
   m_TagString: Untagged
@@ -10368,6 +10370,23 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 65702495022897742}
   m_Enabled: 1
+--- !u!114 &8808235878063149799
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 65702495022897742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5c1a8f3e2b44719a6c0d4e7f8b9a1c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MatchIntroCameraFlythrough
+  _duration: 2.5
+  _startBackOffset: 1.8
+  _startUpOffset: 2
+  _startSideOffset: 0.45
+  _startLookBlend: 0.35
 --- !u!114 &9078750000982901856
 MonoBehaviour:
   m_ObjectHideFlags: 0
