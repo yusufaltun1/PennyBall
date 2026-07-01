@@ -108,6 +108,11 @@ public class CoinDragController : MonoBehaviour
         {
             gameObject.AddComponent<CoinGateIndicatorSettings>();
         }
+
+        if (GetComponent<CoinAimIndicatorSettings>() == null)
+        {
+            gameObject.AddComponent<CoinAimIndicatorSettings>();
+        }
     }
 
     void FixedUpdate()
@@ -411,6 +416,17 @@ public class CoinDragController : MonoBehaviour
         float power01 = Mathf.Clamp01(_rigidbody.linearVelocity.magnitude / _maxLaunchSpeed);
         GameFeedback.EnsureInstance()?.PlayShot(power01);
         return true;
+    }
+
+    public void ForceStopSliding()
+    {
+        if (_rigidbody == null)
+        {
+            return;
+        }
+
+        _rigidbody.linearVelocity = Vector3.zero;
+        _rigidbody.angularVelocity = Vector3.zero;
     }
 
     public void CancelAim()

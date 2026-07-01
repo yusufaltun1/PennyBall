@@ -12,6 +12,12 @@ public static class GameRulesBootstrap
             return;
         }
 
+        if (activeScene.name == GameSceneNames.Game && GameRulesManager.Instance != null)
+        {
+            GameRulesManager.Instance.PrepareForNewMatch();
+            return;
+        }
+
         if (GameRulesManager.Instance != null)
         {
             return;

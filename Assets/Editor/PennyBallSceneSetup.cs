@@ -38,6 +38,7 @@ public static class PennyBallSceneSetup
 
         GetOrAddComponent<CoinDragController>(prefabRoot);
         GetOrAddComponent<CoinAimIndicator>(prefabRoot);
+        GetOrAddComponent<CoinAimIndicatorSettings>(prefabRoot);
         GetOrAddComponent<CoinIdentity>(prefabRoot);
         GetOrAddComponent<CoinVisualState>(prefabRoot);
 

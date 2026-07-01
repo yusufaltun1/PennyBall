@@ -36,6 +36,12 @@ public class CoinInputHandler : MonoBehaviour
 
     void Update()
     {
+        if (MatchBeginningCountdownController.IsActive || MatchIntroCameraFlythrough.IsActive)
+        {
+            _cameraZoom?.SetDragState(0f);
+            return;
+        }
+
         if (!TryReadPointer(out Vector2 screenPosition, out bool isPressed, out bool pressedThisFrame, out bool releasedThisFrame))
         {
             _cameraZoom?.SetDragState(0f);
@@ -78,25 +84,34 @@ public class CoinInputHandler : MonoBehaviour
             CoinIdentity identity = releasedCoin.GetComponent<CoinIdentity>();
 
             releasedCoin.ReleaseAim();
+            GateIndicator.Instance?.Hide();
 
             if (identity != null && releasedCoin.IsSliding)
             {
-                GateIndicator.Instance?.PauseAnimation();
-
                 if (GameRulesManager.Instance != null)
                 {
                     GameRulesManager.Instance.OnShotReleased(identity);
                 }
-            }
-            else
-            {
-                GateIndicator.Instance?.Hide();
             }
 
             _activeCoin = null;
         }
 
         _cameraZoom?.SetDragState(pullRatio, sideRatio);
+    }
+
+    void LateUpdate()
+    {
+        if (_activeCoin != null)
+        {
+            return;
+        }
+
+        GateIndicator indicator = GateIndicator.Instance;
+        if (indicator != null && indicator.IsVisible)
+        {
+            indicator.Hide();
+        }
     }
 
     static bool TryReadPointer(
@@ -211,19 +226,7 @@ public class CoinInputHandler : MonoBehaviour
         }
 
         CoinGateIndicatorSettings settings = CoinGateIndicatorSettings.Resolve(shooterController);
-        Color lineColor = GetGateLineColor(shooterController);
-        indicator.Show(
-            gateA,
-            gateB,
-            lineColor,
-            settings,
-            animate: true);
-    }
-
-    static Color GetGateLineColor(CoinDragController shooterController)
-    {
-        CoinAimIndicator aimIndicator = shooterController.GetComponent<CoinAimIndicator>();
-        return aimIndicator != null ? aimIndicator.StartColor : new Color(0.506f, 0.325f, 0.796f, 1f);
+        indicator.Show(gateA, gateB, settings, animate: true);
     }
 
     bool TryGetTablePosition(Vector2 screenPosition, out Vector3 worldPosition)
