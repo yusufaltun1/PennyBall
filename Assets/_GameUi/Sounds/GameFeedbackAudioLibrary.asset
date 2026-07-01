@@ -16,4 +16,5 @@ MonoBehaviour:
   wallHitClip: {fileID: 8300000, guid: bd4849ae93e6b445e85b2aca474be65a, type: 3}
   coinHitClip: {fileID: 8300000, guid: 4c376884c75e9436b8a89bd5bb3db58e, type: 3}
   goalCelebrationClip: {fileID: 8300000, guid: 20dfaac09faec488db15da643bfd112b, type: 3}
+  enemyGoalCelebrationClip: {fileID: 8300000, guid: b43843ae6cff0404aaa44d45ad9f667d, type: 3}
   backgroundMusicClip: {fileID: 8300000, guid: 5ac87aeafac904eb0ae6f0e511e79d88, type: 3}

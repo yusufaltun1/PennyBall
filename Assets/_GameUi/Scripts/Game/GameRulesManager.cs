@@ -586,6 +586,21 @@ public class GameRulesManager : MonoBehaviour
         BeginRoundResetAfterGoal();
     }
 
+    public void HandleEnemyGoalCelebration()
+    {
+        OpponentBotController.Instance?.PauseForRoundReset();
+        GameFeedback.EnsureInstance()?.PlayEnemyGoal();
+
+        EnemyGoalEffectController effect = EnemyGoalEffectController.EnsureInstance();
+        if (effect != null && effect.CanPlay())
+        {
+            effect.Play(BeginRoundResetAfterGoal);
+            return;
+        }
+
+        BeginRoundResetAfterGoal();
+    }
+
     public void BeginRoundResetAfterGoal()
     {
         OpponentBotController.Instance?.PauseForRoundReset();

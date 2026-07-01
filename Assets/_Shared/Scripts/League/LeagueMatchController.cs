@@ -12,6 +12,7 @@ public class LeagueMatchController : MonoBehaviour
     float _matchTimeRemaining;
     bool _matchActive;
     bool _matchReported;
+    bool _matchTimerPaused;
     Coroutine _matchTimerRoutine;
 
     public int PlayerGoals => _playerGoals;
@@ -83,7 +84,10 @@ public class LeagueMatchController : MonoBehaviour
     void Subscribe()
     {
         GameRulesManager.Instance.PlayerGoalScored += OnPlayerGoal;
+        GameRulesManager.Instance.PlayerGoalScored += OnGoalScoredPauseTimer;
+        GameRulesManager.Instance.RoundReset += OnRoundResetResumeTimer;
         OpponentBotController.Instance.OpponentGoalScored += OnOpponentGoal;
+        OpponentBotController.Instance.OpponentGoalScored += OnGoalScoredPauseTimer;
     }
 
     void Unsubscribe()
@@ -91,12 +95,25 @@ public class LeagueMatchController : MonoBehaviour
         if (GameRulesManager.Instance != null)
         {
             GameRulesManager.Instance.PlayerGoalScored -= OnPlayerGoal;
+            GameRulesManager.Instance.PlayerGoalScored -= OnGoalScoredPauseTimer;
+            GameRulesManager.Instance.RoundReset -= OnRoundResetResumeTimer;
         }
 
         if (OpponentBotController.Instance != null)
         {
             OpponentBotController.Instance.OpponentGoalScored -= OnOpponentGoal;
+            OpponentBotController.Instance.OpponentGoalScored -= OnGoalScoredPauseTimer;
         }
+    }
+
+    void OnGoalScoredPauseTimer()
+    {
+        _matchTimerPaused = true;
+    }
+
+    void OnRoundResetResumeTimer()
+    {
+        _matchTimerPaused = false;
     }
 
     public void BeginMatch()
@@ -108,6 +125,7 @@ public class LeagueMatchController : MonoBehaviour
         _matchTimeRemaining = LeagueConfig.MatchDurationSeconds;
         _matchActive = true;
         _matchReported = false;
+        _matchTimerPaused = false;
 
         if (LeagueService.Instance == null)
         {
@@ -133,7 +151,11 @@ public class LeagueMatchController : MonoBehaviour
     {
         while (_matchActive && !_matchReported && _matchTimeRemaining > 0f)
         {
-            _matchTimeRemaining -= Time.deltaTime;
+            if (!_matchTimerPaused)
+            {
+                _matchTimeRemaining -= Time.deltaTime;
+            }
+
             yield return null;
         }
 

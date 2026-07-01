@@ -9,13 +9,27 @@ public class PlayerGoalEffectController : MonoBehaviour
 {
     public static PlayerGoalEffectController Instance { get; private set; }
 
+    static readonly string[] DefaultLetterOrder =
+    {
+        "Letter_G",
+        "Letter_O1",
+        "Letter_O2",
+        "Letter_A1",
+        "Letter_A2",
+        "Letter_L",
+        "Letter_Unlem",
+    };
+
     [Header("References")]
-    [SerializeField] RectTransform _goalImg;
+    [SerializeField] RectTransform _lettersRoot;
+    [SerializeField] RectTransform[] _waveLetters;
     [SerializeField] RectTransform _particleBurstRoot;
 
-    [Header("Goal Image")]
-    [SerializeField] float _goalScaleAnimationDuration = 1f;
-    [SerializeField] float _goalStartScale = 0.05f;
+    [Header("Letter Wave")]
+    [SerializeField] float _letterWaveTotalDuration = 2f;
+    [SerializeField, Range(0.1f, 0.95f)] float _nextLetterStartAtPeakProgress = 0.66f;
+    [SerializeField] float _letterPeakScale = 1.44f;
+    [SerializeField] int _lettersGroupPulseCount = 2;
 
     [Header("Burst Particles")]
     [SerializeField] int _particleCount = 28;
@@ -37,7 +51,8 @@ public class PlayerGoalEffectController : MonoBehaviour
 
     Coroutine _playRoutine;
     MonoBehaviour _routineHost;
-    Vector3 _goalTargetScale = Vector3.one;
+    Vector3[] _letterBaseScales = Array.Empty<Vector3>();
+    Vector3 _lettersRootBaseScale = Vector3.one;
     readonly List<ParticlePiece> _activeParticles = new();
 
     enum ParticleShape
@@ -56,7 +71,6 @@ public class PlayerGoalEffectController : MonoBehaviour
         public Vector2 BurstOffset;
         public Vector2 Velocity;
         public float SpinSpeed;
-        public float BaseSize;
     }
 
     public static PlayerGoalEffectController EnsureInstance()
@@ -78,7 +92,9 @@ public class PlayerGoalEffectController : MonoBehaviour
         }
 
         Instance = this;
-        CacheGoalTargetScale();
+        ResolveWaveLetters();
+        CacheLetterBaseScales();
+        CacheLettersRootBaseScale();
     }
 
     void OnDestroy()
@@ -118,34 +134,111 @@ public class PlayerGoalEffectController : MonoBehaviour
         _routineHost = null;
     }
 
-    void CacheGoalTargetScale()
+    void ResolveWaveLetters()
     {
-        if (_goalImg != null)
+        if (_waveLetters != null && _waveLetters.Length > 0)
         {
-            _goalTargetScale = _goalImg.localScale;
-            if (_goalTargetScale.sqrMagnitude < 0.0001f)
+            return;
+        }
+
+        if (_lettersRoot == null)
+        {
+            Transform letters = transform.Find("Letters");
+            if (letters != null)
             {
-                _goalTargetScale = Vector3.one;
+                _lettersRoot = letters as RectTransform;
             }
+        }
+
+        if (_lettersRoot == null)
+        {
+            return;
+        }
+
+        var resolved = new List<RectTransform>(DefaultLetterOrder.Length);
+        for (int i = 0; i < DefaultLetterOrder.Length; i++)
+        {
+            Transform letter = _lettersRoot.Find(DefaultLetterOrder[i]);
+            if (letter is RectTransform rect)
+            {
+                resolved.Add(rect);
+            }
+        }
+
+        if (resolved.Count > 0)
+        {
+            _waveLetters = resolved.ToArray();
+        }
+    }
+
+    void CacheLetterBaseScales()
+    {
+        if (_waveLetters == null || _waveLetters.Length == 0)
+        {
+            _letterBaseScales = Array.Empty<Vector3>();
+            return;
+        }
+
+        _letterBaseScales = new Vector3[_waveLetters.Length];
+        for (int i = 0; i < _waveLetters.Length; i++)
+        {
+            RectTransform letter = _waveLetters[i];
+            _letterBaseScales[i] = letter != null && letter.localScale.sqrMagnitude > 0.0001f
+                ? letter.localScale
+                : Vector3.one;
+        }
+    }
+
+    void CacheLettersRootBaseScale()
+    {
+        if (_lettersRoot == null)
+        {
+            Transform letters = transform.Find("Letters");
+            if (letters is RectTransform rect)
+            {
+                _lettersRoot = rect;
+            }
+        }
+
+        if (_lettersRoot != null && _lettersRoot.localScale.sqrMagnitude > 0.0001f)
+        {
+            _lettersRootBaseScale = _lettersRoot.localScale;
+        }
+        else
+        {
+            _lettersRootBaseScale = Vector3.one;
+        }
+    }
+
+    void ResetLettersRootScale()
+    {
+        if (_lettersRoot != null)
+        {
+            _lettersRoot.localScale = _lettersRootBaseScale;
         }
     }
 
     public bool CanPlay()
     {
-        return _goalImg != null;
+        ResolveWaveLetters();
+        return _waveLetters != null && _waveLetters.Length > 0;
     }
 
     public void Play(Action onComplete)
     {
-        if (_goalImg == null)
+        ResolveWaveLetters();
+        if (_waveLetters == null || _waveLetters.Length == 0)
         {
             onComplete?.Invoke();
             return;
         }
 
         StopActiveRoutine();
-        CacheGoalTargetScale();
+        CacheLetterBaseScales();
+        CacheLettersRootBaseScale();
         ClearParticles();
+        ResetLetterScales();
+        ResetLettersRootScale();
 
         if (_particleBurstRoot == null)
         {
@@ -155,7 +248,6 @@ public class PlayerGoalEffectController : MonoBehaviour
         EnsureParticleArea();
         gameObject.SetActive(true);
         transform.SetAsLastSibling();
-        _goalImg.localScale = _goalTargetScale * _goalStartScale;
 
         _routineHost = ResolveRoutineHost();
         if (_routineHost == null)
@@ -172,26 +264,21 @@ public class PlayerGoalEffectController : MonoBehaviour
     {
         SpawnBurstParticles();
 
+        float waveDuration = Mathf.Max(0.01f, _letterWaveTotalDuration);
         float elapsed = 0f;
-        while (elapsed < _goalScaleAnimationDuration)
+        while (elapsed < waveDuration)
         {
             elapsed += Time.unscaledDeltaTime;
-            float normalized = _goalScaleAnimationDuration <= 0f
-                ? 1f
-                : Mathf.Clamp01(elapsed / _goalScaleAnimationDuration);
-            float eased = EaseOutBounce(normalized);
-
-            _goalImg.localScale = Vector3.LerpUnclamped(
-                _goalTargetScale * _goalStartScale,
-                _goalTargetScale,
-                eased);
-
-            UpdateBurstParticles(eased);
+            ApplyLetterWave(elapsed);
+            UpdateBurstParticles(Mathf.Clamp01(elapsed / waveDuration));
             yield return null;
         }
 
-        _goalImg.localScale = _goalTargetScale;
+        ApplyLetterWave(waveDuration);
+        ResetLetterScales();
         UpdateBurstParticles(1f);
+
+        yield return LettersGroupPulseRoutine();
 
         yield return FallParticlesRoutine();
 
@@ -200,6 +287,124 @@ public class PlayerGoalEffectController : MonoBehaviour
         _playRoutine = null;
         _routineHost = null;
         onComplete?.Invoke();
+    }
+
+    float ComputeLetterCycleDuration(int letterCount)
+    {
+        if (letterCount <= 1)
+        {
+            return _letterWaveTotalDuration;
+        }
+
+        float overlap = Mathf.Clamp(_nextLetterStartAtPeakProgress, 0.1f, 0.95f);
+        float denominator = 1f + (letterCount - 1) * overlap * 0.5f;
+        return _letterWaveTotalDuration / denominator;
+    }
+
+    float ComputeLetterStagger(float letterCycleDuration)
+    {
+        return letterCycleDuration * 0.5f * Mathf.Clamp(_nextLetterStartAtPeakProgress, 0.1f, 0.95f);
+    }
+
+    void ApplyLetterWave(float elapsed)
+    {
+        int count = _waveLetters.Length;
+        float cycle = ComputeLetterCycleDuration(count);
+        float stagger = ComputeLetterStagger(cycle);
+
+        for (int i = 0; i < count; i++)
+        {
+            RectTransform letter = _waveLetters[i];
+            if (letter == null)
+            {
+                continue;
+            }
+
+            float localTime = elapsed - i * stagger;
+            float scaleMultiplier = EvaluateLetterScale(localTime, cycle, _letterPeakScale);
+            letter.localScale = _letterBaseScales[i] * scaleMultiplier;
+        }
+    }
+
+    static float EvaluateLetterScale(float localTime, float cycle, float peakScale)
+    {
+        if (localTime <= 0f || localTime >= cycle)
+        {
+            return 1f;
+        }
+
+        float normalized = localTime / cycle;
+        if (normalized < 0.5f)
+        {
+            float upProgress = normalized / 0.5f;
+            return Mathf.Lerp(1f, peakScale, SmoothStep(upProgress));
+        }
+
+        float downProgress = (normalized - 0.5f) / 0.5f;
+        return Mathf.Lerp(peakScale, 1f, SmoothStep(downProgress));
+    }
+
+    static float EvaluateInvertedLetterScale(float localTime, float cycle, float peakScale)
+    {
+        if (localTime <= 0f || localTime >= cycle)
+        {
+            return 1f;
+        }
+
+        float minScale = 1f / peakScale;
+        float normalized = localTime / cycle;
+        if (normalized < 0.5f)
+        {
+            float shrinkProgress = normalized / 0.5f;
+            return Mathf.Lerp(1f, minScale, SmoothStep(shrinkProgress));
+        }
+
+        float growProgress = (normalized - 0.5f) / 0.5f;
+        return Mathf.Lerp(minScale, 1f, SmoothStep(growProgress));
+    }
+
+    void ResetLetterScales()
+    {
+        if (_waveLetters == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < _waveLetters.Length; i++)
+        {
+            RectTransform letter = _waveLetters[i];
+            if (letter == null)
+            {
+                continue;
+            }
+
+            Vector3 baseScale = i < _letterBaseScales.Length ? _letterBaseScales[i] : Vector3.one;
+            letter.localScale = baseScale;
+        }
+    }
+
+    IEnumerator LettersGroupPulseRoutine()
+    {
+        if (_lettersRoot == null || _lettersGroupPulseCount <= 0)
+        {
+            yield break;
+        }
+
+        float pulseDuration = ComputeLetterCycleDuration(_waveLetters.Length);
+
+        for (int pulse = 0; pulse < _lettersGroupPulseCount; pulse++)
+        {
+            float elapsed = 0f;
+            while (elapsed < pulseDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float scaleMultiplier = EvaluateInvertedLetterScale(elapsed, pulseDuration, _letterPeakScale);
+                _lettersRoot.localScale = _lettersRootBaseScale * scaleMultiplier;
+                yield return null;
+            }
+        }
+
+        ResetLettersRootScale();
     }
 
     void EnsureParticleArea()
@@ -289,7 +494,6 @@ public class PlayerGoalEffectController : MonoBehaviour
                 Rect = rect,
                 Image = image,
                 BurstOffset = burstOffset,
-                BaseSize = size,
                 SpinSpeed = UnityEngine.Random.Range(-240f, 240f),
             });
         }
@@ -391,6 +595,11 @@ public class PlayerGoalEffectController : MonoBehaviour
         }
 
         _activeParticles.Clear();
+    }
+
+    static float SmoothStep(float t)
+    {
+        return t * t * (3f - 2f * t);
     }
 
     static Sprite GetShapeSprite(ParticleShape shape)

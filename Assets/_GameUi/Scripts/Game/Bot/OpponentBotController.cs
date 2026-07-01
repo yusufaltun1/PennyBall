@@ -297,12 +297,11 @@ public class OpponentBotController : MonoBehaviour
         if (shotValid && (_goalEnteredDuringShot || inGoal))
         {
             Debug.Log($"[Bot] {coin.gameObject.name} GOL");
-            GameFeedback.EnsureInstance()?.PlayGoal();
             _resolvingCoin = null;
             _isResolving = false;
             StopPlayLoop();
             InvokeOpponentGoalScoredSafely();
-            GameRulesManager.Instance?.BeginRoundResetAfterGoal();
+            GameRulesManager.Instance?.HandleEnemyGoalCelebration();
             yield break;
         }
 

@@ -7,5 +7,6 @@ public class GameFeedbackAudioLibrary : ScriptableObject
     public AudioClip wallHitClip;
     public AudioClip coinHitClip;
     public AudioClip goalCelebrationClip;
+    public AudioClip enemyGoalCelebrationClip;
     public AudioClip backgroundMusicClip;
 }
