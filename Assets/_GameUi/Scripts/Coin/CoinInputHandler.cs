@@ -59,9 +59,13 @@ public class CoinInputHandler : MonoBehaviour
             if (TryGetTablePosition(screenPosition, out Vector3 worldPosition))
             {
                 _activeCoin.UpdateAim(worldPosition);
-                Vector3 pullVec = worldPosition - _activeCoin.transform.position;
-                float   pull    = pullVec.magnitude;
-                pullRatio = Mathf.Clamp01(pull / _activeCoin.MaxPullDistance);
+                Vector3 pullVec = _activeCoin.transform.position - worldPosition;
+                pullVec.y = 0f;
+                float pull = pullVec.magnitude;
+                pullRatio = Mathf.InverseLerp(
+                    _activeCoin.MinPullDistance,
+                    _activeCoin.MaxPullDistance,
+                    pull);
                 // X ekseni = sağ/sol; ne kadar yataysa sideRatio o kadar büyük
                 Vector3 pullFlat = new Vector3(pullVec.x, 0f, pullVec.z);
                 if (pullFlat.sqrMagnitude > 0.0001f)
@@ -77,10 +81,16 @@ public class CoinInputHandler : MonoBehaviour
 
             if (identity != null && releasedCoin.IsSliding)
             {
+                GateIndicator.Instance?.PauseAnimation();
+
                 if (GameRulesManager.Instance != null)
                 {
                     GameRulesManager.Instance.OnShotReleased(identity);
                 }
+            }
+            else
+            {
+                GateIndicator.Instance?.Hide();
             }
 
             _activeCoin = null;
@@ -170,6 +180,7 @@ public class CoinInputHandler : MonoBehaviour
 
             _activeCoin = coin;
             _activeCoin.BeginAim();
+            TryShowGateIndicator(identity, coin);
 
             if (TryGetTablePosition(screenPosition, out Vector3 worldPosition))
             {
@@ -178,6 +189,42 @@ public class CoinInputHandler : MonoBehaviour
 
             return;
         }
+    }
+
+    void TryShowGateIndicator(CoinIdentity shooter, CoinDragController shooterController)
+    {
+        GateIndicator indicator = GateIndicator.Instance;
+        GameRulesManager rules = GameRulesManager.Instance;
+        if (indicator == null || rules == null)
+        {
+            return;
+        }
+
+        CoinGateIndicatorSettings settings = CoinGateIndicatorSettings.Resolve(shooterController);
+        int showFromShotNumber = settings != null ? settings.ShowFromShotNumber : 2;
+        if (rules.PlayerShotNumber < showFromShotNumber)
+        {
+            return;
+        }
+
+        if (!rules.TryGetGateCoins(shooter, out CoinIdentity gateA, out CoinIdentity gateB))
+        {
+            return;
+        }
+
+        Color lineColor = GetGateLineColor(shooterController);
+        indicator.Show(
+            gateA,
+            gateB,
+            lineColor,
+            settings,
+            animate: true);
+    }
+
+    static Color GetGateLineColor(CoinDragController shooterController)
+    {
+        CoinAimIndicator aimIndicator = shooterController.GetComponent<CoinAimIndicator>();
+        return aimIndicator != null ? aimIndicator.StartColor : new Color(0.506f, 0.325f, 0.796f, 1f);
     }
 
     bool TryGetTablePosition(Vector2 screenPosition, out Vector3 worldPosition)

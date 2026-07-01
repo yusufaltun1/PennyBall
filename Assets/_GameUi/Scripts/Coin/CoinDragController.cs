@@ -4,6 +4,7 @@ using UnityEngine;
 [RequireComponent(typeof(CoinAimIndicator))]
 [RequireComponent(typeof(CoinIdentity))]
 [RequireComponent(typeof(CoinVisualState))]
+[RequireComponent(typeof(CoinGateIndicatorSettings))]
 public class CoinDragController : MonoBehaviour
 {
     [SerializeField] float _launchForceMultiplier = 18f;
@@ -14,12 +15,23 @@ public class CoinDragController : MonoBehaviour
     [SerializeField] float _linearDamping = 2.5f;
     [SerializeField] float _angularDamping = 5f;
     [SerializeField] float _mass = 0.1f;
-    [SerializeField] float _wallBounceRetention = 0.9f;
-    [SerializeField] string _boundariesRootName = "Boundries";
+    [SerializeField] [Range(0.5f, 1.2f)] float _travelDistanceScale = 0.9f;
+
+    [Header("Collision Spin")]
+    [SerializeField] float _collisionSpinStrength = 1.5f;
+    [SerializeField] float _maxSpinSpeed = 1080f;
+    [SerializeField] float _spinDecay = 2f;
+    [SerializeField] float _minCollisionSpeedForSpin = 0.15f;
 
     Rigidbody _rigidbody;
     CoinAimIndicator _aimIndicator;
-    Transform _boundariesRoot;
+    readonly RaycastHit[] _wallHits = new RaycastHit[8];
+
+    Transform _spinVisual;
+    Quaternion _spinVisualBaseLocalRotation;
+    float _spinAngle;
+    float _spinSpeedDegrees;
+    float _coinCastRadius = 0.024f;
 
     Vector3 _anchorPosition;
     Vector3 _pullPosition;
@@ -44,9 +56,40 @@ public class CoinDragController : MonoBehaviour
         _rigidbody = GetComponent<Rigidbody>();
         _aimIndicator = GetComponent<CoinAimIndicator>();
         _tableHeight = transform.position.y;
-        CacheBoundariesRoot();
+        CacheCoinCastRadius();
+        CacheSpinVisual();
         ConfigureRigidbody();
         ApplyCoinPhysicsMaterial();
+    }
+
+    void CacheSpinVisual()
+    {
+        _spinVisual = transform.Find("Coin_Object");
+        if (_spinVisual == null)
+        {
+            MeshRenderer meshRenderer = GetComponentInChildren<MeshRenderer>();
+            if (meshRenderer != null)
+            {
+                _spinVisual = meshRenderer.transform;
+            }
+        }
+
+        if (_spinVisual != null)
+        {
+            _spinVisualBaseLocalRotation = _spinVisual.localRotation;
+        }
+    }
+
+    void CacheCoinCastRadius()
+    {
+        SphereCollider sphereCollider = GetComponentInChildren<SphereCollider>();
+        if (sphereCollider == null)
+        {
+            return;
+        }
+
+        float scale = sphereCollider.transform.lossyScale.x;
+        _coinCastRadius = Mathf.Max(sphereCollider.radius * scale, 0.005f);
     }
 
     void EnsureGameplayComponents()
@@ -60,98 +103,11 @@ public class CoinDragController : MonoBehaviour
         {
             gameObject.AddComponent<CoinVisualState>();
         }
-    }
 
-    void CacheBoundariesRoot()
-    {
-        GameObject boundaries = GameObject.Find(_boundariesRootName);
-        if (boundaries != null)
+        if (GetComponent<CoinGateIndicatorSettings>() == null)
         {
-            _boundariesRoot = boundaries.transform;
+            gameObject.AddComponent<CoinGateIndicatorSettings>();
         }
-    }
-
-    void OnCollisionEnter(Collision collision)
-    {
-        if (_rigidbody.isKinematic || _isAiming)
-        {
-            return;
-        }
-
-        if (IsBoundaryCollider(collision.collider))
-        {
-            return;
-        }
-
-        if (!IsWallLikeSurface(collision))
-        {
-            return;
-        }
-
-        ApplyBilliardBounce(collision);
-    }
-
-    bool IsWallLikeSurface(Collision collision)
-    {
-        if (collision.collider.GetComponentInParent<CoinDragController>() != null)
-        {
-            return false;
-        }
-
-        if (collision.contactCount == 0)
-        {
-            return false;
-        }
-
-        Vector3 normal = collision.GetContact(0).normal;
-        return Mathf.Abs(normal.y) < 0.65f;
-    }
-
-    bool IsBoundaryCollider(Collider collider)
-    {
-        if (_boundariesRoot == null)
-        {
-            CacheBoundariesRoot();
-        }
-
-        if (_boundariesRoot != null && collider.transform.IsChildOf(_boundariesRoot))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    void ApplyBilliardBounce(Collision collision)
-    {
-        if (collision.contactCount == 0)
-        {
-            return;
-        }
-
-        Vector3 normal = collision.GetContact(0).normal;
-        normal.y = 0f;
-        if (normal.sqrMagnitude < 0.0001f)
-        {
-            return;
-        }
-
-        normal.Normalize();
-
-        Vector3 velocity = _rigidbody.linearVelocity;
-        velocity.y = 0f;
-        if (velocity.sqrMagnitude < 0.01f)
-        {
-            return;
-        }
-
-        // Only bounce if moving INTO the wall; if already moving away, skip.
-        if (Vector3.Dot(velocity, normal) >= 0f)
-        {
-            return;
-        }
-
-        _rigidbody.linearVelocity = Vector3.Reflect(velocity, normal) * _wallBounceRetention;
     }
 
     void FixedUpdate()
@@ -162,6 +118,34 @@ public class CoinDragController : MonoBehaviour
         }
 
         LockToTablePlane();
+        UpdateVisualSpin();
+    }
+
+    void UpdateVisualSpin()
+    {
+        if (_spinVisual == null)
+        {
+            return;
+        }
+
+        if (Mathf.Abs(_spinSpeedDegrees) > 0.01f)
+        {
+            _spinAngle += _spinSpeedDegrees * Time.fixedDeltaTime;
+            float decay = Mathf.Exp(-_spinDecay * Time.fixedDeltaTime);
+            _spinSpeedDegrees *= decay;
+        }
+
+        ApplyVisualSpinRotation();
+    }
+
+    void ApplyVisualSpinRotation()
+    {
+        if (_spinVisual == null)
+        {
+            return;
+        }
+
+        _spinVisual.localRotation = _spinVisualBaseLocalRotation * Quaternion.AngleAxis(_spinAngle, Vector3.forward);
     }
 
     void LockToTablePlane()
@@ -169,15 +153,136 @@ public class CoinDragController : MonoBehaviour
         Vector3 velocity = _rigidbody.linearVelocity;
         velocity.y = 0f;
         _rigidbody.linearVelocity = velocity;
+    }
 
-        Vector3 angularVelocity = _rigidbody.angularVelocity;
-        angularVelocity.x = 0f;
-        angularVelocity.z = 0f;
-        _rigidbody.angularVelocity = angularVelocity;
+    void OnCollisionEnter(Collision collision)
+    {
+        PlayCollisionFeedback(collision);
 
-        Vector3 position = _rigidbody.position;
-        position.y = _tableHeight;
-        _rigidbody.position = position;
+        if (_rigidbody.isKinematic || _isAiming || _collisionSpinStrength <= 0f || _spinVisual == null)
+        {
+            return;
+        }
+
+        Vector3 relativeVelocity = collision.relativeVelocity;
+        relativeVelocity.y = 0f;
+        if (relativeVelocity.sqrMagnitude < _minCollisionSpeedForSpin * _minCollisionSpeedForSpin)
+        {
+            return;
+        }
+
+        float spinSpeed = CalculateCollisionSpinSpeed(collision, relativeVelocity);
+        ApplyCollisionSpin(spinSpeed);
+    }
+
+    void PlayCollisionFeedback(Collision collision)
+    {
+        if (_rigidbody.isKinematic || _isAiming)
+        {
+            return;
+        }
+
+        CoinDragController otherCoin = collision.collider.GetComponentInParent<CoinDragController>();
+        if (otherCoin != null && otherCoin != this)
+        {
+            if (GetInstanceID() > otherCoin.GetInstanceID())
+            {
+                return;
+            }
+
+            Vector3 relativeVelocity = collision.relativeVelocity;
+            relativeVelocity.y = 0f;
+            float speed = relativeVelocity.magnitude;
+            if (speed < 0.001f)
+            {
+                return;
+            }
+
+            Vector3 contactPoint = collision.contactCount > 0
+                ? collision.GetContact(0).point
+                : (transform.position + otherCoin.transform.position) * 0.5f;
+
+            GameFeedback.EnsureInstance()?.TryPlayCoinHit(
+                GetInstanceID(),
+                otherCoin.GetInstanceID(),
+                speed,
+                contactPoint);
+            return;
+        }
+
+        if (collision.collider.GetComponentInParent<BoundaryPhysics>() == null)
+        {
+            return;
+        }
+
+        Vector3 wallRelativeVelocity = collision.relativeVelocity;
+        wallRelativeVelocity.y = 0f;
+        float wallSpeed = wallRelativeVelocity.sqrMagnitude > 0.0001f
+            ? wallRelativeVelocity.magnitude
+            : _rigidbody.linearVelocity.magnitude;
+        if (wallSpeed < _minCollisionSpeedForSpin * 0.5f)
+        {
+            return;
+        }
+
+        Vector3 wallPoint = collision.contactCount > 0
+            ? collision.GetContact(0).point
+            : transform.position;
+        float intensity = Mathf.Clamp01(wallSpeed / _maxLaunchSpeed);
+        GameFeedback.EnsureInstance()?.PlayWallHit(intensity, wallPoint);
+    }
+
+    float CalculateCollisionSpinSpeed(Collision collision, Vector3 relativeVelocity)
+    {
+        float spinContribution = 0f;
+        int contactCount = collision.contactCount;
+        if (contactCount <= 0)
+        {
+            return 0f;
+        }
+
+        Vector3 impulse = collision.impulse;
+        impulse.y = 0f;
+
+        for (int i = 0; i < contactCount; i++)
+        {
+            ContactPoint contact = collision.GetContact(i);
+            Vector3 offset = contact.point - transform.position;
+            offset.y = 0f;
+            float radiusSq = offset.sqrMagnitude;
+            if (radiusSq < 0.000001f)
+            {
+                continue;
+            }
+
+            Vector3 selfPointVelocity = _rigidbody.GetPointVelocity(contact.point);
+            Vector3 otherPointVelocity = collision.rigidbody != null
+                ? collision.rigidbody.GetPointVelocity(contact.point)
+                : Vector3.zero;
+
+            Vector3 slipVelocity = selfPointVelocity - otherPointVelocity;
+            slipVelocity.y = 0f;
+
+            float impulseTorque = Vector3.Cross(offset, impulse).y / radiusSq;
+            float slipTorque = Vector3.Cross(offset, slipVelocity).y;
+            float glancingTorque = Vector3.Cross(offset.normalized, relativeVelocity).y;
+
+            spinContribution += impulseTorque + slipTorque + glancingTorque;
+        }
+
+        spinContribution /= contactCount;
+        float spinSpeedDegrees = spinContribution * _collisionSpinStrength / _coinCastRadius * Mathf.Rad2Deg;
+        return spinSpeedDegrees;
+    }
+
+    void ApplyCollisionSpin(float spinSpeedDegrees)
+    {
+        if (Mathf.Abs(spinSpeedDegrees) <= 0.01f)
+        {
+            return;
+        }
+
+        _spinSpeedDegrees = Mathf.Clamp(_spinSpeedDegrees + spinSpeedDegrees, -_maxSpinSpeed, _maxSpinSpeed);
     }
 
     void ApplyCoinPhysicsMaterial()
@@ -214,7 +319,15 @@ public class CoinDragController : MonoBehaviour
         _pullPosition = _anchorPosition;
 
         _rigidbody.isKinematic = true;
+        ResetVisualRotation();
         _aimIndicator.Hide();
+    }
+
+    public void ResetVisualRotation()
+    {
+        _spinAngle = 0f;
+        _spinSpeedDegrees = 0f;
+        ApplyVisualSpinRotation();
     }
 
     public void UpdateAim(Vector3 pullWorldPosition)
@@ -234,7 +347,11 @@ public class CoinDragController : MonoBehaviour
             return;
         }
 
-        _aimIndicator.UpdateVisual(_anchorPosition, _pullPosition, launchDirection, pullDistance);
+        float launchSpeed = Mathf.Min(pullDistance * _launchForceMultiplier, _maxLaunchSpeed);
+        float power01 = Mathf.InverseLerp(_minPullDistance, _maxPullDistance, pullDistance);
+        float travelDistance = EstimateTravelDistance(launchSpeed);
+        CoinAimIndicator.PathVisual path = BuildAimPath(_anchorPosition, launchDirection, travelDistance);
+        _aimIndicator.UpdateVisual(path, power01);
     }
 
     public void ReleaseAim()
@@ -286,7 +403,14 @@ public class CoinDragController : MonoBehaviour
 
         launchVelocity.y = 0f;
         _rigidbody.linearVelocity = Vector3.ClampMagnitude(launchVelocity, _maxLaunchSpeed);
-        return _rigidbody.linearVelocity.sqrMagnitude > 0.0001f;
+        if (_rigidbody.linearVelocity.sqrMagnitude <= 0.0001f)
+        {
+            return false;
+        }
+
+        float power01 = Mathf.Clamp01(_rigidbody.linearVelocity.magnitude / _maxLaunchSpeed);
+        GameFeedback.EnsureInstance()?.PlayShot(power01);
+        return true;
     }
 
     public void CancelAim()
@@ -332,5 +456,143 @@ public class CoinDragController : MonoBehaviour
     static Vector3 FlattenToTable(Vector3 position, float height)
     {
         return new Vector3(position.x, height, position.z);
+    }
+
+    float EstimateTravelDistance(float launchSpeed)
+    {
+        launchSpeed = Mathf.Clamp(launchSpeed, 0f, _maxLaunchSpeed);
+        if (launchSpeed <= _stopSpeedThreshold)
+        {
+            return 0f;
+        }
+
+        float distance = 0f;
+        float speed = launchSpeed;
+        float dt = Time.fixedDeltaTime > 0.0001f ? Time.fixedDeltaTime : 0.02f;
+        float dampingFactor = Mathf.Clamp01(1f - _linearDamping * dt);
+
+        for (int i = 0; i < 4000 && speed > _stopSpeedThreshold; i++)
+        {
+            distance += speed * dt;
+            speed *= dampingFactor;
+        }
+
+        return distance * _travelDistanceScale;
+    }
+
+    CoinAimIndicator.PathVisual BuildAimPath(Vector3 anchor, Vector3 direction, float totalDistance)
+    {
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f || totalDistance <= 0.0001f)
+        {
+            return new CoinAimIndicator.PathVisual(anchor, anchor, false, anchor);
+        }
+
+        direction.Normalize();
+
+        if (!TryFindWallHit(anchor, direction, totalDistance, out RaycastHit wallHit, out float distanceToWall))
+        {
+            Vector3 freeEnd = anchor + direction * totalDistance;
+            return new CoinAimIndicator.PathVisual(anchor, freeEnd, false, freeEnd);
+        }
+
+        Vector3 hitPoint = wallHit.point;
+        hitPoint.y = anchor.y;
+        float remainingDistance = totalDistance - distanceToWall;
+        if (remainingDistance <= 0.01f)
+        {
+            return new CoinAimIndicator.PathVisual(anchor, hitPoint, false, hitPoint);
+        }
+
+        if (!TryGetReflectionDirection(direction, wallHit.normal, out Vector3 reflectionDirection))
+        {
+            return new CoinAimIndicator.PathVisual(anchor, hitPoint, false, hitPoint);
+        }
+
+        Vector3 bounceEnd = hitPoint + reflectionDirection * remainingDistance;
+        return new CoinAimIndicator.PathVisual(anchor, hitPoint, true, bounceEnd);
+    }
+
+    bool TryFindWallHit(Vector3 anchor, Vector3 direction, float maxDistance, out RaycastHit closestHit, out float distanceFromAnchor)
+    {
+        closestHit = default;
+        distanceFromAnchor = 0f;
+
+        float castDistance = Mathf.Max(maxDistance - _coinCastRadius, 0f);
+        if (castDistance <= 0.0001f)
+        {
+            return false;
+        }
+
+        Vector3 castOrigin = anchor + direction * _coinCastRadius;
+        castOrigin.y = anchor.y;
+
+        int hitCount = Physics.RaycastNonAlloc(
+            castOrigin,
+            direction,
+            _wallHits,
+            castDistance,
+            Physics.DefaultRaycastLayers,
+            QueryTriggerInteraction.Ignore);
+
+        float closestDistance = float.MaxValue;
+        bool found = false;
+
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider hitCollider = _wallHits[i].collider;
+            if (hitCollider == null || hitCollider.transform.IsChildOf(transform))
+            {
+                continue;
+            }
+
+            if (hitCollider.GetComponentInParent<BoundaryPhysics>() == null)
+            {
+                continue;
+            }
+
+            if (_wallHits[i].distance >= closestDistance)
+            {
+                continue;
+            }
+
+            closestDistance = _wallHits[i].distance;
+            closestHit = _wallHits[i];
+            found = true;
+        }
+
+        if (!found)
+        {
+            return false;
+        }
+
+        distanceFromAnchor = _coinCastRadius + closestDistance;
+        Vector3 hitPoint = anchor + direction * distanceFromAnchor;
+        hitPoint.y = anchor.y;
+        closestHit.point = hitPoint;
+        return true;
+    }
+
+    static bool TryGetReflectionDirection(Vector3 incomingDirection, Vector3 surfaceNormal, out Vector3 reflectionDirection)
+    {
+        Vector3 normal = surfaceNormal;
+        normal.y = 0f;
+        if (normal.sqrMagnitude < 0.0001f)
+        {
+            reflectionDirection = Vector3.zero;
+            return false;
+        }
+
+        normal.Normalize();
+        reflectionDirection = Vector3.Reflect(incomingDirection, normal);
+        reflectionDirection.y = 0f;
+        if (reflectionDirection.sqrMagnitude < 0.0001f)
+        {
+            reflectionDirection = Vector3.zero;
+            return false;
+        }
+
+        reflectionDirection.Normalize();
+        return true;
     }
 }

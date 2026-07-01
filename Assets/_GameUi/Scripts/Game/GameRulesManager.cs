@@ -35,6 +35,12 @@ public class GameRulesManager : MonoBehaviour
     }
 
     public bool IsResolvingMove => _isResolvingMove;
+    public int PlayerShotNumber => _playerShotNumber;
+
+    public bool TryGetGateCoins(CoinIdentity shooter, out CoinIdentity gateA, out CoinIdentity gateB)
+    {
+        return TryGetGateCoinsInternal(shooter, out gateA, out gateB);
+    }
 
     /// <summary>Oyuncu hamlesi bittiğinde (gol reset hariç) tetiklenir.</summary>
     public event Action<CoinTeam> MoveResolved;
@@ -48,6 +54,15 @@ public class GameRulesManager : MonoBehaviour
     /// <summary>Oyuncu atışı çözüldüğünde tetiklenir (gol değilse).</summary>
     public event Action<CoinIdentity, bool> PlayerShotResolved;
 
+    /// <summary>Geçersiz hamle rollback animasyonu başladığında.</summary>
+    public event Action<CoinTeam> InvalidMoveRollbackStarted;
+
+    /// <summary>Geçersiz hamle rollback animasyonu bittiğinde.</summary>
+    public event Action<CoinTeam> InvalidMoveRollbackFinished;
+
+    /// <summary>Gate kuralına uyan geçerli atış tamamlandığında.</summary>
+    public event Action<CoinTeam> ValidShotCommitted;
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -59,6 +74,21 @@ public class GameRulesManager : MonoBehaviour
         Instance = this;
         BeginNewRound();
         DiscoverPlayerCoins();
+
+        if (GetComponent<GateIndicator>() == null)
+        {
+            gameObject.AddComponent<GateIndicator>();
+        }
+
+        if (GetComponent<GameFeedback>() == null)
+        {
+            gameObject.AddComponent<GameFeedback>();
+        }
+
+        if (GetComponent<GoalCelebration>() == null)
+        {
+            gameObject.AddComponent<GoalCelebration>();
+        }
     }
 
     void Start()
@@ -105,16 +135,7 @@ public class GameRulesManager : MonoBehaviour
         }
 
         ResolveOpeningCoin();
-
-        if (_isFirstPlayerMove)
-        {
-            for (int i = 0; i < _playerCoins.Count; i++)
-            {
-                SetCoinPassiveState(_playerCoins[i], false);
-            }
-
-            ApplyOpeningRestrictions();
-        }
+        ReconcilePlayerCoinPassiveState();
     }
 
     void CacheInitialPositions()
@@ -302,6 +323,7 @@ public class GameRulesManager : MonoBehaviour
         yield return WaitUntilCoinStops(coin.DragController, _shotPathSamples);
 
         bool shotValid;
+        bool pendingInvalidRollbackFinished = false;
         if (isOpeningShot)
         {
             _isFirstPlayerMove = false;
@@ -318,7 +340,9 @@ public class GameRulesManager : MonoBehaviour
             {
                 Debug.Log($"[Shot] {coin.gameObject.name} geçersiz — diğer iki coin arasından geçmedi");
                 UnlockCoin(coin);
+                InvalidMoveRollbackStarted?.Invoke(CoinTeam.Player);
                 yield return RollbackCoin(coin, _shotStartPosition);
+                pendingInvalidRollbackFinished = true;
                 shotValid = false;
             }
             else
@@ -329,13 +353,22 @@ public class GameRulesManager : MonoBehaviour
             }
         }
 
-        if (shotValid) _playerShotNumber++;
+        if (shotValid)
+        {
+            if (!isOpeningShot)
+            {
+                ValidShotCommitted?.Invoke(CoinTeam.Player);
+            }
+
+            _playerShotNumber++;
+        }
 
         bool inGoal = IsCoinInOpponentGoal(coin);
         if (shotValid && (_goalEnteredDuringShot || inGoal))
         {
             Debug.Log($"[Shot] {coin.gameObject.name} GOL | trigger={_goalEnteredDuringShot} | içerde={inGoal}");
             PlayerGoalScored?.Invoke();
+            GoalCelebration.Instance?.ShowGoal(playerScored: true);
             yield return ResetRoundAfterGoalRoutine();
             _resolvingShotCoin = null;
             _resolveRoutine = null;
@@ -346,8 +379,16 @@ public class GameRulesManager : MonoBehaviour
         _shotCoin = null;
         _isResolvingMove = false;
         _resolveRoutine = null;
+
+        if (pendingInvalidRollbackFinished)
+        {
+            InvalidMoveRollbackFinished?.Invoke(CoinTeam.Player);
+        }
+
         PlayerShotResolved?.Invoke(coin, shotValid);
         MoveResolved?.Invoke(CoinTeam.Player);
+        ReapplyWaitingCoinPassiveState();
+        EnsureAtLeastOnePlayerCoinSelectable();
     }
 
     static bool IsCoinInOpponentGoal(CoinIdentity coin)
@@ -399,6 +440,79 @@ public class GameRulesManager : MonoBehaviour
     {
         _waitingForOthers.Remove(coin);
         SetCoinPassiveState(coin, false);
+        EnsureAtLeastOnePlayerCoinSelectable();
+    }
+
+    void ReconcilePlayerCoinPassiveState()
+    {
+        if (_playerCoins.Count == 0)
+        {
+            return;
+        }
+
+        if (_isFirstPlayerMove)
+        {
+            for (int i = 0; i < _playerCoins.Count; i++)
+            {
+                SetCoinPassiveState(_playerCoins[i], false);
+            }
+
+            ApplyOpeningRestrictions();
+        }
+        else
+        {
+            for (int i = 0; i < _playerCoins.Count; i++)
+            {
+                CoinIdentity coin = _playerCoins[i];
+                SetCoinPassiveState(coin, _waitingForOthers.ContainsKey(coin));
+            }
+        }
+
+        EnsureAtLeastOnePlayerCoinSelectable();
+    }
+
+    void ReapplyWaitingCoinPassiveState()
+    {
+        for (int i = 0; i < _playerCoins.Count; i++)
+        {
+            CoinIdentity coin = _playerCoins[i];
+            SetCoinPassiveState(coin, _waitingForOthers.ContainsKey(coin));
+        }
+    }
+
+    void EnsureAtLeastOnePlayerCoinSelectable()
+    {
+        if (_playerCoins.Count == 0)
+        {
+            return;
+        }
+
+        int nonPassiveCount = 0;
+        for (int i = 0; i < _playerCoins.Count; i++)
+        {
+            if (!_playerCoins[i].IsPassive)
+            {
+                nonPassiveCount++;
+            }
+        }
+
+        if (nonPassiveCount > 0)
+        {
+            return;
+        }
+
+        Debug.LogWarning("[GameRules] Tüm player coinleri pasif — kilidi kaldırılıyor.");
+        _waitingForOthers.Clear();
+
+        for (int i = 0; i < _playerCoins.Count; i++)
+        {
+            SetCoinPassiveState(_playerCoins[i], false);
+        }
+
+        if (_isFirstPlayerMove)
+        {
+            ApplyOpeningRestrictions();
+        }
     }
 
     void SetCoinPassiveState(CoinIdentity coin, bool passive)
@@ -441,7 +555,7 @@ public class GameRulesManager : MonoBehaviour
             _gateMargin);
     }
 
-    bool TryGetGateCoins(CoinIdentity movingCoin, out CoinIdentity gateA, out CoinIdentity gateB)
+    bool TryGetGateCoinsInternal(CoinIdentity movingCoin, out CoinIdentity gateA, out CoinIdentity gateB)
     {
         gateA = null;
         gateB = null;
@@ -478,7 +592,7 @@ public class GameRulesManager : MonoBehaviour
             _rollbackDuration);
     }
 
-    IEnumerator ResetRoundAfterGoalRoutine()
+    IEnumerator ResetRoundAfterGoalRoutine(bool resetMatchProgress)
     {
         _isResolvingMove = true;
         _shotCoin = null;
@@ -504,11 +618,24 @@ public class GameRulesManager : MonoBehaviour
 
         yield return AnimateCoinsToPositions(_roundCoins, targetPositions, _goalResetDuration);
 
-        BeginNewRound();
+        if (resetMatchProgress)
+        {
+            BeginNewRound();
+        }
+        else
+        {
+            _waitingForOthers.Clear();
+        }
+
         DiscoverPlayerCoins();
 
         _isResolvingMove = false;
         RoundReset?.Invoke();
+    }
+
+    IEnumerator ResetRoundAfterGoalRoutine()
+    {
+        yield return ResetRoundAfterGoalRoutine(resetMatchProgress: true);
     }
 
     public void RequestRoundReset()
@@ -520,6 +647,17 @@ public class GameRulesManager : MonoBehaviour
         }
 
         StartCoroutine(ResetRoundAfterGoalRoutine());
+    }
+
+    public IEnumerator ResetAllCoinPositionsRoutine()
+    {
+        if (_resolveRoutine != null)
+        {
+            StopCoroutine(_resolveRoutine);
+            _resolveRoutine = null;
+        }
+
+        yield return ResetRoundAfterGoalRoutine(resetMatchProgress: false);
     }
 
     public IEnumerator AnimateCoinToPosition(CoinIdentity coin, Vector3 targetPosition, float duration)
@@ -553,6 +691,8 @@ public class GameRulesManager : MonoBehaviour
             {
                 dragController.CancelAim();
             }
+
+            dragController.ResetVisualRotation();
 
             if (!rigidbody.isKinematic)
             {
@@ -588,6 +728,7 @@ public class GameRulesManager : MonoBehaviour
             finalPosition.y = targetPositions[i].y;
             rigidbodies[i].position = finalPosition;
             rigidbodies[i].isKinematic = false;
+            coins[i].DragController.ResetVisualRotation();
         }
     }
 }

@@ -19,5 +19,6 @@ public static class GameRulesBootstrap
 
         var rulesObject = new GameObject("GameRules");
         rulesObject.AddComponent<GameRulesManager>();
+        rulesObject.AddComponent<GameFeedback>();
     }
 }

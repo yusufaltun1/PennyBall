@@ -11,6 +11,9 @@ public class CameraAimZoom : MonoBehaviour
     [Tooltip("Zoom in/out geçiş hızı")]
     [SerializeField, Range(1f, 20f)]     float _lerpSpeed   = 7f;
 
+    [Tooltip("Düşük çekmede az, max çekmeye yaklaşınca hızlı artan zoom eğrisi (1 = doğrusal, 2+ = gecikmeli)")]
+    [SerializeField, Range(1f, 5f)]      float _zoomCurveExponent = 2.75f;
+
     Vector3 _homePosition;
     float   _currentOffset;
     bool    _wasOffset;
@@ -51,8 +54,9 @@ public class CameraAimZoom : MonoBehaviour
     /// <param name="sideRatio">Çekim ne kadar yatay (sağ/sol): 0 = düz ileri/geri, 1 = tam yatay.</param>
     public void SetDragState(float pullRatio, float sideRatio = 0f)
     {
+        float easedPull = Mathf.Pow(Mathf.Clamp01(pullRatio), _zoomCurveExponent);
         float boost  = Mathf.Lerp(1f, _sideZoomBoost, sideRatio);
-        float target = _maxPullBack * Mathf.Clamp01(pullRatio) * boost;
+        float target = _maxPullBack * easedPull * boost;
         _currentOffset = Mathf.Lerp(_currentOffset, target, _lerpSpeed * Time.deltaTime);
     }
 }

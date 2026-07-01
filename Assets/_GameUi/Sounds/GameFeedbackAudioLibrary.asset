@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a2b8c14e5d4a6f9b0c1d2e3f4a5b6c, type: 3}
+  m_Name: GameFeedbackAudioLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::GameFeedbackAudioLibrary
+  kickClip: {fileID: 8300000, guid: 1edebe1d198814d29b67a86efc7f75ad, type: 3}
+  wallHitClip: {fileID: 8300000, guid: bd4849ae93e6b445e85b2aca474be65a, type: 3}
+  coinHitClip: {fileID: 8300000, guid: 4c376884c75e9436b8a89bd5bb3db58e, type: 3}
+  goalCelebrationClip: {fileID: 8300000, guid: 20dfaac09faec488db15da643bfd112b, type: 3}
+  backgroundMusicClip: {fileID: 8300000, guid: 5ac87aeafac904eb0ae6f0e511e79d88, type: 3}

@@ -12,23 +12,31 @@ public class GoalZone : MonoBehaviour
 
     void Awake()
     {
-        if (_autoDetectOwnerFromName && transform.parent != null)
+        if (_autoDetectOwnerFromName)
         {
-            DetectGoalOwnerFromName(transform.parent.name);
+            DetectGoalOwnerFromHierarchy();
         }
     }
 
-    void DetectGoalOwnerFromName(string kaleName)
+    void DetectGoalOwnerFromHierarchy()
     {
-        if (kaleName.Contains("_E"))
+        Transform current = transform;
+        while (current != null)
         {
-            _goalOwner = CoinTeam.Opponent;
-            return;
-        }
+            string kaleName = current.name;
+            if (kaleName.Contains("_E"))
+            {
+                _goalOwner = CoinTeam.Opponent;
+                return;
+            }
 
-        if (kaleName.Contains("_P"))
-        {
-            _goalOwner = CoinTeam.Player;
+            if (kaleName.Contains("_P"))
+            {
+                _goalOwner = CoinTeam.Player;
+                return;
+            }
+
+            current = current.parent;
         }
     }
 

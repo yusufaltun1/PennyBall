@@ -29,6 +29,10 @@ public class OpponentBotController : MonoBehaviour
 
     public event Action OpponentGoalScored;
 
+    public event Action<CoinTeam> InvalidMoveRollbackStarted;
+    public event Action<CoinTeam> InvalidMoveRollbackFinished;
+    public event Action<CoinTeam> ValidShotCommitted;
+
     public bool IsResolving => _isResolving;
 
     public string OpponentDisplayName =>
@@ -46,6 +50,11 @@ public class OpponentBotController : MonoBehaviour
         }
 
         Instance = this;
+
+        if (GameFeedback.Instance != null)
+        {
+            GameFeedback.Instance.RefreshEventSubscriptions();
+        }
     }
 
     void Start()
@@ -77,6 +86,7 @@ public class OpponentBotController : MonoBehaviour
     public void ResetRoundState()
     {
         StopPlayLoop();
+        ClearResolvingState();
         _roundShotNumber = 1;
         TeamRulesService.BeginNewRound(_state);
         TeamRulesService.DiscoverCoins(_state, "_E");
@@ -112,6 +122,14 @@ public class OpponentBotController : MonoBehaviour
     public void FreezeMatch()
     {
         StopPlayLoop();
+        ClearResolvingState();
+    }
+
+    void ClearResolvingState()
+    {
+        _resolvingCoin = null;
+        _isResolving = false;
+        _goalEnteredDuringShot = false;
     }
 
     IEnumerator PlayLoopRoutine()
@@ -176,6 +194,7 @@ public class OpponentBotController : MonoBehaviour
         yield return WaitUntilCoinStops(coin.DragController, _pathSamples);
 
         bool shotValid;
+        bool pendingInvalidRollbackFinished = false;
         if (isOpeningShot)
         {
             _state.IsFirstMove = false;
@@ -198,7 +217,9 @@ public class OpponentBotController : MonoBehaviour
                 Debug.Log($"[Bot] {coin.gameObject.name} GEÇERSİZ — kapıdan geçemedi | " +
                           $"son pozisyon={coin.transform.position:F2}");
                 TeamRulesService.UnlockCoin(_state, coin, SetCoinPassive);
+                InvalidMoveRollbackStarted?.Invoke(CoinTeam.Opponent);
                 yield return RollbackCoin(coin, _shotStartPosition);
+                pendingInvalidRollbackFinished = true;
                 shotValid = false;
             }
             else
@@ -209,13 +230,22 @@ public class OpponentBotController : MonoBehaviour
             }
         }
 
-        if (shotValid) _roundShotNumber++;
+        if (shotValid)
+        {
+            if (!isOpeningShot)
+            {
+                ValidShotCommitted?.Invoke(CoinTeam.Opponent);
+            }
+
+            _roundShotNumber++;
+        }
 
         bool inGoal = IsCoinInPlayerGoal(coin);
         if (shotValid && (_goalEnteredDuringShot || inGoal))
         {
             Debug.Log($"[Bot] {coin.gameObject.name} GOL");
             OpponentGoalScored?.Invoke();
+            GoalCelebration.Instance?.ShowGoal(playerScored: false);
             _resolvingCoin = null;
             _isResolving = false;
             StopPlayLoop();
@@ -229,6 +259,18 @@ public class OpponentBotController : MonoBehaviour
 
         _resolvingCoin = null;
         _isResolving = false;
+
+        if (pendingInvalidRollbackFinished)
+        {
+            InvalidMoveRollbackFinished?.Invoke(CoinTeam.Opponent);
+        }
+
+        TeamRulesService.ReapplyPassiveFromWaiting(_state, SetCoinPassive);
+        TeamRulesService.EnsureAtLeastOneSelectable(
+            _state,
+            SetCoinPassive,
+            _state.IsFirstMove,
+            () => TeamRulesService.ApplyOpeningRestrictions(_state, SetCoinPassive));
     }
 
     IEnumerator WaitUntilCoinStops(CoinDragController coin, List<Vector3> pathSamples)

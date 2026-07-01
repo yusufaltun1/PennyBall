@@ -13,12 +13,9 @@ public class OnboardingCoinDragController : MonoBehaviour
     [SerializeField] float _linearDamping = 2f;
     [SerializeField] float _angularDamping = 5f;
     [SerializeField] float _mass = 0.1f;
-    [SerializeField] float _wallBounceRetention = 0.9f;
-    [SerializeField] string _boundariesRootName = "Boundries";
 
     Rigidbody _rigidbody;
     OnboardingAimIndicator _aimIndicator;
-    Transform _boundariesRoot;
 
     Vector3 _anchorPosition;
     Vector3 _pullPosition;
@@ -43,95 +40,8 @@ public class OnboardingCoinDragController : MonoBehaviour
         _rigidbody = GetComponent<Rigidbody>();
         _aimIndicator = GetComponent<OnboardingAimIndicator>();
         _tableHeight = transform.position.y;
-        CacheBoundariesRoot();
         ConfigureRigidbody();
         ApplyCoinPhysicsMaterial();
-    }
-
-    void CacheBoundariesRoot()
-    {
-        GameObject boundaries = GameObject.Find(_boundariesRootName);
-        if (boundaries != null)
-        {
-            _boundariesRoot = boundaries.transform;
-        }
-    }
-
-    void OnCollisionEnter(Collision collision)
-    {
-        if (_rigidbody.isKinematic || _isAiming)
-        {
-            return;
-        }
-
-        if (IsBoundaryCollider(collision.collider))
-        {
-            return;
-        }
-
-        if (!IsWallLikeSurface(collision))
-        {
-            return;
-        }
-
-        ApplyBilliardBounce(collision);
-    }
-
-    bool IsWallLikeSurface(Collision collision)
-    {
-        if (collision.collider.GetComponentInParent<OnboardingCoinDragController>() != null)
-        {
-            return false;
-        }
-
-        if (collision.contactCount == 0)
-        {
-            return false;
-        }
-
-        Vector3 normal = collision.GetContact(0).normal;
-        return Mathf.Abs(normal.y) < 0.65f;
-    }
-
-    bool IsBoundaryCollider(Collider collider)
-    {
-        if (_boundariesRoot == null)
-        {
-            CacheBoundariesRoot();
-        }
-
-        return _boundariesRoot != null && collider.transform.IsChildOf(_boundariesRoot);
-    }
-
-    void ApplyBilliardBounce(Collision collision)
-    {
-        if (collision.contactCount == 0)
-        {
-            return;
-        }
-
-        Vector3 normal = collision.GetContact(0).normal;
-        normal.y = 0f;
-        if (normal.sqrMagnitude < 0.0001f)
-        {
-            return;
-        }
-
-        normal.Normalize();
-
-        Vector3 velocity = _rigidbody.linearVelocity;
-        velocity.y = 0f;
-        if (velocity.sqrMagnitude < 0.01f)
-        {
-            return;
-        }
-
-        if (Vector3.Dot(velocity, normal) > 0f)
-        {
-            normal = -normal;
-        }
-
-        _rigidbody.linearVelocity = Vector3.Reflect(velocity, normal) * _wallBounceRetention;
     }
 
     void FixedUpdate()
@@ -154,10 +64,6 @@ public class OnboardingCoinDragController : MonoBehaviour
         angularVelocity.x = 0f;
         angularVelocity.z = 0f;
         _rigidbody.angularVelocity = angularVelocity;
-
-        Vector3 position = _rigidbody.position;
-        position.y = _tableHeight;
-        _rigidbody.position = position;
     }
 
     void ApplyCoinPhysicsMaterial()

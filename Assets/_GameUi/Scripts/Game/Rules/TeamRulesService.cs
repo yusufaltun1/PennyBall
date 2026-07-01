@@ -127,6 +127,54 @@ public static class TeamRulesService
         setPassive(coin, false);
     }
 
+    public static void ReapplyPassiveFromWaiting(TeamRoundState state, Action<CoinIdentity, bool> setPassive)
+    {
+        for (int i = 0; i < state.Coins.Count; i++)
+        {
+            CoinIdentity coin = state.Coins[i];
+            setPassive(coin, state.WaitingForOthers.ContainsKey(coin));
+        }
+    }
+
+    public static void EnsureAtLeastOneSelectable(
+        TeamRoundState state,
+        Action<CoinIdentity, bool> setPassive,
+        bool isFirstMove,
+        Action applyOpeningRestrictions)
+    {
+        if (state.Coins.Count == 0)
+        {
+            return;
+        }
+
+        int nonPassiveCount = 0;
+        for (int i = 0; i < state.Coins.Count; i++)
+        {
+            if (!state.Coins[i].IsPassive)
+            {
+                nonPassiveCount++;
+            }
+        }
+
+        if (nonPassiveCount > 0)
+        {
+            return;
+        }
+
+        Debug.LogWarning("[TeamRules] Tüm coinler pasif — kilidi kaldırılıyor.");
+        state.WaitingForOthers.Clear();
+
+        for (int i = 0; i < state.Coins.Count; i++)
+        {
+            setPassive(state.Coins[i], false);
+        }
+
+        if (isFirstMove && applyOpeningRestrictions != null)
+        {
+            applyOpeningRestrictions();
+        }
+    }
+
     public static void RegisterSuccessfulShot(
         TeamRoundState state,
         CoinIdentity movedCoin,

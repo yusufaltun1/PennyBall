@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 6498795458950903796}
   - component: {fileID: 4829173640582937145}
   - component: {fileID: 5930284751693048256}
+  - component: {fileID: 7283940516273849501}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -47,7 +48,7 @@ Rigidbody:
   m_GameObject: {fileID: 291418687983328524}
   serializedVersion: 5
   m_Mass: 1
-  m_LinearDamping: 0
+  m_LinearDamping: 3
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
@@ -63,7 +64,7 @@ Rigidbody:
   m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 1
-  m_Constraints: 116
+  m_Constraints: 84
   m_CollisionDetection: 2
 --- !u!114 &6696761547977650908
 MonoBehaviour:
@@ -77,16 +78,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd18b15a27e6b4804af20ee2e3616f2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinDragController
-  _launchForceMultiplier: 4
-  _maxLaunchSpeed: 8
+  _launchForceMultiplier: 10
+  _maxLaunchSpeed: 20
   _maxPullDistance: 0.35
-  _minPullDistance: 0.025
+  _minPullDistance: 0.05
   _stopSpeedThreshold: 0.05
-  _linearDamping: 2
+  _linearDamping: 5
   _angularDamping: 5
   _mass: 0.1
-  _wallBounceRetention: 0.9
-  _boundariesRootName: Boundries
+  _travelDistanceScale: 0.9
+  _collisionSpinStrength: 6
+  _maxSpinSpeed: 360
+  _spinDecay: 4
+  _minCollisionSpeedForSpin: 0.15
 --- !u!114 &6498795458950903796
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -99,10 +103,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6faaa7fcb4c484dce8dc6b4ef0912aa5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinAimIndicator
-  _lineHeightOffset: 0.003
-  _lineWidth: 0.006
-  _pullLineColor: {r: 1, g: 0.45, b: 0.2, a: 0}
-  _aimLineColor: {r: 0.2, g: 0.95, b: 0.45, a: 0.95}
+  _lineHeightOffset: 0
+  _lineWidth: 0.05
+  _weakPowerColor: {r: 0.5058824, g: 0.3254902, b: 0.79607844, a: 1}
+  _maxPowerColor: {r: 0.55, g: 0.04, b: 0.04, a: 0.95}
+  _endAlphaFactor: 0.5
+  _bounceAlphaFactor: 0.75
 --- !u!114 &4829173640582937145
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -135,6 +141,28 @@ MonoBehaviour:
   _enemyDisabled:
     outerColor: {r: 1, g: 0.0625, b: 0, a: 1}
     innerColor: {r: 1, g: 0.79607844, b: 0, a: 1}
+--- !u!114 &7283940516273849501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 291418687983328524}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8b1c4d72f3a4b5c9d0e1f2a3b4c5d6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinGateIndicatorSettings
+  _lineHeightOffset: 0.004
+  _lineWidth: 0.01
+  _dashLength: 0.025
+  _dashGap: 0.04
+  _animationSpeed: 0.01
+  _glowWidthMultiplier: 2.4
+  _glowAlpha: 0.4
+  _glowPulseSpeed: 0.001
+  _glowPulseAmount: 0.12
+  _showFromShotNumber: 2
 --- !u!1 &6853097355249902552
 GameObject:
   m_ObjectHideFlags: 0
@@ -161,13 +189,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6853097355249902552}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.00000017881392, y: -0.000000104308114, z: 0.3490534, w: -0.9371029}
-  m_LocalPosition: {x: -0.000000012780672, y: -0.0000000071729094, z: -1.1368684e-15}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
+  m_LocalPosition: {x: -0.000000012780672, y: -0.0000000071729, z: -1e-15}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 0.75}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3600200798398696661}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 319.141}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 180}
 --- !u!33 &7205509290170889927
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -235,7 +263,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8837462518392847562}
-  - component: {fileID: 7315651577823593281}
   - component: {fileID: 4305688374281749209}
   m_Layer: 0
   m_Name: Coin_Physics
@@ -252,23 +279,15 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8837462518392847561}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.0005921232, y: 0.00009501727, z: 0.0005921232}
+  m_LocalScale: {x: 0.00048221328, y: 0.00048221328, z: 0.00048221328}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3600200798398696661}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
---- !u!33 &7315651577823593281
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8837462518392847561}
-  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
---- !u!64 &4305688374281749209
-MeshCollider:
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &4305688374281749209
+SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -285,7 +304,6 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+  serializedVersion: 3
+  m_Radius: 0.5
+  m_Center: {x: 0, y: 0, z: 0}

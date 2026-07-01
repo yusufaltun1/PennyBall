@@ -10,7 +10,7 @@ public class OpponentPlayerGoalListener : MonoBehaviour
 {
     void OnTriggerEnter(Collider other)
     {
-        if (transform.parent == null || !transform.parent.name.Contains("_P"))
+        if (transform.parent == null || !IsUnderPlayerGoal())
         {
             return;
         }
@@ -25,5 +25,21 @@ public class OpponentPlayerGoalListener : MonoBehaviour
         {
             OpponentBotController.Instance.NotifyGoalEntered(coin);
         }
+    }
+
+    bool IsUnderPlayerGoal()
+    {
+        Transform current = transform;
+        while (current != null)
+        {
+            if (current.name.Contains("Kale_P"))
+            {
+                return true;
+            }
+
+            current = current.parent;
+        }
+
+        return false;
     }
 }
