@@ -29,7 +29,6 @@ public static class TeamRulesService
     {
         state.IsFirstMove = true;
         state.OpeningCoin = null;
-        state.WaitingForOthers.Clear();
     }
 
     public static void ResolveOpeningCoin(TeamRoundState state)
@@ -106,7 +105,7 @@ public static class TeamRulesService
         for (int i = 0; i < state.Coins.Count; i++)
         {
             CoinIdentity coin = state.Coins[i];
-            if (coin == state.OpeningCoin || state.WaitingForOthers.ContainsKey(coin))
+            if (coin == state.OpeningCoin)
             {
                 continue;
             }
@@ -115,32 +114,23 @@ public static class TeamRulesService
         }
     }
 
-    public static void LockCoinUntilOthersMoved(TeamRoundState state, CoinIdentity coin, Action<CoinIdentity, bool> setPassive)
+    public static void UnlockAllCoins(TeamRoundState state, Action<CoinIdentity, bool> setPassive)
     {
-        state.WaitingForOthers[coin] = new HashSet<CoinIdentity>();
-        setPassive(coin, true);
-    }
+        if (state.IsFirstMove)
+        {
+            ApplyOpeningRestrictions(state, setPassive);
+            return;
+        }
 
-    public static void UnlockCoin(TeamRoundState state, CoinIdentity coin, Action<CoinIdentity, bool> setPassive)
-    {
-        state.WaitingForOthers.Remove(coin);
-        setPassive(coin, false);
-    }
-
-    public static void ReapplyPassiveFromWaiting(TeamRoundState state, Action<CoinIdentity, bool> setPassive)
-    {
         for (int i = 0; i < state.Coins.Count; i++)
         {
-            CoinIdentity coin = state.Coins[i];
-            setPassive(coin, state.WaitingForOthers.ContainsKey(coin));
+            setPassive(state.Coins[i], false);
         }
     }
 
     public static void EnsureAtLeastOneSelectable(
         TeamRoundState state,
-        Action<CoinIdentity, bool> setPassive,
-        bool isFirstMove,
-        Action applyOpeningRestrictions)
+        Action<CoinIdentity, bool> setPassive)
     {
         if (state.Coins.Count == 0)
         {
@@ -161,46 +151,7 @@ public static class TeamRulesService
             return;
         }
 
-        Debug.LogWarning("[TeamRules] Tüm coinler pasif — kilidi kaldırılıyor.");
-        state.WaitingForOthers.Clear();
-
-        for (int i = 0; i < state.Coins.Count; i++)
-        {
-            setPassive(state.Coins[i], false);
-        }
-
-        if (isFirstMove && applyOpeningRestrictions != null)
-        {
-            applyOpeningRestrictions();
-        }
-    }
-
-    public static void RegisterSuccessfulShot(
-        TeamRoundState state,
-        CoinIdentity movedCoin,
-        Action<CoinIdentity, bool> setPassive)
-    {
-        for (int i = 0; i < state.Coins.Count; i++)
-        {
-            CoinIdentity waitingCoin = state.Coins[i];
-            if (waitingCoin == movedCoin || !waitingCoin.IsPassive)
-            {
-                continue;
-            }
-
-            if (!state.WaitingForOthers.TryGetValue(waitingCoin, out HashSet<CoinIdentity> movedOthers))
-            {
-                continue;
-            }
-
-            movedOthers.Add(movedCoin);
-            // Başka herhangi 1 coin hareket edince kilidi aç
-            if (movedOthers.Count >= 1)
-            {
-                state.WaitingForOthers.Remove(waitingCoin);
-                setPassive(waitingCoin, false);
-            }
-        }
+        UnlockAllCoins(state, setPassive);
     }
 
     public static bool ValidatePassBetween(

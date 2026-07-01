@@ -13,7 +13,7 @@ public class GameFeedback : MonoBehaviour
     [SerializeField] [Range(0f, 1f)] float _wallHitVolume = 0.85f;
     [SerializeField] [Range(0f, 1f)] float _coinHitVolume = 0.85f;
     [SerializeField] [Range(0f, 1f)] float _goalVolume = 0.5f;
-    [SerializeField] [Range(0f, 1f)] float _musicVolume = 0.3f;
+    [SerializeField] [Range(0f, 1f)] float _musicVolume = 0.45f;
     [SerializeField] float _coinHitMinSpeed = 0.35f;
 
     [Header("Coin Hit Dust")]
@@ -27,6 +27,7 @@ public class GameFeedback : MonoBehaviour
     AudioClip _wallClip;
     AudioClip _coinClip;
     AudioClip _goalClip;
+    AudioClip _enemyGoalClip;
     AudioClip _musicClip;
 
     float _lastShotSfx;
@@ -49,6 +50,16 @@ public class GameFeedback : MonoBehaviour
             return Instance;
         }
 
+        if (GameRulesManager.Instance != null)
+        {
+            GameFeedback onRules = GameRulesManager.Instance.GetComponent<GameFeedback>();
+            if (onRules != null)
+            {
+                onRules.StartBackgroundMusic();
+                return onRules;
+            }
+        }
+
         GameFeedback existing = FindFirstObjectByType<GameFeedback>();
         if (existing != null)
         {
@@ -68,6 +79,15 @@ public class GameFeedback : MonoBehaviour
         }
 
         Instance = this;
+
+        if (GetComponent<GameRulesManager>() != null)
+        {
+            EnsureAudioListener();
+            SetupAudio();
+            SetupDust();
+            return;
+        }
+
         DontDestroyOnLoad(gameObject);
         SeedDefaultSettingsIfNeeded();
         EnsureAudioListener();
@@ -78,8 +98,6 @@ public class GameFeedback : MonoBehaviour
 
     void OnDestroy()
     {
-        UnsubscribeEvents();
-
         if (_dustMaterial != null && _coinHitDust.CustomMaterial == null)
         {
             Destroy(_dustMaterial);
@@ -185,7 +203,6 @@ public class GameFeedback : MonoBehaviour
 
     public void RefreshEventSubscriptions()
     {
-        SubscribeEvents();
     }
 
     public void PlayShot(float power01)
@@ -276,6 +293,25 @@ public class GameFeedback : MonoBehaviour
         Vibrate(Time.unscaledTime, 0.12f, ref _lastShotVibe);
     }
 
+    public void PlayEnemyGoal()
+    {
+        if (_goalSource == null || _enemyGoalClip == null)
+        {
+            return;
+        }
+
+        if (_goalSource.isPlaying)
+        {
+            _goalSource.Stop();
+        }
+
+        _goalSource.clip = _enemyGoalClip;
+        _goalSource.volume = _masterVolume * _goalVolume;
+        _goalSource.pitch = 1f;
+        _goalSource.Play();
+        Vibrate(Time.unscaledTime, 0.12f, ref _lastShotVibe);
+    }
+
     public void PlayMatchStartBell()
     {
         if (_wallClip == null || !GameFeedbackSettingsService.SoundEffectsEnabled)
@@ -303,6 +339,24 @@ public class GameFeedback : MonoBehaviour
         _musicSource.Play();
     }
 
+    public void StopBackgroundMusic()
+    {
+        if (_musicSource != null)
+        {
+            _musicSource.Stop();
+        }
+    }
+
+    public void PlayWhistle()
+    {
+        if (_audioLibrary == null || _audioLibrary.whistle == null || _sfxSource == null)
+        {
+            return;
+        }
+
+        _sfxSource.PlayOneShot(_audioLibrary.whistle, _masterVolume);
+    }
+
     void SetupAudio()
     {
         _sfxSource = gameObject.AddComponent<AudioSource>();
@@ -327,6 +381,7 @@ public class GameFeedback : MonoBehaviour
             _wallClip = _audioLibrary.wallHitClip;
             _coinClip = _audioLibrary.coinHitClip;
             _goalClip = _audioLibrary.goalCelebrationClip;
+            _enemyGoalClip = _audioLibrary.enemyGoalCelebrationClip;
             _musicClip = _audioLibrary.backgroundMusicClip;
         }
 

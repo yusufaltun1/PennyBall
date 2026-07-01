@@ -1,17 +1,18 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 [DisallowMultipleComponent]
 public class GateIndicator : MonoBehaviour
 {
-    const int MaxDashSegments = 32;
-
-    readonly List<LineRenderer> _dashLines = new(MaxDashSegments);
+    const int DashTextureResolution = 64;
 
     LineRenderer _glowLine;
-    Material _dashMaterial;
+    LineRenderer _dashLine;
     Material _glowMaterial;
+    Material _dashMaterial;
+    Material _dashLineMaterialInstance;
+    Texture2D _dashTexture;
+    bool[] _dashPattern;
     CoinGateIndicatorSettings _activeSettings;
 
     CoinIdentity _gateCoinA;
@@ -19,8 +20,11 @@ public class GateIndicator : MonoBehaviour
     Vector3 _gateStart;
     Vector3 _gateEnd;
     Color _lineColor;
+    Color _glowColor;
     float _dashOffset;
     float _glowPulseTime;
+    float _lastDashLength = -1f;
+    float _lastDashGap = -1f;
     bool _isVisible;
     bool _animate;
 
@@ -36,10 +40,12 @@ public class GateIndicator : MonoBehaviour
         }
 
         Instance = this;
-        _dashMaterial = CreateLineMaterial(false);
-        _glowMaterial = CreateLineMaterial(true);
-        _glowLine = CreateLineRenderer("GateGlow", _glowMaterial, GetGlowWidth());
-        BuildDashPool();
+        _glowMaterial = CreateLineMaterial(additiveGlow: true);
+        _dashMaterial = CreateDashMaterial();
+        _glowLine = CreateLineRenderer("GateGlow", _glowMaterial);
+        _dashLine = CreateLineRenderer("GateDash", _dashMaterial);
+        _dashLine.textureMode = LineTextureMode.Tile;
+        _dashLineMaterialInstance = _dashLine.material;
         SetVisible(false);
     }
 
@@ -50,14 +56,24 @@ public class GateIndicator : MonoBehaviour
             Instance = null;
         }
 
+        if (_glowMaterial != null)
+        {
+            Destroy(_glowMaterial);
+        }
+
         if (_dashMaterial != null)
         {
             Destroy(_dashMaterial);
         }
 
-        if (_glowMaterial != null)
+        if (_dashLineMaterialInstance != null)
         {
-            Destroy(_glowMaterial);
+            Destroy(_dashLineMaterialInstance);
+        }
+
+        if (_dashTexture != null)
+        {
+            Destroy(_dashTexture);
         }
     }
 
@@ -130,7 +146,6 @@ public class GateIndicator : MonoBehaviour
     public void Show(
         CoinIdentity gateCoinA,
         CoinIdentity gateCoinB,
-        Color lineColor,
         CoinGateIndicatorSettings settings,
         bool animate)
     {
@@ -143,7 +158,8 @@ public class GateIndicator : MonoBehaviour
         ApplySettings(settings);
         _gateCoinA = gateCoinA;
         _gateCoinB = gateCoinB;
-        _lineColor = lineColor;
+        _lineColor = settings != null ? settings.LineColor : new Color(0.506f, 0.325f, 0.796f, 1f);
+        _glowColor = settings != null ? settings.GlowColor : _lineColor;
         _dashOffset = 0f;
         _glowPulseTime = 0f;
         _animate = animate;
@@ -182,6 +198,7 @@ public class GateIndicator : MonoBehaviour
     void ApplySettings(CoinGateIndicatorSettings settings)
     {
         _activeSettings = settings;
+        EnsureDashTexture();
         ApplyLineWidths();
     }
 
@@ -189,20 +206,26 @@ public class GateIndicator : MonoBehaviour
     {
         float glowWidth = GetGlowWidth();
         _glowLine.startWidth = glowWidth;
-        _glowLine.endWidth = glowWidth * 0.85f;
+        _glowLine.endWidth = glowWidth;
 
         float dashWidth = GetLineWidth();
-        for (int i = 0; i < _dashLines.Count; i++)
-        {
-            _dashLines[i].startWidth = dashWidth;
-            _dashLines[i].endWidth = dashWidth * 0.85f;
-        }
+        _dashLine.startWidth = dashWidth;
+        _dashLine.endWidth = dashWidth;
     }
 
     void RebuildVisual()
     {
         Vector3 start = Elevate(_gateStart);
         Vector3 end = Elevate(_gateEnd);
+        float totalLength = Vector3.Distance(start, end);
+        if (totalLength <= 0.001f)
+        {
+            _dashLine.enabled = false;
+            _glowLine.enabled = false;
+            return;
+        }
+
+        EnsureDashTexture();
 
         float glowAlpha = GetGlowAlpha();
         if (_animate)
@@ -211,73 +234,107 @@ public class GateIndicator : MonoBehaviour
             glowAlpha += pulse * GetGlowPulseAmount();
         }
 
-        Color glowColor = _lineColor;
+        Color glowColor = _glowColor;
         glowColor.a = glowAlpha;
-        ApplyLineColors(_glowLine, glowColor, glowColor.a);
+        ApplyLineColors(_glowLine, glowColor);
         _glowLine.SetPosition(0, start);
         _glowLine.SetPosition(1, end);
+        _glowLine.enabled = true;
 
-        RebuildDashes(start, end);
+        float dashLength = GetDashLength();
+        float dashGap = GetDashGap();
+        float patternLength = Mathf.Max(dashLength + dashGap, 0.001f);
+
+        ApplyLineColors(_dashLine, _lineColor);
+        _dashLine.SetPosition(0, start);
+        _dashLine.SetPosition(1, end);
+        _dashLine.textureScale = new Vector2(totalLength / patternLength, 1f);
+
+        float patternOffset = _dashOffset / patternLength;
+        ApplyDashTextureScroll(patternOffset - Mathf.Floor(patternOffset));
+
+        _dashLine.enabled = true;
     }
 
-    void RebuildDashes(Vector3 start, Vector3 end)
+    void ApplyDashTextureScroll(float scrollU)
     {
-        Vector3 delta = end - start;
-        float totalLength = delta.magnitude;
-        if (totalLength <= 0.001f)
+        if (_dashTexture == null || _dashPattern == null)
         {
-            DisableUnusedDashes(0);
             return;
         }
 
-        Vector3 direction = delta / totalLength;
-        float dashLength = GetDashLength();
-        float dashGap = GetDashGap();
-        float patternLength = dashLength + dashGap;
-        float normalizedOffset = _dashOffset % patternLength;
-        if (normalizedOffset < 0f)
+        int shift = Mathf.FloorToInt(scrollU * DashTextureResolution) % DashTextureResolution;
+        if (shift < 0)
         {
-            normalizedOffset += patternLength;
+            shift += DashTextureResolution;
         }
 
-        float cursor = -normalizedOffset;
-        int dashIndex = 0;
-
-        while (cursor < totalLength && dashIndex < MaxDashSegments)
+        for (int x = 0; x < DashTextureResolution; x++)
         {
-            float dashStartDistance = Mathf.Max(0f, cursor);
-            float dashEndDistance = Mathf.Min(totalLength, cursor + dashLength);
-            if (dashEndDistance - dashStartDistance > 0.001f)
-            {
-                LineRenderer dashLine = _dashLines[dashIndex];
-                dashLine.enabled = true;
-                ApplyLineColors(dashLine, _lineColor, _lineColor.a * 0.75f);
-                dashLine.SetPosition(0, start + direction * dashStartDistance);
-                dashLine.SetPosition(1, start + direction * dashEndDistance);
-                dashIndex++;
-            }
-
-            cursor += patternLength;
+            int source = (x + shift) % DashTextureResolution;
+            bool isDash = _dashPattern[source];
+            _dashTexture.SetPixel(x, 0, isDash ? Color.white : new Color(1f, 1f, 1f, 0f));
         }
 
-        DisableUnusedDashes(dashIndex);
+        _dashTexture.Apply(false, false);
     }
 
-    void DisableUnusedDashes(int startIndex)
+    void EnsureDashTexture()
     {
-        for (int i = startIndex; i < _dashLines.Count; i++)
+        float dashLength = GetDashLength();
+        float dashGap = GetDashGap();
+        if (_dashTexture != null
+            && Mathf.Approximately(dashLength, _lastDashLength)
+            && Mathf.Approximately(dashGap, _lastDashGap))
         {
-            _dashLines[i].enabled = false;
+            return;
         }
+
+        if (_dashTexture != null)
+        {
+            Destroy(_dashTexture);
+        }
+
+        float pattern = Mathf.Max(dashLength + dashGap, 0.001f);
+        int dashPixels = Mathf.Clamp(Mathf.RoundToInt(DashTextureResolution * (dashLength / pattern)), 1, DashTextureResolution - 1);
+
+        _dashTexture = new Texture2D(DashTextureResolution, 1, TextureFormat.RGBA32, false)
+        {
+            wrapMode = TextureWrapMode.Repeat,
+            filterMode = FilterMode.Bilinear,
+            hideFlags = HideFlags.HideAndDontSave
+        };
+
+        _dashPattern = new bool[DashTextureResolution];
+        for (int x = 0; x < DashTextureResolution; x++)
+        {
+            bool isDash = x < dashPixels;
+            _dashPattern[x] = isDash;
+            _dashTexture.SetPixel(x, 0, isDash ? Color.white : new Color(1f, 1f, 1f, 0f));
+        }
+
+        _dashTexture.Apply(false, false);
+        if (_dashLineMaterialInstance != null)
+        {
+            if (_dashLineMaterialInstance.HasProperty("_MainTex"))
+            {
+                _dashLineMaterialInstance.SetTexture("_MainTex", _dashTexture);
+            }
+
+            if (_dashLineMaterialInstance.HasProperty("_BaseMap"))
+            {
+                _dashLineMaterialInstance.SetTexture("_BaseMap", _dashTexture);
+            }
+        }
+
+        _lastDashLength = dashLength;
+        _lastDashGap = dashGap;
     }
 
     void SetRenderersEnabled(bool enabled)
     {
         _glowLine.enabled = enabled;
-        for (int i = 0; i < _dashLines.Count; i++)
-        {
-            _dashLines[i].enabled = false;
-        }
+        _dashLine.enabled = enabled;
     }
 
     void SetVisible(bool visible)
@@ -291,14 +348,6 @@ public class GateIndicator : MonoBehaviour
         return new Vector3(position.x, position.y + GetLineHeightOffset(), position.z);
     }
 
-    void BuildDashPool()
-    {
-        for (int i = 0; i < MaxDashSegments; i++)
-        {
-            _dashLines.Add(CreateLineRenderer($"GateDash_{i}", _dashMaterial, GetLineWidth()));
-        }
-    }
-
     float GetLineHeightOffset() => _activeSettings != null ? _activeSettings.LineHeightOffset : 0.004f;
     float GetLineWidth() => _activeSettings != null ? _activeSettings.LineWidth : 0.05f;
     float GetDashLength() => _activeSettings != null ? _activeSettings.DashLength : 0.055f;
@@ -310,15 +359,32 @@ public class GateIndicator : MonoBehaviour
     float GetGlowPulseAmount() => _activeSettings != null ? _activeSettings.GlowPulseAmount : 0.12f;
     float GetGlowWidth() => GetLineWidth() * GetGlowWidthMultiplier();
 
-    static void ApplyLineColors(LineRenderer lineRenderer, Color startColor, float endAlpha)
+    static void ApplyLineColors(LineRenderer lineRenderer, Color color)
     {
-        Color endColor = startColor;
-        endColor.a = endAlpha;
-        lineRenderer.startColor = startColor;
-        lineRenderer.endColor = endColor;
+        lineRenderer.applyActiveColorSpace = false;
+        lineRenderer.startColor = color;
+        lineRenderer.endColor = color;
+        lineRenderer.colorGradient = CreateSolidGradient(color);
     }
 
-    LineRenderer CreateLineRenderer(string objectName, Material material, float width)
+    static Gradient CreateSolidGradient(Color color)
+    {
+        var gradient = new Gradient();
+        gradient.SetKeys(
+            new[]
+            {
+                new GradientColorKey(color, 0f),
+                new GradientColorKey(color, 1f)
+            },
+            new[]
+            {
+                new GradientAlphaKey(color.a, 0f),
+                new GradientAlphaKey(color.a, 1f)
+            });
+        return gradient;
+    }
+
+    LineRenderer CreateLineRenderer(string objectName, Material material)
     {
         var lineObject = new GameObject(objectName);
         lineObject.transform.SetParent(transform, false);
@@ -327,15 +393,51 @@ public class GateIndicator : MonoBehaviour
         lineRenderer.positionCount = 2;
         lineRenderer.useWorldSpace = true;
         lineRenderer.alignment = LineAlignment.View;
-        lineRenderer.startWidth = width;
-        lineRenderer.endWidth = width * 0.85f;
-        lineRenderer.numCapVertices = 4;
+        lineRenderer.widthMultiplier = 1f;
+        lineRenderer.widthCurve = AnimationCurve.Constant(0f, 1f, 1f);
+        lineRenderer.numCapVertices = 0;
+        lineRenderer.numCornerVertices = 0;
         lineRenderer.shadowCastingMode = ShadowCastingMode.Off;
         lineRenderer.receiveShadows = false;
         lineRenderer.material = material;
         lineRenderer.enabled = false;
+        ApplyLineColors(lineRenderer, Color.white);
 
         return lineRenderer;
+    }
+
+    static Material CreateDashMaterial()
+    {
+        Shader shader = Shader.Find("Sprites/Default");
+        if (shader == null)
+        {
+            shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+        }
+
+        if (shader == null)
+        {
+            shader = Shader.Find("Hidden/Internal-Colored");
+        }
+
+        Material material = new Material(shader);
+        material.hideFlags = HideFlags.HideAndDontSave;
+        material.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
+        material.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+        material.SetInt("_Cull", (int)CullMode.Off);
+        material.SetInt("_ZWrite", 0);
+        material.renderQueue = (int)RenderQueue.Transparent;
+
+        if (material.HasProperty("_Color"))
+        {
+            material.SetColor("_Color", Color.white);
+        }
+
+        if (material.HasProperty("_BaseColor"))
+        {
+            material.SetColor("_BaseColor", Color.white);
+        }
+
+        return material;
     }
 
     static Material CreateLineMaterial(bool additiveGlow)

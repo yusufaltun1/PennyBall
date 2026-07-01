@@ -61,6 +61,7 @@ public class ChangeAvatarPanelController : MonoBehaviour
     public void Close()
     {
         if (!_isOpen) return;
+        MainMenuClickSound.Play();
         _isOpen = false;
         Animate(_closedY, deactivateOnDone: true);
     }

@@ -22,17 +22,131 @@ public class MatchingPanelController : MonoBehaviour
     [SerializeField] private AvatarSpriteLibrary avatarLibrary;
 
     [Header("Settings")]
+    [SerializeField] private GameFeedbackAudioLibrary audioLibrary;
     [SerializeField] private float rotateSpeed = 360f;
     [SerializeField] private float slideDuration = 0.5f;
+    [SerializeField] private float countdownStepDuration = 1f;
+    [SerializeField] private float hornLeadTime = 2f;
 
     private bool isShuffling;
     private bool isRunning;
     private Coroutine matchmakingCoroutine;
+    private Coroutine findingFadeCoroutine;
     private RectTransform rectTransform;
+    private AudioSource audioSource;
+    private AudioSource findingSource;
 
     private void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f;
+
+        findingSource = gameObject.AddComponent<AudioSource>();
+        findingSource.playOnAwake = false;
+        findingSource.spatialBlend = 0f;
+        findingSource.loop = true;
+
+        ResolveAudioLibrary();
+    }
+
+    private void ResolveAudioLibrary()
+    {
+        if (audioLibrary != null)
+        {
+            return;
+        }
+
+        GameFeedbackAudioLibrary[] libraries = Resources.FindObjectsOfTypeAll<GameFeedbackAudioLibrary>();
+        if (libraries.Length > 0)
+        {
+            audioLibrary = libraries[0];
+        }
+    }
+
+    private void PlayFindingSound()
+    {
+        ResolveAudioLibrary();
+        if (audioLibrary == null || audioLibrary.finding == null || findingSource == null)
+        {
+            return;
+        }
+
+        if (findingFadeCoroutine != null)
+        {
+            StopCoroutine(findingFadeCoroutine);
+            findingFadeCoroutine = null;
+        }
+
+        findingSource.Stop();
+        findingSource.clip = audioLibrary.finding;
+        findingSource.volume = 1f;
+        findingSource.pitch = 1f;
+        findingSource.Play();
+    }
+
+    private void PlayHornSound(float findingFadeDuration)
+    {
+        ResolveAudioLibrary();
+        if (audioLibrary == null || audioLibrary.horn == null || audioSource == null)
+        {
+            return;
+        }
+
+        BeginFindingFadeOut(findingFadeDuration);
+        audioSource.PlayOneShot(audioLibrary.horn, 1f);
+    }
+
+    private void BeginFindingFadeOut(float duration)
+    {
+        if (findingFadeCoroutine != null)
+        {
+            StopCoroutine(findingFadeCoroutine);
+        }
+
+        findingFadeCoroutine = StartCoroutine(FadeOutFindingSound(duration));
+    }
+
+    private IEnumerator FadeOutFindingSound(float duration)
+    {
+        if (findingSource == null || !findingSource.isPlaying)
+        {
+            findingFadeCoroutine = null;
+            yield break;
+        }
+
+        float startVolume = findingSource.volume;
+        float elapsed = 0f;
+        duration = Mathf.Max(0.01f, duration);
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            findingSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / duration);
+            yield return null;
+        }
+
+        findingSource.volume = 0f;
+        findingSource.Stop();
+        findingFadeCoroutine = null;
+    }
+
+    private void StopFootballGameMusic()
+    {
+        if (GameFeedback.Instance != null)
+        {
+            GameFeedback.Instance.StopBackgroundMusic();
+            return;
+        }
+
+        GameFeedback feedback = FindFirstObjectByType<GameFeedback>();
+        feedback?.StopBackgroundMusic();
     }
 
     private void OnDisable()
@@ -45,6 +159,24 @@ public class MatchingPanelController : MonoBehaviour
 
         isShuffling = false;
         isRunning = false;
+
+        if (audioSource != null)
+        {
+            audioSource.Stop();
+        }
+
+        if (findingFadeCoroutine != null)
+        {
+            StopCoroutine(findingFadeCoroutine);
+            findingFadeCoroutine = null;
+        }
+
+        if (findingSource != null)
+        {
+            findingSource.Stop();
+            findingSource.volume = 0f;
+            findingSource.loop = true;
+        }
     }
 
     private void Update()
@@ -80,6 +212,10 @@ public class MatchingPanelController : MonoBehaviour
         {
             gameObject.SetActive(true);
         }
+
+        StopFootballGameMusic();
+        MainMenuMusicController.StopMusic();
+        PlayFindingSound();
 
         matchmakingCoroutine = StartCoroutine(DoMatchmakingSequence());
     }
@@ -130,6 +266,7 @@ public class MatchingPanelController : MonoBehaviour
 
         sayacObject?.SetActive(true);
 
+        bool hornPlayed = false;
         for (int count = 5; count >= 0; count--)
         {
             if (sayacText != null)
@@ -138,19 +275,30 @@ public class MatchingPanelController : MonoBehaviour
                 sayacText.text = count.ToString();
             }
 
-            yield return new WaitForSeconds(1.0f);
+            float timeUntilCounterEnds = (count + 1) * countdownStepDuration;
+            float delayBeforeHorn = timeUntilCounterEnds - hornLeadTime;
+
+            if (!hornPlayed && delayBeforeHorn >= 0f && delayBeforeHorn < countdownStepDuration)
+            {
+                if (delayBeforeHorn > 0f)
+                {
+                    yield return new WaitForSeconds(delayBeforeHorn);
+                }
+
+                float remainingPanelTime = (countdownStepDuration - delayBeforeHorn) + count * countdownStepDuration;
+                PlayHornSound(remainingPanelTime);
+                hornPlayed = true;
+                yield return new WaitForSeconds(countdownStepDuration - delayBeforeHorn);
+            }
+            else
+            {
+                yield return new WaitForSeconds(countdownStepDuration);
+            }
         }
 
         isRunning = false;
         matchmakingCoroutine = null;
 
-        //if (!OnboardingProgress.IsCompleted)
-        //{
-          //  SceneManager.LoadScene(OnboardingSceneNames.Onboarding);
-            //yield break;
-        //}
-
-        // Rakip zaten MatchSessionContext'te — direkt sahneyi yükle
         SceneManager.LoadScene(GameSceneNames.Game);
     }
 

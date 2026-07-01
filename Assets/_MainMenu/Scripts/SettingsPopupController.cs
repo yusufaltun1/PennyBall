@@ -102,6 +102,7 @@ public class SettingsPopupController : MonoBehaviour
             return;
         }
 
+        MainMenuClickSound.Play();
         isOpen = true;
         gameObject.SetActive(true);
         RefreshAllToggles();
@@ -121,6 +122,7 @@ public class SettingsPopupController : MonoBehaviour
             return;
         }
 
+        MainMenuClickSound.Play();
         isOpen = false;
 
         if (animationCoroutine != null)

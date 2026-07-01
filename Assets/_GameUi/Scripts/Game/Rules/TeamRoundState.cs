@@ -6,7 +6,6 @@ using System.Collections.Generic;
 public sealed class TeamRoundState
 {
     public readonly List<CoinIdentity> Coins = new(3);
-    public readonly Dictionary<CoinIdentity, HashSet<CoinIdentity>> WaitingForOthers = new();
 
     public CoinIdentity OpeningCoin;
     public bool IsFirstMove = true;

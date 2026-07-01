@@ -1,9 +1,11 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
     [SerializeField] MatchingPanelController matchingPanel;
+    [SerializeField] Button exerciseButton;
 
     void Awake()
     {
@@ -22,6 +24,31 @@ public class UIManager : MonoBehaviour
         {
             matchingPanel.gameObject.SetActive(false);
         }
+
+        if (exerciseButton == null)
+        {
+            Transform root = transform.parent;
+            Transform exerciseTransform = root != null
+                ? FindDeepChild(root, "Btn_Exercise")
+                : null;
+            if (exerciseTransform != null)
+            {
+                exerciseButton = exerciseTransform.GetComponent<Button>();
+            }
+        }
+
+        if (exerciseButton != null)
+        {
+            exerciseButton.onClick.AddListener(OnAntremanButtonPressed);
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (exerciseButton != null)
+        {
+            exerciseButton.onClick.RemoveListener(OnAntremanButtonPressed);
+        }
     }
 
     void Start()
@@ -34,6 +61,8 @@ public class UIManager : MonoBehaviour
 
     public void OnPlayButtonPressed()
     {
+        MainMenuClickSound.Play();
+
         if (matchingPanel == null)
         {
             Debug.LogError("[UIManager] Matching_Panel bulunamadı.");
@@ -45,6 +74,26 @@ public class UIManager : MonoBehaviour
 
     public void OnAntremanButtonPressed()
     {
+        MainMenuClickSound.Play();
         Debug.Log("Antreman yapılacak!");
+    }
+
+    static Transform FindDeepChild(Transform parent, string childName)
+    {
+        if (parent.name == childName)
+        {
+            return parent;
+        }
+
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform found = FindDeepChild(parent.GetChild(i), childName);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 }
