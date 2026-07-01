@@ -81,8 +81,6 @@ public class CoinInputHandler : MonoBehaviour
 
             if (identity != null && releasedCoin.IsSliding)
             {
-                GateIndicator.Instance?.PauseAnimation();
-
                 if (GameRulesManager.Instance != null)
                 {
                     GameRulesManager.Instance.OnShotReleased(identity);
@@ -211,19 +209,7 @@ public class CoinInputHandler : MonoBehaviour
         }
 
         CoinGateIndicatorSettings settings = CoinGateIndicatorSettings.Resolve(shooterController);
-        Color lineColor = GetGateLineColor(shooterController);
-        indicator.Show(
-            gateA,
-            gateB,
-            lineColor,
-            settings,
-            animate: true);
-    }
-
-    static Color GetGateLineColor(CoinDragController shooterController)
-    {
-        CoinAimIndicator aimIndicator = shooterController.GetComponent<CoinAimIndicator>();
-        return aimIndicator != null ? aimIndicator.StartColor : new Color(0.506f, 0.325f, 0.796f, 1f);
+        indicator.Show(gateA, gateB, settings, animate: true);
     }
 
     bool TryGetTablePosition(Vector2 screenPosition, out Vector3 worldPosition)

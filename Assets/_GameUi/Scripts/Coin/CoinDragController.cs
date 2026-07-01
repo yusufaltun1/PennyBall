@@ -108,6 +108,11 @@ public class CoinDragController : MonoBehaviour
         {
             gameObject.AddComponent<CoinGateIndicatorSettings>();
         }
+
+        if (GetComponent<CoinAimIndicatorSettings>() == null)
+        {
+            gameObject.AddComponent<CoinAimIndicatorSettings>();
+        }
     }
 
     void FixedUpdate()

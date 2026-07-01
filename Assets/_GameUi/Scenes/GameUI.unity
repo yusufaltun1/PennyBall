@@ -4601,6 +4601,7 @@ MonoBehaviour:
   _counterText: {fileID: 286802105}
   _resettingGameRoot: {fileID: 1824388318}
   _hideDelayAfterRollback: 1
+  _resettingGameDisplayDuration: 1
 --- !u!1 &1128411230
 GameObject:
   m_ObjectHideFlags: 0
@@ -6058,12 +6059,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c88d4269ddbf64580a0aa87880798a77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OpponentBotController
-  _aiStrength: 10
-  _useInspectorAiStrength: 1
+  _aiStrength: 1
+  _useInspectorAiStrength: 0
   _turnThinkDelaySeconds: 2
   _useInspectorTurnDelay: 1
   _difficulty:
-    Level: 10
+    Level: 1
   _gateMargin: 0.09
   _rollbackDuration: 0.45
   _coinStopTimeout: 8
@@ -7174,7 +7175,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1824388319
 RectTransform:
   m_ObjectHideFlags: 0

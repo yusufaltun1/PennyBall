@@ -10,6 +10,7 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
     [SerializeField] TextMeshProUGUI _counterText;
     [SerializeField] GameObject _resettingGameRoot;
     [SerializeField] float _hideDelayAfterRollback = 1f;
+    [SerializeField] float _resettingGameDisplayDuration = 1f;
 
     int _consecutiveInvalidMoves;
     Coroutine _feedbackRoutine;
@@ -135,6 +136,7 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
         _isPerformingStreakReset = true;
         HideInvalidMove();
         ShowResettingGame();
+        float shownAt = Time.unscaledTime;
 
         if (OpponentBotController.Instance != null)
         {
@@ -144,6 +146,12 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
         if (GameRulesManager.Instance != null)
         {
             yield return GameRulesManager.Instance.ResetAllCoinPositionsRoutine();
+        }
+
+        float remaining = _resettingGameDisplayDuration - (Time.unscaledTime - shownAt);
+        if (remaining > 0f)
+        {
+            yield return new WaitForSecondsRealtime(remaining);
         }
 
         _consecutiveInvalidMoves = 0;

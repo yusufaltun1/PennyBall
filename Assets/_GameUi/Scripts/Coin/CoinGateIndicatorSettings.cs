@@ -14,6 +14,10 @@ public class CoinGateIndicatorSettings : MonoBehaviour
     [SerializeField] [Range(0f, 0.35f)] float _glowPulseAmount = 0.12f;
     [SerializeField] [Min(2)] int _showFromShotNumber = 2;
 
+    [Header("Renkler")]
+    [SerializeField] Color _lineColor = new(0.506f, 0.325f, 0.796f, 1f);
+    [SerializeField] Color _glowColor = new(0.506f, 0.325f, 0.796f, 1f);
+
     public float LineHeightOffset => _lineHeightOffset;
     public float LineWidth => _lineWidth;
     public float DashLength => _dashLength;
@@ -24,6 +28,8 @@ public class CoinGateIndicatorSettings : MonoBehaviour
     public float GlowPulseSpeed => _glowPulseSpeed;
     public float GlowPulseAmount => _glowPulseAmount;
     public int ShowFromShotNumber => _showFromShotNumber;
+    public Color LineColor => _lineColor;
+    public Color GlowColor => _glowColor;
 
     public bool ShouldShowForShot(int currentShotNumber)
     {
