@@ -11,6 +11,8 @@ public class MatchTurnCoordinator : MonoBehaviour
     {
         Subscribe();
 
+        GameRulesManager.Instance?.PrepareForNewMatch();
+
         if (_enableOpponentBot && OpponentBotController.Instance != null)
         {
             OpponentBotController.Instance.ResetRoundState();

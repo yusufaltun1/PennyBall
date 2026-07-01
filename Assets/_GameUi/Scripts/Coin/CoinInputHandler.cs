@@ -78,6 +78,7 @@ public class CoinInputHandler : MonoBehaviour
             CoinIdentity identity = releasedCoin.GetComponent<CoinIdentity>();
 
             releasedCoin.ReleaseAim();
+            GateIndicator.Instance?.Hide();
 
             if (identity != null && releasedCoin.IsSliding)
             {
@@ -86,15 +87,25 @@ public class CoinInputHandler : MonoBehaviour
                     GameRulesManager.Instance.OnShotReleased(identity);
                 }
             }
-            else
-            {
-                GateIndicator.Instance?.Hide();
-            }
 
             _activeCoin = null;
         }
 
         _cameraZoom?.SetDragState(pullRatio, sideRatio);
+    }
+
+    void LateUpdate()
+    {
+        if (_activeCoin != null)
+        {
+            return;
+        }
+
+        GateIndicator indicator = GateIndicator.Instance;
+        if (indicator != null && indicator.IsVisible)
+        {
+            indicator.Hide();
+        }
     }
 
     static bool TryReadPointer(

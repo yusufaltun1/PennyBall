@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using ByteBrewSDK;
@@ -166,11 +167,25 @@ public class ByteBrewGameAnalytics : MonoBehaviour
 
     static void TrackEvent(string eventName)
     {
-        ByteBrew.NewCustomEvent(eventName);
+        try
+        {
+            ByteBrew.NewCustomEvent(eventName);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[ByteBrew] Event '{eventName}' gönderilemedi: {ex.Message}");
+        }
     }
 
     static void TrackEvent(string eventName, Dictionary<string, string> parameters)
     {
-        ByteBrew.NewCustomEvent(eventName, parameters);
+        try
+        {
+            ByteBrew.NewCustomEvent(eventName, parameters);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[ByteBrew] Event '{eventName}' gönderilemedi: {ex.Message}");
+        }
     }
 }

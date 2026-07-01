@@ -50,6 +50,16 @@ public class GameFeedback : MonoBehaviour
             return Instance;
         }
 
+        if (GameRulesManager.Instance != null)
+        {
+            GameFeedback onRules = GameRulesManager.Instance.GetComponent<GameFeedback>();
+            if (onRules != null)
+            {
+                onRules.StartBackgroundMusic();
+                return onRules;
+            }
+        }
+
         GameFeedback existing = FindFirstObjectByType<GameFeedback>();
         if (existing != null)
         {
@@ -69,6 +79,15 @@ public class GameFeedback : MonoBehaviour
         }
 
         Instance = this;
+
+        if (GetComponent<GameRulesManager>() != null)
+        {
+            EnsureAudioListener();
+            SetupAudio();
+            SetupDust();
+            return;
+        }
+
         DontDestroyOnLoad(gameObject);
         EnsureAudioListener();
         SetupAudio();

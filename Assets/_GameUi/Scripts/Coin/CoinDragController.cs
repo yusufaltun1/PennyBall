@@ -418,6 +418,17 @@ public class CoinDragController : MonoBehaviour
         return true;
     }
 
+    public void ForceStopSliding()
+    {
+        if (_rigidbody == null)
+        {
+            return;
+        }
+
+        _rigidbody.linearVelocity = Vector3.zero;
+        _rigidbody.angularVelocity = Vector3.zero;
+    }
+
     public void CancelAim()
     {
         if (!_isAiming)

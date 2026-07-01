@@ -164,6 +164,12 @@ public class OpponentBotController : MonoBehaviour
         ClearResolvingState();
     }
 
+    public void PauseForRoundReset()
+    {
+        StopPlayLoop();
+        ClearResolvingState();
+    }
+
     void ClearResolvingState()
     {
         _resolvingCoin = null;
@@ -175,7 +181,11 @@ public class OpponentBotController : MonoBehaviour
     {
         while (true)
         {
-            while (_isResolving) yield return null;
+            while (_isResolving
+                   || (GameRulesManager.Instance != null && GameRulesManager.Instance.IsResolvingMove))
+            {
+                yield return null;
+            }
 
             yield return new WaitForSeconds(GetTurnThinkDelay());
 
@@ -211,7 +221,6 @@ public class OpponentBotController : MonoBehaviour
             _goalEnteredDuringShot  = false;
             _isOpeningShot          = _roundShotNumber == 1;   // yalnızca 1. atış gate validation'dan muaf
             _shotStartPosition      = plan.Coin.transform.position;
-            TeamRulesService.LockCoinUntilOthersMoved(_state, plan.Coin, SetCoinPassive);
 
             yield return ResolveShotRoutine(plan.Coin);
         }
@@ -246,7 +255,6 @@ public class OpponentBotController : MonoBehaviour
         {
             _state.IsFirstMove = false;
             shotValid = true;
-            TeamRulesService.RegisterSuccessfulShot(_state, coin, SetCoinPassive);
             TeamRulesService.UnlockOpeningSideCoins(_state, SetCoinPassive);
             Debug.Log($"[Bot] {coin.gameObject.name} açılış hamlesi geçerli");
         }
@@ -263,7 +271,6 @@ public class OpponentBotController : MonoBehaviour
             {
                 Debug.Log($"[Bot] {coin.gameObject.name} GEÇERSİZ — kapıdan geçemedi | " +
                           $"son pozisyon={coin.transform.position:F2}");
-                TeamRulesService.UnlockCoin(_state, coin, SetCoinPassive);
                 InvalidMoveRollbackStarted?.Invoke(CoinTeam.Opponent);
                 yield return RollbackCoin(coin, _shotStartPosition);
                 pendingInvalidRollbackFinished = true;
@@ -271,7 +278,6 @@ public class OpponentBotController : MonoBehaviour
             }
             else
             {
-                TeamRulesService.RegisterSuccessfulShot(_state, coin, SetCoinPassive);
                 shotValid = true;
                 Debug.Log($"[Bot] {coin.gameObject.name} geçerli — kapıdan geçti");
             }
@@ -291,16 +297,12 @@ public class OpponentBotController : MonoBehaviour
         if (shotValid && (_goalEnteredDuringShot || inGoal))
         {
             Debug.Log($"[Bot] {coin.gameObject.name} GOL");
-            OpponentGoalScored?.Invoke();
-            GoalCelebration.Instance?.ShowGoal(playerScored: false);
+            GameFeedback.EnsureInstance()?.PlayGoal();
             _resolvingCoin = null;
             _isResolving = false;
             StopPlayLoop();
-            if (GameRulesManager.Instance != null)
-            {
-                GameRulesManager.Instance.RequestRoundReset();
-            }
-
+            InvokeOpponentGoalScoredSafely();
+            GameRulesManager.Instance?.BeginRoundResetAfterGoal();
             yield break;
         }
 
@@ -312,12 +314,8 @@ public class OpponentBotController : MonoBehaviour
             InvalidMoveRollbackFinished?.Invoke(CoinTeam.Opponent);
         }
 
-        TeamRulesService.ReapplyPassiveFromWaiting(_state, SetCoinPassive);
-        TeamRulesService.EnsureAtLeastOneSelectable(
-            _state,
-            SetCoinPassive,
-            _state.IsFirstMove,
-            () => TeamRulesService.ApplyOpeningRestrictions(_state, SetCoinPassive));
+        TeamRulesService.UnlockAllCoins(_state, SetCoinPassive);
+        TeamRulesService.EnsureAtLeastOneSelectable(_state, SetCoinPassive);
     }
 
     IEnumerator WaitUntilCoinStops(CoinDragController coin, List<Vector3> pathSamples)
@@ -394,5 +392,25 @@ public class OpponentBotController : MonoBehaviour
     void SetCoinPassive(CoinIdentity coin, bool passive)
     {
         coin.SetPassive(passive);
+    }
+
+    void InvokeOpponentGoalScoredSafely()
+    {
+        if (OpponentGoalScored == null)
+        {
+            return;
+        }
+
+        foreach (Action handler in OpponentGoalScored.GetInvocationList())
+        {
+            try
+            {
+                handler();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
     }
 }
