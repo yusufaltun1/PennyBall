@@ -180,6 +180,12 @@ public class MatchBeginningCountdownController : MonoBehaviour
 
     void PlayCountSound(int count)
     {
+        GameFeedbackSettingsService.EnsureLoaded();
+        if (!GameFeedbackSettingsService.SoundEffectsEnabled)
+        {
+            return;
+        }
+
         ResolveAudioLibrary();
         if (_audioLibrary == null || _audioSource == null)
         {
@@ -209,7 +215,8 @@ public class MatchBeginningCountdownController : MonoBehaviour
         }
 
         ResolveAudioLibrary();
-        if (_audioLibrary == null || _audioLibrary.whistle == null || _audioSource == null)
+        if (_audioLibrary == null || _audioLibrary.whistle == null || _audioSource == null
+            || !GameFeedbackSettingsService.SoundEffectsEnabled)
         {
             return;
         }

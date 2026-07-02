@@ -295,7 +295,7 @@ public class GameFeedback : MonoBehaviour
 
     public void PlayEnemyGoal()
     {
-        if (_goalSource == null || _enemyGoalClip == null)
+        if (_goalSource == null || _enemyGoalClip == null || !GameFeedbackSettingsService.SoundEffectsEnabled)
         {
             return;
         }
@@ -349,7 +349,8 @@ public class GameFeedback : MonoBehaviour
 
     public void PlayWhistle()
     {
-        if (_audioLibrary == null || _audioLibrary.whistle == null || _sfxSource == null)
+        if (_audioLibrary == null || _audioLibrary.whistle == null || _sfxSource == null
+            || !GameFeedbackSettingsService.SoundEffectsEnabled)
         {
             return;
         }

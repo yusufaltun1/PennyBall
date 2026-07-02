@@ -26,9 +26,16 @@ public class MainMenuMusicController : MonoBehaviour
         ResolveAudioLibrary();
     }
 
-    void Start()
+    void OnEnable()
     {
-        Play();
+        GameFeedbackSettingsService.Changed += ApplyMusicSetting;
+        GameFeedbackSettingsService.EnsureLoaded();
+        ApplyMusicSetting();
+    }
+
+    void OnDisable()
+    {
+        GameFeedbackSettingsService.Changed -= ApplyMusicSetting;
     }
 
     void OnDestroy()
@@ -38,6 +45,18 @@ public class MainMenuMusicController : MonoBehaviour
         if (Instance == this)
         {
             Instance = null;
+        }
+    }
+
+    void ApplyMusicSetting()
+    {
+        if (GameFeedbackSettingsService.MusicEnabled)
+        {
+            Play();
+        }
+        else
+        {
+            Stop();
         }
     }
 

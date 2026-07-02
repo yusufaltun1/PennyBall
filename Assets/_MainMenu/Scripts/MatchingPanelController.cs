@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -72,6 +71,13 @@ public class MatchingPanelController : MonoBehaviour
 
     private void PlayFindingSound()
     {
+        GameFeedbackSettingsService.EnsureLoaded();
+        if (!GameFeedbackSettingsService.MusicEnabled)
+        {
+            StopFindingMusic();
+            return;
+        }
+
         ResolveAudioLibrary();
         if (audioLibrary == null || audioLibrary.finding == null || findingSource == null)
         {
@@ -88,11 +94,48 @@ public class MatchingPanelController : MonoBehaviour
         findingSource.clip = audioLibrary.finding;
         findingSource.volume = 1f;
         findingSource.pitch = 1f;
+        findingSource.loop = true;
         findingSource.Play();
+    }
+
+    private void StopFindingMusic()
+    {
+        if (findingFadeCoroutine != null)
+        {
+            StopCoroutine(findingFadeCoroutine);
+            findingFadeCoroutine = null;
+        }
+
+        if (findingSource != null)
+        {
+            findingSource.Stop();
+            findingSource.volume = 0f;
+            findingSource.loop = true;
+        }
+    }
+
+    private void ApplyAudioSettings()
+    {
+        if (!GameFeedbackSettingsService.MusicEnabled)
+        {
+            StopFindingMusic();
+            return;
+        }
+
+        if (isRunning && findingObject != null && findingObject.activeSelf)
+        {
+            PlayFindingSound();
+        }
     }
 
     private void PlayHornSound(float findingFadeDuration)
     {
+        GameFeedbackSettingsService.EnsureLoaded();
+        if (!GameFeedbackSettingsService.SoundEffectsEnabled)
+        {
+            return;
+        }
+
         ResolveAudioLibrary();
         if (audioLibrary == null || audioLibrary.horn == null || audioSource == null)
         {
@@ -149,8 +192,15 @@ public class MatchingPanelController : MonoBehaviour
         feedback?.StopBackgroundMusic();
     }
 
+    private void OnEnable()
+    {
+        GameFeedbackSettingsService.Changed += ApplyAudioSettings;
+    }
+
     private void OnDisable()
     {
+        GameFeedbackSettingsService.Changed -= ApplyAudioSettings;
+
         if (matchmakingCoroutine != null)
         {
             StopCoroutine(matchmakingCoroutine);
@@ -165,18 +215,7 @@ public class MatchingPanelController : MonoBehaviour
             audioSource.Stop();
         }
 
-        if (findingFadeCoroutine != null)
-        {
-            StopCoroutine(findingFadeCoroutine);
-            findingFadeCoroutine = null;
-        }
-
-        if (findingSource != null)
-        {
-            findingSource.Stop();
-            findingSource.volume = 0f;
-            findingSource.loop = true;
-        }
+        StopFindingMusic();
     }
 
     private void Update()

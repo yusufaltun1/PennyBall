@@ -7,6 +7,12 @@ public static class MainMenuClickSound
 
     public static void Play()
     {
+        GameFeedbackSettingsService.EnsureLoaded();
+        if (!GameFeedbackSettingsService.SoundEffectsEnabled)
+        {
+            return;
+        }
+
         EnsureReady();
         if (_audioLibrary == null || _audioLibrary.buttonClick == null || _audioSource == null)
         {
