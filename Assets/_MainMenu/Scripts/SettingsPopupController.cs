@@ -6,7 +6,10 @@ public class SettingsPopupController : MonoBehaviour
 {
     [SerializeField] private Button openButton;
     [SerializeField] private Button closeButton;
+    [SerializeField] private RectTransform slidePanel;
     [SerializeField] private float animationDuration = 0.4f;
+    [SerializeField] private float openBottomMargin;
+    [SerializeField] private float hiddenPadding = 40f;
 
     private RectTransform rectTransform;
     private float closedY;
@@ -14,26 +17,77 @@ public class SettingsPopupController : MonoBehaviour
     private Coroutine animationCoroutine;
     private bool isOpen;
     private bool _settingsBound;
+    private bool _initialized;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void WireInactivePopups()
+    {
+        SettingsPopupController[] controllers = Object.FindObjectsByType<SettingsPopupController>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+
+        for (int i = 0; i < controllers.Length; i++)
+        {
+            if (controllers[i].gameObject.scene.isLoaded)
+            {
+                controllers[i].EnsureInitialized();
+            }
+        }
+    }
 
     private void Awake()
     {
+        EnsureInitialized();
+
+        if (!isOpen)
+        {
+            PrepareClosedState();
+            gameObject.SetActive(false);
+        }
+    }
+
+    void EnsureInitialized()
+    {
+        if (_initialized)
+        {
+            return;
+        }
+
+        _initialized = true;
         rectTransform = GetComponent<RectTransform>();
-        CachePositions();
-        SetClosedPosition();
+        ResolveSlidePanel();
         BindFeedbackSettings();
 
         if (openButton != null)
         {
+            openButton.onClick.RemoveListener(Open);
             openButton.onClick.AddListener(Open);
         }
 
         if (closeButton != null)
         {
+            closeButton.onClick.RemoveListener(Close);
             closeButton.onClick.AddListener(Close);
         }
+    }
 
-        if (!isOpen)
-            gameObject.SetActive(false);
+    void ResolveSlidePanel()
+    {
+        if (slidePanel != null)
+        {
+            return;
+        }
+
+        Transform panel = transform.Find("PanelRoot");
+        if (panel != null)
+        {
+            slidePanel = panel as RectTransform;
+        }
+    }
+
+    void ResetRootPosition()
+    {
+        rectTransform.anchoredPosition = Vector2.zero;
     }
 
     void BindFeedbackSettings()
@@ -45,9 +99,9 @@ public class SettingsPopupController : MonoBehaviour
         }
 
         GameFeedbackSettingsService.EnsureLoaded();
-        BindToggle("Container/Wrapper/Control-Music/Button", SettingsToggleControl.SettingKind.Music);
-        BindToggle("Container/Wrapper/Control-SoundEffects/Button", SettingsToggleControl.SettingKind.SoundEffects);
-        BindToggle("Container/Wrapper/Control-Vibrations/Button", SettingsToggleControl.SettingKind.Vibration);
+        BindToggle("PanelRoot/Container/Wrapper/Control-Music/Button", SettingsToggleControl.SettingKind.Music);
+        BindToggle("PanelRoot/Container/Wrapper/Control-SoundEffects/Button", SettingsToggleControl.SettingKind.SoundEffects);
+        BindToggle("PanelRoot/Container/Wrapper/Control-Vibrations/Button", SettingsToggleControl.SettingKind.Vibration);
         _settingsBound = true;
     }
 
@@ -105,14 +159,28 @@ public class SettingsPopupController : MonoBehaviour
         MainMenuClickSound.Play();
         isOpen = true;
         gameObject.SetActive(true);
-        RefreshAllToggles();
+        EnsureInitialized();
 
         if (animationCoroutine != null)
         {
             StopCoroutine(animationCoroutine);
         }
 
-        animationCoroutine = StartCoroutine(AnimateTo(openY, deactivateOnComplete: false));
+        animationCoroutine = StartCoroutine(OpenSequence());
+    }
+
+    IEnumerator OpenSequence()
+    {
+        ResetRootPosition();
+        RefreshAllToggles();
+        HidePanelOffScreen();
+
+        yield return null;
+
+        Canvas.ForceUpdateCanvases();
+        PrepareClosedState();
+        yield return AnimateTo(openY, deactivateOnComplete: false);
+        animationCoroutine = null;
     }
 
     public void Close()
@@ -124,6 +192,7 @@ public class SettingsPopupController : MonoBehaviour
 
         MainMenuClickSound.Play();
         isOpen = false;
+        CachePositions();
 
         if (animationCoroutine != null)
         {
@@ -133,11 +202,40 @@ public class SettingsPopupController : MonoBehaviour
         animationCoroutine = StartCoroutine(AnimateTo(closedY, deactivateOnComplete: true));
     }
 
+    void PrepareClosedState()
+    {
+        CachePositions();
+        SetClosedPosition();
+    }
+
+    void HidePanelOffScreen()
+    {
+        ResolveSlidePanel();
+        RectTransform target = slidePanel != null ? slidePanel : rectTransform;
+        Vector2 position = target.anchoredPosition;
+        position.y = -10000f;
+        target.anchoredPosition = position;
+    }
+
     private void CachePositions()
     {
-        float halfHeight = GetCanvasHalfHeight();
-        closedY = halfHeight;
-        openY = -halfHeight;
+        ResolveSlidePanel();
+        ResetRootPosition();
+
+        if (slidePanel == null)
+        {
+            float halfHeight = GetCanvasHalfHeight();
+            closedY = halfHeight;
+            openY = -halfHeight;
+            return;
+        }
+
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(slidePanel);
+
+        float panelHeight = slidePanel.rect.height;
+        closedY = -panelHeight - hiddenPadding;
+        openY = openBottomMargin;
     }
 
     private float GetCanvasHalfHeight()
@@ -161,14 +259,16 @@ public class SettingsPopupController : MonoBehaviour
 
     private void SetClosedPosition()
     {
-        Vector2 position = rectTransform.anchoredPosition;
+        RectTransform target = slidePanel != null ? slidePanel : rectTransform;
+        Vector2 position = target.anchoredPosition;
         position.y = closedY;
-        rectTransform.anchoredPosition = position;
+        target.anchoredPosition = position;
     }
 
     private IEnumerator AnimateTo(float targetY, bool deactivateOnComplete)
     {
-        Vector2 startPosition = rectTransform.anchoredPosition;
+        RectTransform target = slidePanel != null ? slidePanel : rectTransform;
+        Vector2 startPosition = target.anchoredPosition;
         Vector2 endPosition = new Vector2(startPosition.x, targetY);
         float elapsed = 0f;
 
@@ -177,11 +277,11 @@ public class SettingsPopupController : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / animationDuration);
             float easedT = SmoothStep(t);
-            rectTransform.anchoredPosition = Vector2.Lerp(startPosition, endPosition, easedT);
+            target.anchoredPosition = Vector2.Lerp(startPosition, endPosition, easedT);
             yield return null;
         }
 
-        rectTransform.anchoredPosition = endPosition;
+        target.anchoredPosition = endPosition;
 
         if (deactivateOnComplete)
         {

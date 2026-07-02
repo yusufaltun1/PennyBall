@@ -42,7 +42,7 @@ public class ResultPanelController : MonoBehaviour
     [SerializeField] private RectTransform p1;
     [SerializeField] private RectTransform p2;
     [SerializeField] private RectTransform p3;
-    [SerializeField] private RectTransform btnContinue;
+    [SerializeField] private RectTransform buttons;
     [SerializeField] private ConfettiController confetti;
     [SerializeField] private Button continueButton;
 
@@ -130,8 +130,8 @@ public class ResultPanelController : MonoBehaviour
         if (confetti == null)
             confetti = GetComponentInChildren<ConfettiController>(true);
 
-        if (continueButton == null && btnContinue != null)
-            continueButton = btnContinue.GetComponent<Button>();
+        if (continueButton == null && buttons != null)
+            continueButton = buttons.GetComponentInChildren<Button>(true);
 
         if (continueButton != null)
             continueButton.onClick.AddListener(OnContinueClicked);
@@ -306,7 +306,7 @@ public class ResultPanelController : MonoBehaviour
         personFinals[0] = Capture(p1);
         personFinals[1] = Capture(p2);
         personFinals[2] = Capture(p3);
-        continueFinal = Capture(btnContinue);
+        continueFinal = Capture(buttons);
         coinsFinal = Capture(rewardCoins);
         xpFinal = Capture(rewardXp);
     }
@@ -352,11 +352,11 @@ public class ResultPanelController : MonoBehaviour
         icon.anchoredPosition = Vector2.zero;
         icon.localScale = iconFinal.LocalScale;
 
-        btnContinue.gameObject.SetActive(false);
-        btnContinue.anchoredPosition = new Vector2(
+        buttons.gameObject.SetActive(false);
+        buttons.anchoredPosition = new Vector2(
             continueFinal.AnchoredPosition.x,
-            continueFinal.AnchoredPosition.y - canvasHalfHeight - btnContinue.rect.height - offscreenPadding);
-        btnContinue.localScale = continueFinal.LocalScale;
+            continueFinal.AnchoredPosition.y - canvasHalfHeight - buttons.rect.height - offscreenPadding);
+        buttons.localScale = continueFinal.LocalScale;
 
         if (rewards != null)
         {
@@ -394,8 +394,8 @@ public class ResultPanelController : MonoBehaviour
             SetCanvasGroupAlpha(xpCanvasGroup, 1f);
         }
 
-        btnContinue.gameObject.SetActive(true);
-        Apply(btnContinue, continueFinal);
+        buttons.gameObject.SetActive(true);
+        Apply(buttons, continueFinal);
     }
 
     private IEnumerator PlayResultSequence()
@@ -453,10 +453,10 @@ public class ResultPanelController : MonoBehaviour
 
         yield return new WaitForSeconds(continueDelay);
 
-        btnContinue.gameObject.SetActive(true);
-        Vector2 continueStart = btnContinue.anchoredPosition;
+        buttons.gameObject.SetActive(true);
+        Vector2 continueStart = buttons.anchoredPosition;
         yield return AnimatePosition(
-            btnContinue,
+            buttons,
             continueStart,
             continueFinal.AnchoredPosition,
             continueDuration);

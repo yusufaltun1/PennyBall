@@ -25,7 +25,7 @@ public class WalletPresenter : MonoBehaviour
             coinsLabel.text = WalletService.TotalCoins.ToString();
 
         if (levelLabel != null)
-            levelLabel.text = WalletService.Level.ToString();
+            levelLabel.text = "Level " + WalletService.Level.ToString();
 
         if (progressFillImage != null)
             progressFillImage.fillAmount = WalletService.LevelProgress;
