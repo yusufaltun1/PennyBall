@@ -25,3 +25,6 @@ alwaysApply: true
 ## Memory & Physics Performance
 - **Object Pooling**: Enforce the use of `UnityEngine.Pool` for high-frequency instantiated objects like projectiles, particles, and damage numbers.
 - **Physics Queries**: Always use non-allocating physics APIs (e.g., `Physics.RaycastNonAlloc`, `Physics.OverlapSphereNonAlloc`) and pass a pre-allocated array buffer to avoid Garbage Collection spikes.
+
+## Cursor Standarts 
+- **AI Response**: Avoid unnecessary explanations. Only inform the user when necessary or if there's something you want the user to do. Otherwise, avoid lengthy explanations.

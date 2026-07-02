@@ -9,9 +9,17 @@ public class PlayerProfilePresenter : MonoBehaviour
     [SerializeField] TextMeshProUGUI _nameLabelTMP;
     [SerializeField] Text _nameLabel;
 
-    void Start()
+    void OnEnable()
     {
         Refresh();
+        if (LeagueService.Instance != null)
+            LeagueService.Instance.AvatarChanged += Refresh;
+    }
+
+    void OnDisable()
+    {
+        if (LeagueService.Instance != null)
+            LeagueService.Instance.AvatarChanged -= Refresh;
     }
 
     void Refresh()

@@ -53,8 +53,9 @@ public class ChangeAvatarPanelController : MonoBehaviour
         _library      = AvatarSpriteLibrary.Load();
         _currentIndex = LeagueService.Instance?.PlayerAvatarIndex ?? 0;
 
-        gameObject.SetActive(true);  // önce aktif et → child Awake()'ler çalışır
+        gameObject.SetActive(true);
         BuildGrid();
+        SetToClosedPosition();
         Animate(_openY, deactivateOnDone: false);
     }
 
@@ -70,9 +71,7 @@ public class ChangeAvatarPanelController : MonoBehaviour
 
     void BuildGrid()
     {
-        // Eski slotları temizle
-        for (int i = _content.childCount - 1; i >= 0; i--)
-            Destroy(_content.GetChild(i).gameObject);
+        ClearContent();
 
         int count = _library != null ? _library.Count : 0;
         _slots = new ChangeAvatarElementView[count];
@@ -80,11 +79,28 @@ public class ChangeAvatarPanelController : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             var slot = Instantiate(_slotPrefab, _content);
-            slot.Setup(_library.Get(i), i == _currentIndex, _selectedTint, _unselectedTint);
-
-            int captured = i;
-            slot.Button.onClick.AddListener(() => SelectAvatar(captured));
+            var layout = slot.GetComponent<LayoutElement>() ?? slot.gameObject.AddComponent<LayoutElement>();
+            layout.minWidth = layout.minHeight = 300f;
+            layout.preferredWidth = layout.preferredHeight = 300f;
+            slot.Setup(i, _library.Get(i), i == _currentIndex, _selectedTint, _unselectedTint);
+            slot.Bind(SelectAvatar);
             _slots[i] = slot;
+        }
+
+        if (_content is RectTransform contentRect)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+    }
+
+    void ClearContent()
+    {
+        if (_content == null)
+        {
+            return;
+        }
+
+        for (int i = _content.childCount - 1; i >= 0; i--)
+        {
+            DestroyImmediate(_content.GetChild(i).gameObject);
         }
     }
 
@@ -99,7 +115,7 @@ public class ChangeAvatarPanelController : MonoBehaviour
     {
         if (_slots == null || _library == null) return;
         for (int i = 0; i < _slots.Length; i++)
-            _slots[i].Setup(_library.Get(i), i == _currentIndex, _selectedTint, _unselectedTint);
+            _slots[i].Setup(i, _library.Get(i), i == _currentIndex, _selectedTint, _unselectedTint);
     }
 
     // ── Animation ────────────────────────────────────────────────────────────
@@ -133,10 +149,9 @@ public class ChangeAvatarPanelController : MonoBehaviour
 
     void CachePositions()
     {
-        // Tasarımda panelin bulunduğu Y'yi "açık" pozisyon olarak kullan
-        _openY   = _rect.anchoredPosition.y;
-        float half = GetCanvasHalfHeight();
-        _closedY = _openY - (half + _rect.rect.height);
+        float halfHeight = GetCanvasHalfHeight();
+        _closedY = halfHeight;
+        _openY   = -halfHeight;
     }
 
     void SetToClosedPosition()
