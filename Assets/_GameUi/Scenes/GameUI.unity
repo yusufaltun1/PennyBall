@@ -2808,6 +2808,7 @@ GameObject:
   - component: {fileID: 659976157}
   - component: {fileID: 659976159}
   - component: {fileID: 659976158}
+  - component: {fileID: 659976160}
   m_Layer: 5
   m_Name: Score
   m_TagString: Untagged
@@ -2873,6 +2874,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 659976156}
   m_CullTransparentMesh: 1
+--- !u!114 &659976160
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 659976156}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b72adde8f46cb4b509a8bc1388bf1fb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MatchScoreboardPresenter
+  _playerScoreText: {fileID: 2144909490}
+  _opponentScoreText: {fileID: 1031406822}
 --- !u!1 &684775322
 GameObject:
   m_ObjectHideFlags: 0
@@ -9864,7 +9879,6 @@ MonoBehaviour:
   _goalVolume: 0.5
   _musicVolume: 0.75
   _coinHitMinSpeed: 0.35
-  _vibrationEnabled: 1
   _coinHitDust:
     _enabled: 1
     _heightOffset: 0.012

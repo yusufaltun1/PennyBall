@@ -5187,6 +5187,7 @@ MonoBehaviour:
   _scrollDuration: 1
   _rankAnimDelay: 0.5
   _rankAnimDuration: 0.9
+  _leagueNameLabel: {fileID: 995307049}
 --- !u!1 &836732433
 GameObject:
   m_ObjectHideFlags: 0

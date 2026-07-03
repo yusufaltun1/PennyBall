@@ -429,6 +429,33 @@ public class CoinDragController : MonoBehaviour
         _rigidbody.angularVelocity = Vector3.zero;
     }
 
+    public void FreezeForGoal()
+    {
+        if (_isAiming)
+        {
+            _isAiming = false;
+            _aimIndicator.Hide();
+        }
+
+        ForceStopSliding();
+        _spinSpeedDegrees = 0f;
+
+        if (_rigidbody != null)
+        {
+            _rigidbody.isKinematic = true;
+        }
+    }
+
+    public void UnfreezeAfterGoal()
+    {
+        if (_rigidbody == null || _isAiming)
+        {
+            return;
+        }
+
+        _rigidbody.isKinematic = false;
+    }
+
     public void CancelAim()
     {
         if (!_isAiming)

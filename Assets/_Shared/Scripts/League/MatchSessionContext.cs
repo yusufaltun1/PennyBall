@@ -13,6 +13,15 @@ public static class MatchSessionContext
     public static int LevelAfter  { get; private set; } = 1;
     public static bool LeveledUp  => LevelAfter > LevelBefore;
 
+    public static int PlayerGoalsAtEnd   { get; private set; }
+    public static int OpponentGoalsAtEnd { get; private set; }
+
+    public static void SetFinalScore(int playerGoals, int opponentGoals)
+    {
+        PlayerGoalsAtEnd   = playerGoals;
+        OpponentGoalsAtEnd = opponentGoals;
+    }
+
     public static void SetOpponent(BotPlayerEntry opponent)
     {
         _currentOpponent = opponent;
@@ -37,5 +46,7 @@ public static class MatchSessionContext
         EarnedXp    = 0;
         LevelBefore = 1;
         LevelAfter  = 1;
+        PlayerGoalsAtEnd   = 0;
+        OpponentGoalsAtEnd = 0;
     }
 }

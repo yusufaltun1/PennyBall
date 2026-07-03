@@ -7,8 +7,17 @@ public class MatchScoreboardPresenter : MonoBehaviour
     [SerializeField] TextMeshProUGUI _playerScoreText;
     [SerializeField] TextMeshProUGUI _opponentScoreText;
 
-    int _playerScore;
-    int _opponentScore;
+    bool _handleMatchEnd;
+
+    void Awake()
+    {
+        _handleMatchEnd = GetComponentInParent<ResultPanelController>(true) == null;
+    }
+
+    void OnEnable()
+    {
+        RefreshDisplay();
+    }
 
     void Start()
     {
@@ -17,71 +26,78 @@ public class MatchScoreboardPresenter : MonoBehaviour
 
     void OnDestroy()
     {
-        if (GameRulesManager.Instance != null)
-            GameRulesManager.Instance.PlayerGoalScored -= OnPlayerGoal;
-
-        if (OpponentBotController.Instance != null)
-            OpponentBotController.Instance.OpponentGoalScored -= OnOpponentGoal;
-
-        MatchTimerPresenter timer = FindAnyObjectByType<MatchTimerPresenter>();
-        if (timer != null)
-            timer.TimerExpired -= OnTimerExpired;
+        if (LeagueMatchController.Instance != null)
+        {
+            LeagueMatchController.Instance.ScoresChanged -= RefreshDisplay;
+            LeagueMatchController.Instance.MatchTimerExpired -= OnMatchTimerExpired;
+        }
     }
 
     IEnumerator BindWhenReady()
     {
-        while (GameRulesManager.Instance == null || OpponentBotController.Instance == null)
+        while (LeagueMatchController.Instance == null)
             yield return null;
 
-        GameRulesManager.Instance.PlayerGoalScored += OnPlayerGoal;
-        OpponentBotController.Instance.OpponentGoalScored += OnOpponentGoal;
+        LeagueMatchController.Instance.ScoresChanged -= RefreshDisplay;
+        LeagueMatchController.Instance.ScoresChanged += RefreshDisplay;
 
-        MatchTimerPresenter timer = FindAnyObjectByType<MatchTimerPresenter>();
-        if (timer != null)
-            timer.TimerExpired += OnTimerExpired;
+        if (_handleMatchEnd)
+        {
+            LeagueMatchController.Instance.MatchTimerExpired -= OnMatchTimerExpired;
+            LeagueMatchController.Instance.MatchTimerExpired += OnMatchTimerExpired;
+        }
 
-        UpdateDisplay();
+        RefreshDisplay();
     }
 
-    void OnPlayerGoal()
+    public void RefreshDisplay()
     {
-        _playerScore++;
-        UpdateDisplay();
+        GetScores(out int playerScore, out int opponentScore);
+
+        if (_playerScoreText != null)
+            _playerScoreText.SetText(playerScore.ToString());
+        if (_opponentScoreText != null)
+            _opponentScoreText.SetText(opponentScore.ToString());
     }
 
-    void OnOpponentGoal()
+    public static void RefreshAll()
     {
-        _opponentScore++;
-        UpdateDisplay();
+        MatchScoreboardPresenter[] presenters =
+            FindObjectsByType<MatchScoreboardPresenter>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < presenters.Length; i++)
+            presenters[i].RefreshDisplay();
     }
 
-    void OnTimerExpired()
+    static void GetScores(out int playerScore, out int opponentScore)
+    {
+        if (LeagueMatchController.Instance != null && LeagueMatchController.Instance.IsMatchActive)
+        {
+            playerScore = LeagueMatchController.Instance.PlayerGoals;
+            opponentScore = LeagueMatchController.Instance.OpponentGoals;
+            return;
+        }
+
+        playerScore = MatchSessionContext.PlayerGoalsAtEnd;
+        opponentScore = MatchSessionContext.OpponentGoalsAtEnd;
+    }
+
+    void OnMatchTimerExpired()
     {
         CoinInputHandler[] inputs = FindObjectsByType<CoinInputHandler>(FindObjectsSortMode.None);
         for (int i = 0; i < inputs.Length; i++)
             inputs[i].enabled = false;
 
         OpponentBotController.Instance?.FreezeMatch();
+        GameFeedback.EnsureInstance()?.PlayWhistle();
 
-        MatchResultType result;
-        if (_playerScore > _opponentScore)
-            result = MatchResultType.Win;
-        else if (_playerScore < _opponentScore)
-            result = MatchResultType.Loss;
-        else
-            result = MatchResultType.Draw;
+        MatchResultType result = MatchResultType.Draw;
+        if (LeagueMatchController.Instance != null)
+            result = LeagueMatchController.Instance.CompleteMatchFromTimer();
 
-        LeagueService.Instance?.RegisterMatchResult(result);
+        RefreshAll();
 
-        ResultPanelController resultPanel = FindAnyObjectByType<ResultPanelController>(FindObjectsInactive.Include);
+        ResultPanelController resultPanel =
+            FindAnyObjectByType<ResultPanelController>(FindObjectsInactive.Include);
         resultPanel?.ShowResult(result);
-    }
-
-    void UpdateDisplay()
-    {
-        if (_playerScoreText != null)
-            _playerScoreText.SetText(_playerScore.ToString());
-        if (_opponentScoreText != null)
-            _opponentScoreText.SetText(_opponentScore.ToString());
     }
 }

@@ -110,6 +110,13 @@ public class ResultPanelController : MonoBehaviour
             gameObject.SetActive(true);  // OnEnable fires → HandleOutcomeChange çalışır
         else
             HandleOutcomeChange();
+
+        RefreshChildScoreboards();
+    }
+
+    void RefreshChildScoreboards()
+    {
+        MatchScoreboardPresenter.RefreshAll();
     }
 
     private struct RectState
