@@ -141,6 +141,8 @@ public class OpponentBotController : MonoBehaviour
         }
 
         _goalEnteredDuringShot = true;
+        GameRulesManager.Instance?.PreviewFreezeForPossibleGoal();
+        coin.DragController.ForceStopSliding();
     }
 
     void BeginPlayLoop()
@@ -170,6 +172,23 @@ public class OpponentBotController : MonoBehaviour
         ClearResolvingState();
     }
 
+    public void ResumePlayIfIdle()
+    {
+        if (_playLoopRoutine != null)
+        {
+            return;
+        }
+
+        if (GameRulesManager.Instance != null
+            && (GameRulesManager.Instance.IsGoalSequenceActive
+                || GameRulesManager.Instance.IsResolvingMove))
+        {
+            return;
+        }
+
+        BeginPlayLoop();
+    }
+
     void ClearResolvingState()
     {
         _resolvingCoin = null;
@@ -182,7 +201,7 @@ public class OpponentBotController : MonoBehaviour
         while (true)
         {
             while (_isResolving
-                   || (GameRulesManager.Instance != null && GameRulesManager.Instance.IsResolvingMove))
+                   || (GameRulesManager.Instance != null && GameRulesManager.Instance.IsMatchLockedForInput))
             {
                 yield return null;
             }
@@ -247,7 +266,7 @@ public class OpponentBotController : MonoBehaviour
         bool isOpeningShot = _isOpeningShot;
 
         _pathSamples.Clear();
-        yield return WaitUntilCoinStops(coin.DragController, _pathSamples);
+        yield return WaitUntilCoinStops(coin.DragController, coin, _pathSamples);
 
         bool shotValid;
         bool pendingInvalidRollbackFinished = false;
@@ -299,10 +318,23 @@ public class OpponentBotController : MonoBehaviour
             Debug.Log($"[Bot] {coin.gameObject.name} GOL");
             _resolvingCoin = null;
             _isResolving = false;
-            StopPlayLoop();
+
+            if (GameRulesManager.Instance == null
+                || !GameRulesManager.Instance.TryBeginGoalSequence(pauseOpponent: false))
+            {
+                yield break;
+            }
+
             InvokeOpponentGoalScoredSafely();
-            GameRulesManager.Instance?.HandleEnemyGoalCelebration();
+            GameRulesManager.Instance.HandleEnemyGoalCelebration();
+            StopPlayLoop();
             yield break;
+        }
+
+        if (GameRulesManager.Instance != null && GameRulesManager.Instance.HasPendingGoalFreeze)
+        {
+            GameRulesManager.Instance.UnfreezeAllRoundCoins();
+            ResumePlayIfIdle();
         }
 
         _resolvingCoin = null;
@@ -317,37 +349,42 @@ public class OpponentBotController : MonoBehaviour
         TeamRulesService.EnsureAtLeastOneSelectable(_state, SetCoinPassive);
     }
 
-    IEnumerator WaitUntilCoinStops(CoinDragController coin, List<Vector3> pathSamples)
+    IEnumerator WaitUntilCoinStops(CoinDragController dragController, CoinIdentity shotCoin, List<Vector3> pathSamples)
     {
         pathSamples.Clear();
-        pathSamples.Add(coin.transform.position);
+        pathSamples.Add(dragController.transform.position);
 
-        // Her frame'de sample al — 0.05s gap yerine anlık başla
         float elapsed = 0f;
         bool everSlid = false;
         while (true)
         {
             yield return null;
-            pathSamples.Add(coin.transform.position);
+            pathSamples.Add(dragController.transform.position);
 
-            if (coin.IsSliding)
+            if (shotCoin != null && (_goalEnteredDuringShot || IsCoinInPlayerGoal(shotCoin)))
+            {
+                GameRulesManager.Instance?.PreviewFreezeForPossibleGoal();
+                dragController.ForceStopSliding();
+                break;
+            }
+
+            if (dragController.IsSliding)
             {
                 everSlid = true;
                 elapsed += Time.deltaTime;
                 if (elapsed >= _coinStopTimeout)
                 {
-                    Debug.LogWarning($"[Bot] {coin.gameObject.name} timeout — coin durduruluyor");
+                    Debug.LogWarning($"[Bot] {dragController.gameObject.name} timeout — coin durduruluyor");
+                    dragController.ForceStopSliding();
                     break;
                 }
             }
             else if (everSlid)
             {
-                // Hareket etti ve durdu
                 break;
             }
             else if (elapsed > 0.3f)
             {
-                // Hiç kaymadı, 0.3s içinde başlamazsa vazgeç
                 break;
             }
             else
@@ -356,9 +393,9 @@ public class OpponentBotController : MonoBehaviour
             }
         }
 
-        pathSamples.Add(coin.transform.position);
+        pathSamples.Add(dragController.transform.position);
         yield return new WaitForSeconds(0.1f);
-        pathSamples.Add(coin.transform.position);
+        pathSamples.Add(dragController.transform.position);
     }
 
     IEnumerator RollbackCoin(CoinIdentity coin, Vector3 targetPosition)

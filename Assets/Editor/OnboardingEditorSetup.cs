@@ -6,6 +6,7 @@ using UnityEngine.UI;
 
 public static class OnboardingEditorSetup
 {
+    const string SplashScenePath = "Assets/_SplashUI/Scene/Splash.unity";
     const string GameUiScenePath = "Assets/_GameUi/Scenes/GameUI.unity";
     const string OnboardingScenePath = "Assets/_Onboarding/Scenes/Onboarding.unity";
     const string MainMenuScenePath = "Assets/_MainMenu/Scenes/MainMenu_Scene.unity";
@@ -38,13 +39,14 @@ public static class OnboardingEditorSetup
     {
         EditorBuildSettingsScene[] scenes =
         {
+            new(SplashScenePath, true),
             new(MainMenuScenePath, true),
             new(OnboardingScenePath, true),
             new(GameUiScenePath, true)
         };
 
         EditorBuildSettings.scenes = scenes;
-        Debug.Log("[Onboarding] Build Settings: MainMenu → Onboarding → GameUI");
+        Debug.Log("[Onboarding] Build Settings: Splash → MainMenu → Onboarding → GameUI");
     }
 
     [MenuItem("PennyBall/Onboarding/Setup Main Menu Router")]

@@ -28,6 +28,8 @@ public class GameRulesManager : MonoBehaviour
     bool _isResolvingMove;
     bool _isFirstPlayerMove = true;
     bool _isOpeningShot;
+    bool _goalSequenceActive;
+    bool _pendingGoalFreeze;
     int  _playerShotNumber = 1;   // bu turdaki atış sırası; yalnızca 1. atış gate validation'dan muaf
     Coroutine _resolveRoutine;
     Coroutine _roundResetRoutine;
@@ -39,6 +41,9 @@ public class GameRulesManager : MonoBehaviour
     }
 
     public bool IsResolvingMove => _isResolvingMove;
+    public bool IsGoalSequenceActive => _goalSequenceActive;
+    public bool HasPendingGoalFreeze => _pendingGoalFreeze;
+    public bool IsMatchLockedForInput => _goalSequenceActive || _pendingGoalFreeze || _isResolvingMove;
     public int PlayerShotNumber => _playerShotNumber;
 
     /// <summary>Sıradaki atış gate kuralına tabi mi (2. atış ve sonrası).</summary>
@@ -137,6 +142,8 @@ public class GameRulesManager : MonoBehaviour
         _isFirstPlayerMove = true;
         _isOpeningShot = false;
         _isResolvingMove = false;
+        _goalSequenceActive = false;
+        _pendingGoalFreeze = false;
         _playerShotNumber = 1;
         _shotCoin = null;
         _resolvingShotCoin = null;
@@ -341,6 +348,96 @@ public class GameRulesManager : MonoBehaviour
         }
 
         _goalEnteredDuringShot = true;
+        PreviewFreezeForPossibleGoal();
+    }
+
+    public void PreviewFreezeForPossibleGoal()
+    {
+        if (_goalSequenceActive || _pendingGoalFreeze)
+        {
+            return;
+        }
+
+        FreezeAllRoundCoins();
+        _pendingGoalFreeze = true;
+    }
+
+    public bool TryBeginGoalSequence(bool cancelActiveResolve = true, bool pauseOpponent = true)
+    {
+        if (_goalSequenceActive)
+        {
+            return false;
+        }
+
+        _goalSequenceActive = true;
+        _isResolvingMove = true;
+        _pendingGoalFreeze = false;
+        FreezeAllRoundCoins();
+
+        if (pauseOpponent)
+        {
+            OpponentBotController.Instance?.PauseForRoundReset();
+        }
+
+        if (cancelActiveResolve)
+        {
+            CancelActiveShotResolutionForGoal();
+        }
+        else
+        {
+            ClearResolveStateWithoutStopping();
+        }
+
+        return true;
+    }
+
+    public void FreezeAllRoundCoins()
+    {
+        PruneDestroyedRoundCoins();
+
+        for (int i = 0; i < _roundCoins.Count; i++)
+        {
+            CoinIdentity coin = _roundCoins[i];
+            if (coin?.DragController == null)
+            {
+                continue;
+            }
+
+            coin.DragController.FreezeForGoal();
+        }
+    }
+
+    public void UnfreezeAllRoundCoins()
+    {
+        PruneDestroyedRoundCoins();
+
+        for (int i = 0; i < _roundCoins.Count; i++)
+        {
+            CoinIdentity coin = _roundCoins[i];
+            coin?.DragController?.UnfreezeAfterGoal();
+        }
+
+        _pendingGoalFreeze = false;
+    }
+
+    void CancelActiveShotResolutionForGoal()
+    {
+        if (_resolveRoutine != null)
+        {
+            StopCoroutine(_resolveRoutine);
+            _resolveRoutine = null;
+        }
+
+        ClearResolveStateWithoutStopping();
+    }
+
+    void ClearResolveStateWithoutStopping()
+    {
+        _shotCoin = null;
+        _resolvingShotCoin = null;
+        _goalEnteredDuringShot = false;
+        _isOpeningShot = false;
+        GateIndicator.Instance?.Hide();
     }
 
     void CancelActiveShotResolution()
@@ -409,11 +506,24 @@ public class GameRulesManager : MonoBehaviour
 
         if (scoredGoal)
         {
+            if (!TryBeginGoalSequence(cancelActiveResolve: false))
+            {
+                _resolvingShotCoin = null;
+                _resolveRoutine = null;
+                yield break;
+            }
+
             Debug.Log($"[Shot] {coin.gameObject.name} GOL | trigger={_goalEnteredDuringShot} | içerde={inGoal}");
             HandlePlayerGoalCelebration();
             _resolvingShotCoin = null;
             _resolveRoutine = null;
             yield break;
+        }
+
+        if (_pendingGoalFreeze)
+        {
+            UnfreezeAllRoundCoins();
+            OpponentBotController.Instance?.ResumePlayIfIdle();
         }
 
         _resolvingShotCoin = null;
@@ -496,6 +606,7 @@ public class GameRulesManager : MonoBehaviour
 
             if (shotCoin != null && (_goalEnteredDuringShot || IsCoinInOpponentGoal(shotCoin)))
             {
+                PreviewFreezeForPossibleGoal();
                 dragController.ForceStopSliding();
                 break;
             }
@@ -572,7 +683,6 @@ public class GameRulesManager : MonoBehaviour
 
     void HandlePlayerGoalCelebration()
     {
-        OpponentBotController.Instance?.PauseForRoundReset();
         GameFeedback.EnsureInstance()?.PlayGoal();
         InvokePlayerGoalScoredSafely();
 
@@ -588,7 +698,11 @@ public class GameRulesManager : MonoBehaviour
 
     public void HandleEnemyGoalCelebration()
     {
-        OpponentBotController.Instance?.PauseForRoundReset();
+        PlayEnemyGoalCelebrationEffects();
+    }
+
+    void PlayEnemyGoalCelebrationEffects()
+    {
         GameFeedback.EnsureInstance()?.PlayEnemyGoal();
 
         EnemyGoalEffectController effect = EnemyGoalEffectController.EnsureInstance();
@@ -688,6 +802,8 @@ public class GameRulesManager : MonoBehaviour
 
         DiscoverPlayerCoins();
         _isResolvingMove = false;
+        _goalSequenceActive = false;
+        _pendingGoalFreeze = false;
         _roundResetRoutine = null;
         RoundReset?.Invoke();
 

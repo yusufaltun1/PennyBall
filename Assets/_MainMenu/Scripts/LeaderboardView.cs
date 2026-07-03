@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,6 +8,7 @@ public class LeaderboardView : MonoBehaviour
     [SerializeField] LeaderboardRowView _botRowPrefab;
     [SerializeField] LeaderboardRowView _playerRowPrefab;
     [SerializeField] Transform _content;
+    [SerializeField] TextMeshProUGUI _leagueNameLabel;
     [SerializeField] float _scrollDelay    = 0.3f;
     [SerializeField] float _scrollDuration = 1.0f;
 
@@ -22,23 +24,55 @@ public class LeaderboardView : MonoBehaviour
     void Awake()
     {
         _scrollRect = GetComponent<ScrollRect>();
+
+        if (_leagueNameLabel == null)
+        {
+            Transform leagueName = transform.parent != null
+                ? transform.parent.Find("LeagueName")
+                : null;
+            if (leagueName != null)
+                _leagueNameLabel = leagueName.GetComponent<TextMeshProUGUI>();
+        }
     }
 
     void OnEnable()
     {
         if (LeagueService.Instance != null)
+        {
             LeagueService.Instance.StandingsUpdated += Rebuild;
+            LeagueService.Instance.PlayerPromoted += OnLeagueChanged;
+        }
 
+        RefreshLeagueName();
         Rebuild();
     }
 
     void OnDisable()
     {
         if (LeagueService.Instance != null)
+        {
             LeagueService.Instance.StandingsUpdated -= Rebuild;
+            LeagueService.Instance.PlayerPromoted -= OnLeagueChanged;
+        }
 
         StopScroll();
         StopRankAnim();
+    }
+
+    void OnLeagueChanged(int _)
+    {
+        RefreshLeagueName();
+    }
+
+    void RefreshLeagueName()
+    {
+        if (_leagueNameLabel == null)
+        {
+            return;
+        }
+
+        int league = LeagueService.Instance?.PlayerLeague ?? 1;
+        _leagueNameLabel.SetText(LeagueConfig.GetLeagueName(league));
     }
 
     public void OnTabSelected()

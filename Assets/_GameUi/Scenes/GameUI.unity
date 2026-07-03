@@ -151,11 +151,11 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 684775323}
-  m_Father: {fileID: 63828639}
+  m_Father: {fileID: 1674004250}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 111.5}
+  m_AnchoredPosition: {x: 0, y: 250}
   m_SizeDelta: {x: 788, y: 223}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &35054506
@@ -443,6 +443,7 @@ MonoBehaviour:
   _botRowPrefab: {fileID: -7136584092841832648, guid: 97e36f12497a94d36b64ac7185c6c1f2, type: 3}
   _playerRowPrefab: {fileID: 5111856438758180014, guid: b23b9dc341e1f4aacb9d837052d32ca8, type: 3}
   _content: {fileID: 1950632744}
+  _leagueNameLabel: {fileID: 1226593604}
   _scrollDelay: 0.3
   _scrollDuration: 1
   _rankAnimDelay: 0.5
@@ -2667,8 +2668,6 @@ RectTransform:
   m_Children:
   - {fileID: 1226593603}
   - {fileID: 53983113}
-  - {fileID: 1107564917}
-  - {fileID: 842122287}
   m_Father: {fileID: 585451194}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -3235,6 +3234,7 @@ RectTransform:
   m_Children:
   - {fileID: 585708798}
   - {fileID: 525808182}
+  - {fileID: 1107564917}
   m_Father: {fileID: 1799544533}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -3477,6 +3477,7 @@ GameObject:
   - component: {fileID: 659976157}
   - component: {fileID: 659976159}
   - component: {fileID: 659976158}
+  - component: {fileID: 659976160}
   m_Layer: 5
   m_Name: Score
   m_TagString: Untagged
@@ -3542,6 +3543,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 659976156}
   m_CullTransparentMesh: 1
+--- !u!114 &659976160
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 659976156}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b72adde8f46cb4b509a8bc1388bf1fb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MatchScoreboardPresenter
+  _playerScoreText: {fileID: 2144909490}
+  _opponentScoreText: {fileID: 1031406822}
 --- !u!1 &684775322
 GameObject:
   m_ObjectHideFlags: 0
@@ -3626,13 +3641,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 64
-  m_fontSizeBase: 64
+  m_fontSize: 72
+  m_fontSizeBase: 72
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -4047,7 +4062,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -155}
+  m_AnchoredPosition: {x: 0, y: -333}
   m_SizeDelta: {x: 599, y: 599}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &740986063
@@ -5309,7 +5324,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fb5193cd27ac46afaa6dd6f8dd79d9e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MatchTimerPresenter
-  _totalSeconds: 90
 --- !u!1 &987098447
 GameObject:
   m_ObjectHideFlags: 0
@@ -6372,12 +6386,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 576420296}
-  m_Father: {fileID: 525808182}
+  m_Father: {fileID: 585451194}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: 0, y: -78.5}
-  m_SizeDelta: {x: -282, y: 223}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 213}
+  m_SizeDelta: {x: 788, y: 223}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1107564918
 MonoBehaviour:
@@ -7970,7 +7984,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5275238727757102012, guid: 97e36f12497a94d36b64ac7185c6c1f2, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 5275238727757102012, guid: 97e36f12497a94d36b64ac7185c6c1f2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -8417,12 +8431,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c88d4269ddbf64580a0aa87880798a77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OpponentBotController
-  _aiStrength: 1
+  _aiStrength: 10
   _useInspectorAiStrength: 0
-  _turnThinkDelaySeconds: 30
+  _turnThinkDelaySeconds: 2.5
   _useInspectorTurnDelay: 1
   _difficulty:
-    Level: 1
+    Level: 10
   _gateMargin: 0.09
   _rollbackDuration: 0.45
   _coinStopTimeout: 8
@@ -9094,7 +9108,7 @@ RectTransform:
   - {fileID: 40477311}
   - {fileID: 989927833}
   - {fileID: 659976157}
-  - {fileID: 63828639}
+  - {fileID: 35054505}
   - {fileID: 1674004261}
   m_Father: {fileID: 1799544533}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -9143,7 +9157,7 @@ MonoBehaviour:
   p1: {fileID: 1962805834}
   p2: {fileID: 1614979347}
   p3: {fileID: 438575386}
-  buttons: {fileID: 63828639}
+  btnContinue: {fileID: 35054505}
   confetti: {fileID: 1674004262}
   continueButton: {fileID: 0}
   leagueStatusPanel: {fileID: 585451193}
@@ -9516,7 +9530,6 @@ RectTransform:
   - {fileID: 457735964}
   - {fileID: 1674004250}
   - {fileID: 585451194}
-  - {fileID: 411708297}
   - {fileID: 972722223}
   - {fileID: 1824388319}
   - {fileID: 2901001002}
@@ -10956,7 +10969,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 435}
+  m_AnchoredPosition: {x: 0, y: 333}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!43 &2078596087
@@ -12105,13 +12118,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6568721000628119761}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.49460453, y: -0.54890555, z: 0.46762475, w: 0.48517635}
-  m_LocalPosition: {x: -0.17, y: 4.85, z: 1.82}
+  m_LocalRotation: {x: 0.6117622, y: -0.66882706, z: 0.2984184, w: 0.29893792}
+  m_LocalPosition: {x: 1.17527, y: 4.75, z: 1.86527}
   m_LocalScale: {x: 100.000015, y: 100, z: 100.00004}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 83.366, y: -142.671, z: -50.562}
+  m_LocalEulerAnglesHint: {x: 49.902, y: -176.907, z: -83.458}
 --- !u!1001 &1229824078393035233
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12120,17 +12133,9 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 534617425947907376, guid: a20f58e9fcd8e4ff7a9128c8e79209a2, type: 3}
-      propertyPath: m_Layer
-      value: 10
-      objectReference: {fileID: 0}
     - target: {fileID: 2404768523648375083, guid: a20f58e9fcd8e4ff7a9128c8e79209a2, type: 3}
       propertyPath: m_Name
       value: Saha
-      objectReference: {fileID: 0}
-    - target: {fileID: 2404768523648375083, guid: a20f58e9fcd8e4ff7a9128c8e79209a2, type: 3}
-      propertyPath: m_Layer
-      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 3107575955259858585, guid: a20f58e9fcd8e4ff7a9128c8e79209a2, type: 3}
       propertyPath: m_LocalPosition.x
@@ -12194,14 +12199,6 @@ PrefabInstance:
     - target: {fileID: 1034944052130216605, guid: af5e291db2b4844ac9f47e6ccd658c19, type: 3}
       propertyPath: m_Name
       value: Base
-      objectReference: {fileID: 0}
-    - target: {fileID: 1034944052130216605, guid: af5e291db2b4844ac9f47e6ccd658c19, type: 3}
-      propertyPath: m_Layer
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 3645380754800619942, guid: af5e291db2b4844ac9f47e6ccd658c19, type: 3}
-      propertyPath: m_Layer
-      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 6671813913644076230, guid: af5e291db2b4844ac9f47e6ccd658c19, type: 3}
       propertyPath: m_LocalPosition.x
@@ -12356,7 +12353,7 @@ Light:
   m_RenderMode: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 1024
+    m_Bits: 4294967295
   m_RenderingLayerMask: 1
   m_Lightmapping: 2
   m_LightShadowCasterMode: 0
@@ -12594,7 +12591,7 @@ GameObject:
   - component: {fileID: 1668776105255289602}
   - component: {fileID: 7131106252041701148}
   m_Layer: 0
-  m_Name: TriLamp-Geometry
+  m_Name: TriLamp-Back
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -12611,13 +12608,13 @@ Light:
   serializedVersion: 12
   m_Type: 1
   m_Color: {r: 0.8, g: 0.8, b: 0.8, a: 1}
-  m_Intensity: 0.25
+  m_Intensity: 0.5
   m_Range: 10
   m_SpotAngle: 45
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 0.5, y: 0.5}
   m_Shadows:
-    m_Type: 0
+    m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -12787,9 +12784,9 @@ Light:
   m_GameObject: {fileID: 7812195308733857807}
   m_Enabled: 1
   serializedVersion: 12
-  m_Type: 1
+  m_Type: 0
   m_Color: {r: 0.8, g: 0.8, b: 0.8, a: 1}
-  m_Intensity: 1
+  m_Intensity: 4
   m_Range: 10
   m_SpotAngle: 45
   m_InnerSpotAngle: 8
@@ -12838,7 +12835,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShadowRadius: 0
+  m_ShadowRadius: 0.025
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -12855,7 +12852,7 @@ GameObject:
   - component: {fileID: 7640557174090806525}
   - component: {fileID: 4234044223045909689}
   m_Layer: 0
-  m_Name: TriLamp-Shadow
+  m_Name: TriLamp-Key
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -12869,13 +12866,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7812195308733857807}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.50719583, y: 0.50080466, z: -0.49614727, w: 0.49576715}
-  m_LocalPosition: {x: 3.08, y: 3.69, z: 4.24}
+  m_LocalRotation: {x: 0.45567462, y: 0.5473528, z: -0.5438477, w: 0.4438416}
+  m_LocalPosition: {x: 1.52827, y: 4, z: 2.22628}
   m_LocalScale: {x: 100.00004, y: 100.000015, z: 100.000015}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 89, y: -157.344, z: -247}
+  m_LocalEulerAnglesHint: {x: 89, y: -146, z: -247}
 --- !u!114 &8808235878063149795
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12936,7 +12933,6 @@ MonoBehaviour:
   _tableHeight: 0.139
   _maxPickDistance: 50
   _cameraZoom: {fileID: 8808235878063149797}
-  _touchPickRadius: 0.08
 --- !u!114 &8808235878063149797
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12949,27 +12945,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62b8e73e47ae14690b92965dd1719ac7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraAimZoom
-  _dynamicZoom: 0
-  _dragSide: 1
   _maxPullBack: 0.8
   _sideZoomBoost: 2
   _lerpSpeed: 7
   _zoomCurveExponent: 2.75
-  _edgeOrbitHorizontal: 1.8
-  _focusHeight: 0.01
-  _edgeHeightLowering: 0.6
-  _edgePitchReduceDegrees: 4
-  _maxEdgeBlendAtFullPull: 0.75
-  _edgeBlendCurveExponent: 1.25
-  _edgeAimAlignStartPull: 0.02
-  _edgeAimAlignEndPull: 0.05
-  _dynamicZoomMaxPullBack: 1.2
-  _dragSideMaxPositionX: 0.5
-  _dragSideZoomMultiplier: 3
-  _dragSideMaxFieldOfView: 17
-  _dragSideHorizontalInfluence: 0.86
-  _dragSideVerticalInfluence: 0.14
-  _edgeRestoreDuration: 0.6
 --- !u!81 &8808235878063149798
 AudioListener:
   m_ObjectHideFlags: 0

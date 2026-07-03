@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -5,8 +6,10 @@ public class LeagueMatchController : MonoBehaviour
 {
     public static LeagueMatchController Instance { get; private set; }
 
-    public event System.Action<MatchResultType> MatchCompleted;
-    public event System.Action MatchStarted;
+    public event Action MatchStarted;
+    public event Action MatchTimerExpired;
+    public event Action ScoresChanged;
+    public event Action<MatchResultType> MatchCompleted;
 
     int _playerGoals;
     int _opponentGoals;
@@ -130,6 +133,9 @@ public class LeagueMatchController : MonoBehaviour
 
         if (LeagueService.Instance == null)
         {
+            ScoresChanged?.Invoke();
+            _matchTimerRoutine = StartCoroutine(MatchTimerRoutine());
+            MatchStarted?.Invoke();
             return;
         }
 
@@ -139,12 +145,10 @@ public class LeagueMatchController : MonoBehaviour
         if (opponent != null)
         {
             MatchSessionContext.SetOpponent(opponent);
-            if (OpponentBotController.Instance != null)
-            {
-                OpponentBotController.Instance.ApplySessionOpponentDifficulty();
-            }
+            OpponentBotController.Instance?.ApplySessionOpponentDifficulty();
         }
 
+        ScoresChanged?.Invoke();
         _matchTimerRoutine = StartCoroutine(MatchTimerRoutine());
         MatchStarted?.Invoke();
     }
@@ -169,6 +173,12 @@ public class LeagueMatchController : MonoBehaviour
 
         while (_matchActive && !_matchReported && _matchTimeRemaining > 0f)
         {
+            if (IsGoalFlowBlockingTimer())
+            {
+                yield return null;
+                continue;
+            }
+
             if (!_matchTimerPaused)
             {
                 _matchTimeRemaining -= Time.deltaTime;
@@ -179,8 +189,35 @@ public class LeagueMatchController : MonoBehaviour
 
         if (_matchActive && !_matchReported)
         {
-            CompleteMatch(ResolveResultByScore());
+            _matchTimeRemaining = 0f;
+            MatchTimerExpired?.Invoke();
         }
+    }
+
+    static bool IsGoalFlowBlockingTimer()
+    {
+        return GameRulesManager.Instance != null && GameRulesManager.Instance.IsMatchLockedForInput;
+    }
+
+    public MatchResultType CompleteMatchFromTimer()
+    {
+        if (_matchReported)
+        {
+            return ResolveResultByScore(
+                MatchSessionContext.PlayerGoalsAtEnd,
+                MatchSessionContext.OpponentGoalsAtEnd);
+        }
+
+        if (!_matchActive)
+        {
+            return ResolveResultByScore(
+                MatchSessionContext.PlayerGoalsAtEnd,
+                MatchSessionContext.OpponentGoalsAtEnd);
+        }
+
+        MatchResultType result = ResolveResultByScore();
+        CompleteMatch(result, startNextMatch: false);
+        return result;
     }
 
     void OnPlayerGoal()
@@ -191,6 +228,7 @@ public class LeagueMatchController : MonoBehaviour
         }
 
         _playerGoals++;
+        ScoresChanged?.Invoke();
     }
 
     void OnOpponentGoal()
@@ -201,6 +239,7 @@ public class LeagueMatchController : MonoBehaviour
         }
 
         _opponentGoals++;
+        ScoresChanged?.Invoke();
     }
 
     static MatchResultType ResolveResultByScore(int playerGoals, int opponentGoals)
@@ -234,6 +273,9 @@ public class LeagueMatchController : MonoBehaviour
         _matchActive = false;
         StopMatchTimer();
 
+        MatchSessionContext.SetFinalScore(_playerGoals, _opponentGoals);
+        ScoresChanged?.Invoke();
+
         if (LeagueService.Instance != null)
         {
             bool registered = LeagueService.Instance.RegisterMatchResult(result);
@@ -247,11 +289,7 @@ public class LeagueMatchController : MonoBehaviour
             }
         }
 
-        if (OpponentBotController.Instance != null)
-        {
-            OpponentBotController.Instance.ApplySessionOpponentDifficulty();
-        }
-
+        OpponentBotController.Instance?.ApplySessionOpponentDifficulty();
         MatchCompleted?.Invoke(result);
 
         if (startNextMatch)

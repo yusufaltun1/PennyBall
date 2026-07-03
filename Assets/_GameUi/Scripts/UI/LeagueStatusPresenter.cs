@@ -70,7 +70,7 @@ public class LeagueStatusPresenter : MonoBehaviour
 
         if (_leagueLabel != null)
         {
-            _leagueLabel.text = $"League {save.playerLeague}";
+            _leagueLabel.text = LeagueConfig.GetLeagueName(save.playerLeague);
         }
 
         if (_rankLabel != null)

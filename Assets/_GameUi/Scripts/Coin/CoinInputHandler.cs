@@ -53,6 +53,19 @@ public class CoinInputHandler : MonoBehaviour
             return;
         }
 
+        if (GameRulesManager.Instance != null && GameRulesManager.Instance.IsMatchLockedForInput)
+        {
+            if (_activeCoin != null)
+            {
+                _activeCoin.CancelAim();
+                _activeCoin = null;
+            }
+
+            GateIndicator.Instance?.Hide();
+            _cameraZoom?.SetDragState(0f);
+            return;
+        }
+
         if (!TryReadPointer(
                 out Vector2 screenPosition,
                 out bool isPressed,
