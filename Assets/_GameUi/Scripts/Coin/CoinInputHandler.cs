@@ -44,12 +44,6 @@ public class CoinInputHandler : MonoBehaviour
             return;
         }
 
-        if (!TryReadPointer(
-                out Vector2 screenPosition,
-                out bool isPressed,
-                out bool pressedThisFrame,
-                out bool releasedThisFrame,
-                out bool isFromTouch))
         if (GameRulesManager.Instance != null && GameRulesManager.Instance.IsMatchLockedForInput)
         {
             if (_activeCoin != null)
@@ -63,7 +57,12 @@ public class CoinInputHandler : MonoBehaviour
             return;
         }
 
-        if (!TryReadPointer(out Vector2 screenPosition, out bool isPressed, out bool pressedThisFrame, out bool releasedThisFrame))
+        if (!TryReadPointer(
+                out Vector2 screenPosition,
+                out bool isPressed,
+                out bool pressedThisFrame,
+                out bool releasedThisFrame,
+                out bool isFromTouch))
         {
             _cameraZoom?.SetDragState(0f);
             return;
