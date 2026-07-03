@@ -15,6 +15,9 @@ EditorBuildSettings:
     path: Assets/_GameUi/Scenes/GameUI.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1
+    path: Assets/_GameUi/Scenes/Exercise.unity
+    guid: 869e498d101b4d48b4a0ca72ae636446
+  - enabled: 1
     path: Assets/_MainMenu/Scenes/MainMenu_Scene.unity
     guid: 80deb8278b8aa448eac376166d861da3
   - enabled: 1

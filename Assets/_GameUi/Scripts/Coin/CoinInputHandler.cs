@@ -14,11 +14,19 @@ public class CoinInputHandler : MonoBehaviour
 
     CoinDragController _activeCoin;
     Plane _tablePlane;
+    bool _useFrozenAimRay;
+    Vector3 _aimRayCameraPosition;
+    Quaternion _aimRayCameraRotation;
 
     void Awake()
     {
         ResolveCamera();
         _tablePlane = new Plane(Vector3.up, new Vector3(0f, _tableHeight, 0f));
+
+        if (_cameraZoom == null)
+        {
+            _cameraZoom = GetComponent<CameraAimZoom>();
+        }
     }
 
     void ResolveCamera()
@@ -41,6 +49,7 @@ public class CoinInputHandler : MonoBehaviour
         if (MatchBeginningCountdownController.IsActive || MatchIntroCameraFlythrough.IsActive)
         {
             _cameraZoom?.SetDragState(0f);
+            _cameraZoom?.EndEdgeAssist();
             return;
         }
 
@@ -69,20 +78,11 @@ public class CoinInputHandler : MonoBehaviour
         }
         else if (isPressed && _activeCoin != null)
         {
-            if (TryGetTablePosition(screenPosition, out Vector3 worldPosition))
+            _cameraZoom?.TryBeginEdgeAssist(_activeCoin);
+
+            if (TryUpdateAim(screenPosition, out pullRatio, out float sideRatioFromAim))
             {
-                _activeCoin.UpdateAim(worldPosition);
-                Vector3 pullVec = _activeCoin.transform.position - worldPosition;
-                pullVec.y = 0f;
-                float pull = pullVec.magnitude;
-                pullRatio = Mathf.InverseLerp(
-                    _activeCoin.MinPullDistance,
-                    _activeCoin.MaxPullDistance,
-                    pull);
-                // X ekseni = sağ/sol; ne kadar yataysa sideRatio o kadar büyük
-                Vector3 pullFlat = new Vector3(pullVec.x, 0f, pullVec.z);
-                if (pullFlat.sqrMagnitude > 0.0001f)
-                    sideRatio = Mathf.Abs(pullFlat.normalized.x);
+                sideRatio = sideRatioFromAim;
             }
         }
         else if (releasedThisFrame && _activeCoin != null)
@@ -102,6 +102,8 @@ public class CoinInputHandler : MonoBehaviour
             }
 
             _activeCoin = null;
+            ClearAimRayReference();
+            _cameraZoom?.EndEdgeAssist();
         }
 
         _cameraZoom?.SetDragState(pullRatio, sideRatio);
@@ -184,15 +186,58 @@ public class CoinInputHandler : MonoBehaviour
         }
 
         _activeCoin = coin;
+        CaptureAimRayReference();
         _activeCoin.BeginAim();
+        _cameraZoom?.TryBeginEdgeAssist(coin);
 
         CoinIdentity identity = _activeCoin.GetComponent<CoinIdentity>();
         TryShowGateIndicator(identity, _activeCoin);
 
-        if (TryGetTablePosition(screenPosition, out Vector3 worldPosition))
+        TryUpdateAim(screenPosition, out _, out _);
+    }
+
+    bool TryUpdateAim(Vector2 screenPosition, out float pullRatio, out float sideRatio)
+    {
+        pullRatio = 0f;
+        sideRatio = 0f;
+
+        if (_activeCoin == null || !TryGetTablePosition(screenPosition, false, out Vector3 worldPosition))
         {
-            _activeCoin.UpdateAim(worldPosition);
+            return false;
         }
+
+        _activeCoin.UpdateAim(worldPosition);
+
+        float pull = 0f;
+        Vector3 shotDirectionForCamera = Vector3.zero;
+        if (TryGetTablePosition(screenPosition, true, out Vector3 frozenWorldPosition))
+        {
+            Vector3 frozenPullVec = _activeCoin.transform.position - frozenWorldPosition;
+            frozenPullVec.y = 0f;
+            pull = frozenPullVec.magnitude;
+            if (frozenPullVec.sqrMagnitude > 0.0001f)
+            {
+                shotDirectionForCamera = frozenPullVec.normalized;
+            }
+        }
+
+        pullRatio = Mathf.InverseLerp(
+            _activeCoin.MinPullDistance,
+            _activeCoin.MaxPullDistance,
+            pull);
+
+        _cameraZoom?.UpdateEdgeAssist(_activeCoin, shotDirectionForCamera, pullRatio);
+
+        Vector3 pullVec = _activeCoin.transform.position - worldPosition;
+        pullVec.y = 0f;
+
+        Vector3 pullFlat = new Vector3(pullVec.x, 0f, pullVec.z);
+        if (pullFlat.sqrMagnitude > 0.0001f)
+        {
+            sideRatio = Mathf.Abs(pullFlat.normalized.x);
+        }
+
+        return true;
     }
 
     bool TryPickCoin(Ray ray, Vector2 screenPosition, bool isFromTouch, out CoinDragController coin)
@@ -250,7 +295,7 @@ public class CoinInputHandler : MonoBehaviour
     {
         selectedCoin = null;
 
-        if (!TryGetTablePosition(screenPosition, out Vector3 tapPosition))
+        if (!TryGetTablePosition(screenPosition, false, out Vector3 tapPosition))
         {
             return false;
         }
@@ -341,7 +386,52 @@ public class CoinInputHandler : MonoBehaviour
         indicator.Show(gateA, gateB, settings, animate: true);
     }
 
-    bool TryGetTablePosition(Vector2 screenPosition, out Vector3 worldPosition)
+    void CaptureAimRayReference()
+    {
+        if (_camera == null)
+        {
+            ResolveCamera();
+        }
+
+        if (_camera == null)
+        {
+            _useFrozenAimRay = false;
+            return;
+        }
+
+        _aimRayCameraPosition = _camera.transform.position;
+        _aimRayCameraRotation = _camera.transform.rotation;
+        _useFrozenAimRay = true;
+    }
+
+    void ClearAimRayReference()
+    {
+        _useFrozenAimRay = false;
+    }
+
+    Ray GetAimRay(Vector2 screenPosition, bool useFrozenRay)
+    {
+        if (useFrozenRay && _useFrozenAimRay)
+        {
+            return ScreenPointToRay(_camera, screenPosition, _aimRayCameraPosition, _aimRayCameraRotation);
+        }
+
+        return _camera.ScreenPointToRay(screenPosition);
+    }
+
+    static Ray ScreenPointToRay(Camera camera, Vector2 screenPosition, Vector3 cameraPosition, Quaternion cameraRotation)
+    {
+        Transform cameraTransform = camera.transform;
+        Vector3 previousPosition = cameraTransform.position;
+        Quaternion previousRotation = cameraTransform.rotation;
+
+        cameraTransform.SetPositionAndRotation(cameraPosition, cameraRotation);
+        Ray ray = camera.ScreenPointToRay(screenPosition);
+        cameraTransform.SetPositionAndRotation(previousPosition, previousRotation);
+        return ray;
+    }
+
+    bool TryGetTablePosition(Vector2 screenPosition, bool useFrozenRay, out Vector3 worldPosition)
     {
         if (_camera == null)
         {
@@ -349,7 +439,7 @@ public class CoinInputHandler : MonoBehaviour
             return false;
         }
 
-        Ray ray = _camera.ScreenPointToRay(screenPosition);
+        Ray ray = GetAimRay(screenPosition, useFrozenRay);
         if (_tablePlane.Raycast(ray, out float enter))
         {
             worldPosition = ray.GetPoint(enter);

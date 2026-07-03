@@ -441,6 +441,18 @@ public class CoinDragController : MonoBehaviour
         _rigidbody.isKinematic = false;
     }
 
+    public bool TryGetAimLaunchDirection(out Vector3 launchDirection)
+    {
+        launchDirection = Vector3.zero;
+        if (!_isAiming)
+        {
+            return false;
+        }
+
+        float pullDistance;
+        return TryGetLaunchData(out launchDirection, out pullDistance);
+    }
+
     Vector3 CalculateLaunchVelocity()
     {
         Vector3 launchDirection;

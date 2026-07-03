@@ -75,7 +75,7 @@ public class UIManager : MonoBehaviour
     public void OnAntremanButtonPressed()
     {
         MainMenuClickSound.Play();
-        Debug.Log("Antreman yapılacak!");
+        SceneManager.LoadScene(GameSceneNames.Exercise);
     }
 
     static Transform FindDeepChild(Transform parent, string childName)
