@@ -5351,11 +5351,11 @@ MonoBehaviour:
   _botRowPrefab: {fileID: -7136584092841832648, guid: 97e36f12497a94d36b64ac7185c6c1f2, type: 3}
   _playerRowPrefab: {fileID: 5111856438758180014, guid: b23b9dc341e1f4aacb9d837052d32ca8, type: 3}
   _content: {fileID: 2100000007}
+  _leagueNameLabel: {fileID: 995307049}
   _scrollDelay: 0.3
   _scrollDuration: 1
   _rankAnimDelay: 0.5
   _rankAnimDuration: 0.9
-  _leagueNameLabel: {fileID: 995307049}
 --- !u!1 &836732433
 GameObject:
   m_ObjectHideFlags: 0

@@ -71,7 +71,7 @@ public static class OpponentBotBrain
         bool ok;
         if (shotNumber == 1)
         {
-            ok = BuildOpeningShot(state, isResolvingMove, false, goal, out plan);
+            ok = BuildOpeningShot(state, isResolvingMove, false, goal, difficulty, out plan);
         }
         else
         {
@@ -88,6 +88,7 @@ public static class OpponentBotBrain
                     isResolvingMove,
                     goal,
                     gateMargin,
+                    difficulty,
                     out plan)
                 || ChooseBestStrategicShot(
                     state,
@@ -100,16 +101,14 @@ public static class OpponentBotBrain
                     out pathBlocked);
         }
 
-        if (ok && shotNumber >= 2
-            && plan.Kind != ShotKind.MandatoryGatePass
-            && plan.Kind != ShotKind.GoalFinish)
-        {
-            plan = ApplyNoise(plan, difficulty);
-        }
-
         if (ok && shotNumber >= 2 && plan.Kind != ShotKind.GoalFinish)
         {
-            plan = SnapGatePassPlan(state, plan);
+            plan = SnapGatePassPlan(state, plan, difficulty);
+        }
+
+        if (ok)
+        {
+            plan = FinalizePlanForDifficulty(plan, difficulty, shotNumber);
         }
 
         return ok;
@@ -239,11 +238,12 @@ public static class OpponentBotBrain
     /// En arkadaki coin → diğer ikisinin tam ortası, %100 güç. Kolay gate pozisyonları için.
     /// </summary>
     static bool TryBuildDirectGatePassShot(
-        TeamRoundState state,
-        bool           isResolvingMove,
-        Vector3        goal,
-        float          gateMargin,
-        out ShotPlan   plan)
+        TeamRoundState        state,
+        bool                  isResolvingMove,
+        Vector3               goal,
+        float                 gateMargin,
+        OpponentBotDifficulty difficulty,
+        out ShotPlan          plan)
     {
         plan = default;
         Vector3 goalFlat = Flat(goal);
@@ -309,7 +309,8 @@ public static class OpponentBotBrain
         Vector3 shooterOrigin = Flat(bestShooter.transform.position);
         Vector3 mid = GateMidpoint(bestGateA, bestGateB);
         Vector3 dir = SafeDir(mid - shooterOrigin);
-        float maxPull = shooterDc.MaxPullDistance;
+        float maxPull = StrengthMaxPull(shooterDc, difficulty) * difficulty.GatePassPullScale;
+        maxPull = ClampStrengthPull(shooterDc, difficulty, maxPull);
         float travel = EffectiveTravelDistance(maxPull);
         bool plannerGateOk = WillPassGate(shooterOrigin, dir, travel, bestGateA, bestGateB, gateMargin);
         float advance = EstimateGoalAdvance(shooterOrigin, dir, travel, goalFlat);
@@ -330,7 +331,7 @@ public static class OpponentBotBrain
         return true;
     }
 
-    static ShotPlan SnapGatePassPlan(TeamRoundState state, ShotPlan plan)
+    static ShotPlan SnapGatePassPlan(TeamRoundState state, ShotPlan plan, OpponentBotDifficulty difficulty)
     {
         if (plan.Coin == null || plan.Coin.DragController == null)
         {
@@ -346,11 +347,15 @@ public static class OpponentBotBrain
         Vector3 gateMid = GateMidpoint(gateA, gateB);
         Vector3 gateDir = SafeDir(gateMid - origin);
         float gateDot = Vector3.Dot(plan.Direction, gateDir);
+        CoinDragController dc = plan.Coin.DragController;
 
         if (plan.Kind == ShotKind.MandatoryGatePass || gateDot > 0.80f)
         {
             plan.Direction = gateDir;
-            plan.PullDistance = plan.Coin.DragController.MaxPullDistance;
+            plan.PullDistance = ClampStrengthPull(
+                dc,
+                difficulty,
+                StrengthMaxPull(dc, difficulty) * difficulty.GatePassPullScale);
         }
 
         return plan;
@@ -359,11 +364,12 @@ public static class OpponentBotBrain
     // ── Açılış (1): orta para, kaleye doğru ilerle ───────────────────────────
 
     static bool BuildOpeningShot(
-        TeamRoundState state,
-        bool           isResolvingMove,
-        bool           preferRightSide,
-        Vector3        goal,
-        out ShotPlan   plan)
+        TeamRoundState        state,
+        bool                  isResolvingMove,
+        bool                  preferRightSide,
+        Vector3               goal,
+        OpponentBotDifficulty difficulty,
+        out ShotPlan          plan)
     {
         plan = default;
 
@@ -393,9 +399,12 @@ public static class OpponentBotBrain
         CoinDragController dc = coin.DragController;
         Vector3 origin = Flat(coin.transform.position);
         Vector3 goalDir = (Flat(goal) - origin).normalized;
-        float spread = preferRightSide ? 14f : -14f;
+        float spread = preferRightSide ? difficulty.OpeningAimSpreadDegrees : -difficulty.OpeningAimSpreadDegrees;
         Vector3 direction = (Quaternion.Euler(0f, spread, 0f) * goalDir).normalized;
-        float pull = dc.MaxPullDistance * 0.78f;
+        float pull = ClampStrengthPull(
+            dc,
+            difficulty,
+            StrengthMaxPull(dc, difficulty) * difficulty.OpeningPowerScale);
         float advance = EstimateGoalAdvance(origin, direction, EffectiveTravelDistance(pull), Flat(goal));
 
         plan = new ShotPlan
@@ -499,7 +508,7 @@ public static class OpponentBotBrain
         }
 
         pathBlocked = true;
-        return false;
+            return false;
     }
 
     static void EvaluateShooterCandidates(
@@ -975,8 +984,8 @@ public static class OpponentBotBrain
         float abLen = ab.magnitude;
         if (abLen < 0.001f)
         {
-            return true;
-        }
+        return true;
+    }
 
         Vector2 abDir = new Vector2(ab.x / abLen, ab.z / abLen);
         Vector2 perp = new Vector2(-abDir.y, abDir.x);
@@ -1075,7 +1084,57 @@ public static class OpponentBotBrain
 
     // ── Gürültü ──────────────────────────────────────────────────────────────
 
-    static ShotPlan ApplyNoise(ShotPlan plan, OpponentBotDifficulty difficulty)
+    static ShotPlan FinalizePlanForDifficulty(ShotPlan plan, OpponentBotDifficulty difficulty, int shotNumber)
+    {
+        if (plan.Coin == null || plan.Coin.DragController == null)
+        {
+            return plan;
+        }
+
+        CoinDragController dc = plan.Coin.DragController;
+        plan.PullDistance = ClampStrengthPull(dc, difficulty, plan.PullDistance);
+
+        switch (plan.Kind)
+        {
+            case ShotKind.GoalFinish:
+                plan.PullDistance = ClampStrengthPull(
+                    dc,
+                    difficulty,
+                    plan.PullDistance * difficulty.GoalFinishPullScale);
+                plan = ApplyNoise(plan, difficulty, difficulty.GoalFinishNoiseScale);
+                break;
+
+            case ShotKind.MandatoryGatePass:
+                plan.PullDistance = ClampStrengthPull(
+                    dc,
+                    difficulty,
+                    StrengthMaxPull(dc, difficulty) * difficulty.GatePassPullScale);
+                plan = ApplyNoise(plan, difficulty, 0.35f);
+                break;
+
+            case ShotKind.Opening:
+                plan = ApplyNoise(plan, difficulty, Mathf.Lerp(1.25f, 0.45f, difficulty.RuleCompliance));
+                break;
+
+            default:
+                plan = ApplyNoise(plan, difficulty);
+                break;
+        }
+
+        return plan;
+    }
+
+    static float StrengthMaxPull(CoinDragController dc, OpponentBotDifficulty difficulty)
+    {
+        return dc.MinPullDistance + (dc.MaxPullDistance - dc.MinPullDistance) * difficulty.MaxPullScale;
+    }
+
+    static float ClampStrengthPull(CoinDragController dc, OpponentBotDifficulty difficulty, float pull)
+    {
+        return Mathf.Clamp(pull, dc.MinPullDistance, StrengthMaxPull(dc, difficulty));
+    }
+
+    static ShotPlan ApplyNoise(ShotPlan plan, OpponentBotDifficulty difficulty, float noiseScale = 1f)
     {
         if (plan.Coin == null || plan.Coin.DragController == null)
         {
@@ -1084,15 +1143,20 @@ public static class OpponentBotBrain
 
         CoinDragController dc = plan.Coin.DragController;
         float complianceScale = Mathf.Lerp(1f, 0.15f, difficulty.RuleCompliance);
+        float scaledNoise = Mathf.Max(0.01f, noiseScale);
 
-        float yaw = Random.Range(-difficulty.AimNoiseDegrees, difficulty.AimNoiseDegrees) * complianceScale;
+        float yaw = Random.Range(-difficulty.AimNoiseDegrees, difficulty.AimNoiseDegrees)
+                    * complianceScale
+                    * scaledNoise;
         plan.Direction = (Quaternion.Euler(0f, yaw, 0f) * plan.Direction).normalized;
 
-        float pullNoise = Random.Range(-difficulty.PullNoise, difficulty.PullNoise) * complianceScale;
-        plan.PullDistance = Mathf.Clamp(
-            plan.PullDistance + pullNoise,
-            dc.MinPullDistance,
-            dc.MaxPullDistance);
+        float pullNoise = Random.Range(-difficulty.PullNoise, difficulty.PullNoise)
+                          * complianceScale
+                          * scaledNoise;
+        plan.PullDistance = ClampStrengthPull(
+            dc,
+            difficulty,
+            plan.PullDistance + pullNoise);
 
         return plan;
     }

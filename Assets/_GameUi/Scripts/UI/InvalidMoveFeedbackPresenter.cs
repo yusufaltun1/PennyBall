@@ -126,7 +126,14 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
 
     IEnumerator HideInvalidMoveAfterDelay()
     {
-        yield return new WaitForSeconds(_hideDelayAfterRollback);
+        float delay = _hideDelayAfterRollback;
+        OnboardingGuideController onboarding = OnboardingGuideController.Instance;
+        if (onboarding != null && onboarding.ShouldUseExtendedInvalidMoveHideDelay)
+        {
+            delay *= 2f;
+        }
+
+        yield return new WaitForSeconds(delay);
         HideInvalidMove();
         _feedbackRoutine = null;
     }

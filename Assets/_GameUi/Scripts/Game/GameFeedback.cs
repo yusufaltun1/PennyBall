@@ -519,7 +519,15 @@ public class GameFeedback : MonoBehaviour
         ParticleSystem.ShapeModule shape = _dustBurst.shape;
         shape.enabled = true;
         shape.position = Vector3.zero;
-        shape.shapeType = _coinHitDust.ShapeType;
+        ParticleSystemShapeType shapeType = _coinHitDust.ShapeType;
+#pragma warning disable CS0618
+        if (shapeType == ParticleSystemShapeType.CircleEdge)
+        {
+            shapeType = ParticleSystemShapeType.Circle;
+            shape.radiusThickness = 1f;
+        }
+#pragma warning restore CS0618
+        shape.shapeType = shapeType;
         shape.rotation = _coinHitDust.ShapeRotation;
         ApplyShapeDimensions(shape);
 
@@ -550,7 +558,6 @@ public class GameFeedback : MonoBehaviour
         switch (settings.ShapeType)
         {
             case ParticleSystemShapeType.Circle:
-            case ParticleSystemShapeType.CircleEdge:
             case ParticleSystemShapeType.SingleSidedEdge:
                 shape.radius = settings.ShapeRadius;
                 shape.scale = Vector3.one;

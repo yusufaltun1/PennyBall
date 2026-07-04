@@ -4,6 +4,8 @@ using UnityEngine;
 public class GameFeedbackAudioLibrary : ScriptableObject
 {
     public AudioClip buttonClick;
+    public AudioClip levelUp;
+    public AudioClip wellDone;
     public AudioClip kickClip;
     public AudioClip wallHitClip;
     public AudioClip coinHitClip;

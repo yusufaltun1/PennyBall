@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: GameFeedbackAudioLibrary
   m_EditorClassIdentifier: Assembly-CSharp::GameFeedbackAudioLibrary
   buttonClick: {fileID: 8300000, guid: 5c4327d18c5044af5885580c27f0427e, type: 3}
+  levelUp: {fileID: 8300000, guid: 702229e65e57640fd9e591b7ebe0ddbc, type: 3}
+  wellDone: {fileID: 8300000, guid: 702229e65e57640fd9e591b7ebe0ddbc, type: 3}
   kickClip: {fileID: 8300000, guid: 1edebe1d198814d29b67a86efc7f75ad, type: 3}
   wallHitClip: {fileID: 8300000, guid: bd4849ae93e6b445e85b2aca474be65a, type: 3}
   coinHitClip: {fileID: 8300000, guid: 4c376884c75e9436b8a89bd5bb3db58e, type: 3}

@@ -37,8 +37,12 @@ public class CoinDragController : MonoBehaviour
     Vector3 _pullPosition;
     float _tableHeight;
     bool _isAiming;
+    bool _isAimPullLocked;
+    bool _isAimDirectionLocked;
+    Vector3 _lockedLaunchDirection;
 
     public bool IsAiming => _isAiming;
+    public bool IsAimPullLocked => _isAimPullLocked;
     public bool IsSliding =>
         !_isAiming
         && !_rigidbody.isKinematic
@@ -320,6 +324,8 @@ public class CoinDragController : MonoBehaviour
     public void BeginAim()
     {
         _isAiming = true;
+        _isAimPullLocked = false;
+        _isAimDirectionLocked = false;
         _anchorPosition = transform.position;
         _pullPosition = _anchorPosition;
 
@@ -335,6 +341,143 @@ public class CoinDragController : MonoBehaviour
         ApplyVisualSpinRotation();
     }
 
+    public void LockAimPull()
+    {
+        if (!_isAiming)
+        {
+            return;
+        }
+
+        _isAimPullLocked = true;
+        ApplyAimVisual();
+    }
+
+    public void LockAimTowardWorldTarget(Vector3 targetWorldPosition)
+    {
+        if (!_isAiming)
+        {
+            return;
+        }
+
+        Vector3 launchDirection = targetWorldPosition - _anchorPosition;
+        launchDirection.y = 0f;
+        if (launchDirection.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
+
+        launchDirection.Normalize();
+        float pullDistance = Mathf.Max(_minPullDistance, GetPullDistanceForPower01(0.5f));
+        _pullPosition = _anchorPosition - launchDirection * pullDistance;
+        _isAimPullLocked = true;
+        ApplyAimVisual();
+    }
+
+    public void LockAimDirection(Vector3 launchDirection)
+    {
+        if (!_isAiming)
+        {
+            return;
+        }
+
+        launchDirection.y = 0f;
+        if (launchDirection.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
+
+        _lockedLaunchDirection = launchDirection.normalized;
+        _isAimDirectionLocked = true;
+        _isAimPullLocked = false;
+        ConstrainPullToLockedDirection(_pullPosition);
+        ApplyAimVisual();
+    }
+
+    public void SetAimPullForPower01(float power01)
+    {
+        if (!_isAiming || !_isAimDirectionLocked)
+        {
+            return;
+        }
+
+        float pullDistance = GetPullDistanceForPower01(Mathf.Clamp01(power01));
+        _pullPosition = _anchorPosition - _lockedLaunchDirection * pullDistance;
+        ApplyAimVisual();
+    }
+
+    public bool TryGetPower01ForWorldTarget(
+        Vector3 anchor,
+        Vector3 direction,
+        Vector3 targetWorldPosition,
+        out float power01,
+        float distanceTolerance = 0.02f)
+    {
+        power01 = 0f;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            return false;
+        }
+
+        direction.Normalize();
+        Vector3 flatAnchor = FlattenToTable(anchor, anchor.y);
+        Vector3 flatTarget = FlattenToTable(targetWorldPosition, anchor.y);
+        Vector3 toTarget = flatTarget - flatAnchor;
+        toTarget.y = 0f;
+        float desiredDistance = toTarget.magnitude;
+        if (desiredDistance < 0.0001f)
+        {
+            return false;
+        }
+
+        if (Vector3.Dot(direction, toTarget.normalized) < 0.25f)
+        {
+            return false;
+        }
+
+        float lo = 0f;
+        float hi = 1f;
+        float bestPower = 0.5f;
+        float bestError = float.MaxValue;
+
+        for (int i = 0; i < 24; i++)
+        {
+            float mid = (lo + hi) * 0.5f;
+            Vector3 pathEnd = GetPathEndForDirectionAndPower(anchor, direction, mid);
+            float pathDistance = Vector3.Distance(
+                new Vector3(flatAnchor.x, 0f, flatAnchor.z),
+                new Vector3(pathEnd.x, 0f, pathEnd.z));
+            float error = Mathf.Abs(pathDistance - desiredDistance);
+            if (error < bestError)
+            {
+                bestError = error;
+                bestPower = mid;
+            }
+
+            if (pathDistance < desiredDistance)
+            {
+                lo = mid;
+            }
+            else
+            {
+                hi = mid;
+            }
+        }
+
+        power01 = bestPower;
+        return bestError <= distanceTolerance || bestError <= desiredDistance * 0.08f;
+    }
+
+    void ConstrainPullToLockedDirection(Vector3 pullWorldPosition)
+    {
+        pullWorldPosition = FlattenToTable(pullWorldPosition, _anchorPosition.y);
+        Vector3 fromAnchorToPull = pullWorldPosition - _anchorPosition;
+        fromAnchorToPull.y = 0f;
+        float pullDistance = Vector3.Dot(fromAnchorToPull, -_lockedLaunchDirection);
+        pullDistance = Mathf.Clamp(pullDistance, _minPullDistance, _maxPullDistance);
+        _pullPosition = _anchorPosition - _lockedLaunchDirection * pullDistance;
+    }
+
     public void UpdateAim(Vector3 pullWorldPosition)
     {
         if (!_isAiming)
@@ -342,8 +485,26 @@ public class CoinDragController : MonoBehaviour
             return;
         }
 
-        _pullPosition = FlattenToTable(pullWorldPosition, _anchorPosition.y);
+        if (_isAimPullLocked)
+        {
+            ApplyAimVisual();
+            return;
+        }
 
+        if (_isAimDirectionLocked)
+        {
+            ConstrainPullToLockedDirection(pullWorldPosition);
+        }
+        else
+        {
+            _pullPosition = FlattenToTable(pullWorldPosition, _anchorPosition.y);
+        }
+
+        ApplyAimVisual();
+    }
+
+    void ApplyAimVisual()
+    {
         Vector3 launchDirection;
         float pullDistance;
         if (!TryGetLaunchData(out launchDirection, out pullDistance))
@@ -352,11 +513,72 @@ public class CoinDragController : MonoBehaviour
             return;
         }
 
-        float launchSpeed = Mathf.Min(pullDistance * _launchForceMultiplier, _maxLaunchSpeed);
-        float power01 = Mathf.InverseLerp(_minPullDistance, _maxPullDistance, pullDistance);
+        float power01 = ResolveAimPower01(pullDistance);
+        float launchSpeed = GetLaunchSpeedForPower01(power01);
         float travelDistance = EstimateTravelDistance(launchSpeed);
         CoinAimIndicator.PathVisual path = BuildAimPath(_anchorPosition, launchDirection, travelDistance);
         _aimIndicator.UpdateVisual(path, power01);
+    }
+
+    public bool TryGetActiveAimTarget(out Vector3 targetWorldPosition, out float power01)
+    {
+        targetWorldPosition = default;
+        power01 = 0f;
+
+        if (!_isAiming)
+        {
+            return false;
+        }
+
+        if (!TryGetLaunchData(out Vector3 launchDirection, out float pullDistance))
+        {
+            return false;
+        }
+
+        power01 = ResolveAimPower01(pullDistance);
+        targetWorldPosition = GetPathEndForDirectionAndPower(_anchorPosition, launchDirection, power01);
+        return true;
+    }
+
+    public bool TryGetActiveLaunchDirection(out Vector3 launchDirection)
+    {
+        launchDirection = default;
+        if (!_isAiming)
+        {
+            return false;
+        }
+
+        return TryGetLaunchData(out launchDirection, out _);
+    }
+
+    public Vector3 GetPathEndForDirectionAndPower(Vector3 anchor, Vector3 direction, float power01)
+    {
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            return anchor;
+        }
+
+        direction.Normalize();
+        float pullDistance = Mathf.Lerp(_minPullDistance, _maxPullDistance, Mathf.Clamp01(power01));
+        float launchSpeed = Mathf.Min(pullDistance * _launchForceMultiplier, _maxLaunchSpeed);
+        float travelDistance = EstimateTravelDistance(launchSpeed);
+        return BuildAimPath(anchor, direction, travelDistance).PrimaryEnd;
+    }
+
+    public CoinAimIndicator.PathVisual BuildPathForDirectionAndPower(Vector3 anchor, Vector3 direction, float power01)
+    {
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            return new CoinAimIndicator.PathVisual(anchor, anchor, false, anchor);
+        }
+
+        direction.Normalize();
+        float pullDistance = Mathf.Lerp(_minPullDistance, _maxPullDistance, Mathf.Clamp01(power01));
+        float launchSpeed = Mathf.Min(pullDistance * _launchForceMultiplier, _maxLaunchSpeed);
+        float travelDistance = EstimateTravelDistance(launchSpeed);
+        return BuildAimPath(anchor, direction, travelDistance);
     }
 
     public void ReleaseAim()
@@ -367,6 +589,8 @@ public class CoinDragController : MonoBehaviour
         }
 
         _isAiming = false;
+        _isAimPullLocked = false;
+        _isAimDirectionLocked = false;
         _aimIndicator.Hide();
 
         Vector3 launchVelocity = CalculateLaunchVelocity();
@@ -464,6 +688,8 @@ public class CoinDragController : MonoBehaviour
         }
 
         _isAiming = false;
+        _isAimPullLocked = false;
+        _isAimDirectionLocked = false;
         _aimIndicator.Hide();
         _rigidbody.isKinematic = false;
     }
@@ -489,7 +715,43 @@ public class CoinDragController : MonoBehaviour
             return Vector3.zero;
         }
 
-        return launchDirection * (pullDistance * _launchForceMultiplier);
+        float power01 = ResolveAimPower01(pullDistance);
+        float effectivePullDistance = GetPullDistanceForPower01(power01);
+        return launchDirection * (effectivePullDistance * _launchForceMultiplier);
+    }
+
+    float ResolveAimPower01(float pullDistance)
+    {
+        if (TryGetOnboardingFixedAimPower(out float fixedPower))
+        {
+            return fixedPower;
+        }
+
+        return Mathf.InverseLerp(_minPullDistance, _maxPullDistance, pullDistance);
+    }
+
+    static bool TryGetOnboardingFixedAimPower(out float power01)
+    {
+        power01 = 0f;
+        OnboardingGuideController guide = OnboardingGuideController.Instance;
+        if (guide == null || !guide.UsesFixedTutorialAimPower)
+        {
+            return false;
+        }
+
+        power01 = Mathf.Clamp01(guide.FixedTutorialAimPower01);
+        return true;
+    }
+
+    float GetPullDistanceForPower01(float power01)
+    {
+        return Mathf.Lerp(_minPullDistance, _maxPullDistance, Mathf.Clamp01(power01));
+    }
+
+    float GetLaunchSpeedForPower01(float power01)
+    {
+        float pullDistance = GetPullDistanceForPower01(power01);
+        return Mathf.Min(pullDistance * _launchForceMultiplier, _maxLaunchSpeed);
     }
 
     bool TryGetLaunchData(out Vector3 launchDirection, out float pullDistance)

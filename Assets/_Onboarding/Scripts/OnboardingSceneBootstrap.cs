@@ -1,75 +1,79 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Onboarding sahnesinde oyun scriptlerini devre dışı bırakır, coinlere onboarding bileşenlerini ekler.
+/// Onboarding sahnesinde rakip coinler ve oyuncu kalesi kaldırılır.
+/// Yan coinler başlangıçta gizlenir; coin spawn pozisyonları ve rotasyonları kaydedilir.
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-200)]
 public class OnboardingSceneBootstrap : MonoBehaviour
 {
-    [SerializeField] string[] _playerCoinObjectNames = { "Coin_P1", "Coin_P2", "Coin_P3" };
+    public static Vector3 CenterCoinSpawnPosition { get; private set; }
+    public static Quaternion CenterCoinSpawnRotation { get; private set; } = Quaternion.identity;
+    public static Vector3 SideCoinLeftSpawnPosition { get; private set; }
+    public static Quaternion SideCoinLeftSpawnRotation { get; private set; } = Quaternion.identity;
+    public static Vector3 SideCoinRightSpawnPosition { get; private set; }
+    public static Quaternion SideCoinRightSpawnRotation { get; private set; } = Quaternion.identity;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void EnsureBootstrap()
+    {
+        Scene activeScene = SceneManager.GetActiveScene();
+        if (!activeScene.IsValid() || activeScene.name != OnboardingSceneNames.Onboarding)
+        {
+            return;
+        }
+
+        if (FindFirstObjectByType<OnboardingSceneBootstrap>() != null)
+        {
+            return;
+        }
+
+        var bootstrapObject = new GameObject("OnboardingBootstrap");
+        bootstrapObject.AddComponent<OnboardingSceneBootstrap>();
+    }
 
     void Awake()
     {
-        DestroyGameObjectIfExists("OpponentBot");
-        DestroyGameObjectIfExists("MatchTurnCoordinator");
-        DestroyGameObjectIfExists("TurnController");
-        DestroyGameObjectIfExists("GameRules");
-        DestroyGameObjectIfExists("Coin_E1");
-        DestroyGameObjectIfExists("Coin_E2");
-        DestroyGameObjectIfExists("Coin_E3");
-        DestroyGameObjectIfExists("Kale_P");
-
-        DisableGameComponent<CoinInputHandler>();
-
-        GameRulesManager rulesManager = FindFirstObjectByType<GameRulesManager>();
-        if (rulesManager != null)
+        if (SceneManager.GetActiveScene().name != OnboardingSceneNames.Onboarding)
         {
-            Destroy(rulesManager.gameObject);
+            Destroy(gameObject);
+            return;
         }
 
-        DisableGameComponent<OpponentBotController>();
-        DisableGameComponent<MatchTurnCoordinator>();
-        DisableGameComponent<TurnController>();
+        DestroyIfExists("Coin_E1");
+        DestroyIfExists("Coin_E2");
+        DestroyIfExists("Coin_E3");
+        DestroyIfExists("Kale_P");
+        DestroyIfExists("OpponentBot");
 
-        for (int i = 0; i < _playerCoinObjectNames.Length; i++)
-        {
-            GameObject coinObject = GameObject.Find(_playerCoinObjectNames[i]);
-            if (coinObject == null)
-            {
-                continue;
-            }
-
-            PrepareCoin(coinObject, i);
-        }
+        CacheCoinSpawnPoses();
+        DeactivateIfExists("Coin_P1");
+        DeactivateIfExists("Coin_P3");
+        DeactivateIfExists("InvalidMove");
     }
 
-    static void PrepareCoin(GameObject coinObject, int coinIndex)
+    void CacheCoinSpawnPoses()
     {
-        DisableGameComponent<CoinDragController>(coinObject);
-        DisableGameComponent<CoinIdentity>(coinObject);
-        DisableGameComponent<CoinVisualState>(coinObject);
-
-        if (coinObject.GetComponent<OnboardingAimIndicator>() == null)
-        {
-            coinObject.AddComponent<OnboardingAimIndicator>();
-        }
-
-        if (coinObject.GetComponent<OnboardingCoinDragController>() == null)
-        {
-            coinObject.AddComponent<OnboardingCoinDragController>();
-        }
-
-        OnboardingCoin onboardingCoin = coinObject.GetComponent<OnboardingCoin>();
-        if (onboardingCoin == null)
-        {
-            onboardingCoin = coinObject.AddComponent<OnboardingCoin>();
-        }
-
-        onboardingCoin.Configure(coinIndex);
+        (CenterCoinSpawnPosition, CenterCoinSpawnRotation) = ReadCoinPose("Coin_P2");
+        (SideCoinLeftSpawnPosition, SideCoinLeftSpawnRotation) = ReadCoinPose("Coin_P1");
+        (SideCoinRightSpawnPosition, SideCoinRightSpawnRotation) = ReadCoinPose("Coin_P3");
     }
 
-    static void DestroyGameObjectIfExists(string objectName)
+    static (Vector3 position, Quaternion rotation) ReadCoinPose(string objectName)
+    {
+        GameObject coinObject = GameObject.Find(objectName);
+        if (coinObject == null)
+        {
+            return (default, Quaternion.identity);
+        }
+
+        Transform coinTransform = coinObject.transform;
+        return (coinTransform.position, coinTransform.rotation);
+    }
+
+    static void DestroyIfExists(string objectName)
     {
         GameObject target = GameObject.Find(objectName);
         if (target != null)
@@ -78,21 +82,12 @@ public class OnboardingSceneBootstrap : MonoBehaviour
         }
     }
 
-    static void DisableGameComponent<T>() where T : Behaviour
+    static void DeactivateIfExists(string objectName)
     {
-        T[] components = FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        for (int i = 0; i < components.Length; i++)
+        GameObject target = GameObject.Find(objectName);
+        if (target != null)
         {
-            components[i].enabled = false;
-        }
-    }
-
-    static void DisableGameComponent<T>(GameObject target) where T : Behaviour
-    {
-        T component = target.GetComponent<T>();
-        if (component != null)
-        {
-            component.enabled = false;
+            target.SetActive(false);
         }
     }
 }
