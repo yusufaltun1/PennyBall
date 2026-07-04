@@ -8768,7 +8768,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OpponentBotController
   _aiStrength: 7
   _useInspectorAiStrength: 1
-  _turnThinkDelaySeconds: 0.25
+  _turnThinkDelaySeconds: 2.5
   _useInspectorTurnDelay: 1
   _difficulty:
     Level: 7
