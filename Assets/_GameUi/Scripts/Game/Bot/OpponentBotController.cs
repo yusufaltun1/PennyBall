@@ -104,7 +104,9 @@ public class OpponentBotController : MonoBehaviour
 
         Debug.Log(
             $"[Bot] AI gücü={_aiStrength} | Think={GetTurnThinkDelay():F2}s | " +
-            $"AimNoise={_difficulty.AimNoiseDegrees:F1}° | GoalFocus={_difficulty.GoalFocus:F2} | " +
+            $"AimNoise={_difficulty.AimNoiseDegrees:F1}° | PullNoise={_difficulty.PullNoise:F3} | " +
+            $"MaxPull={_difficulty.MaxPullScale:P0} | GoalPull={_difficulty.GoalFinishPullScale:P0} | " +
+            $"GoalFocus={_difficulty.GoalFocus:F2} | " +
             $"Kaynak={(_useInspectorAiStrength ? "Inspector" : "Lig")} | " +
             $"Tempo={(_useInspectorTurnDelay ? "Inspector" : "Zorluk")}");
     }
@@ -221,11 +223,6 @@ public class OpponentBotController : MonoBehaviour
             }
 
             float launchPull = plan.PullDistance;
-            if (plan.Kind == OpponentBotBrain.ShotKind.MandatoryGatePass)
-            {
-                launchPull = plan.Coin.DragController.MaxPullDistance;
-            }
-
             if (!CoinShotLauncher.TryLaunch(plan.Coin.DragController, plan.Direction, launchPull)
                 || !plan.Coin.DragController.IsSliding)
             {

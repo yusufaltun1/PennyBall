@@ -31,6 +31,32 @@ public class GateIndicator : MonoBehaviour
     public static GateIndicator Instance { get; private set; }
     public bool IsVisible => _isVisible;
 
+    public bool TryGetGateMidpoint(out Vector3 worldMidpoint)
+    {
+        if (!_isVisible || _gateCoinA == null || _gateCoinB == null)
+        {
+            worldMidpoint = default;
+            return false;
+        }
+
+        worldMidpoint = (_gateCoinA.transform.position + _gateCoinB.transform.position) * 0.5f;
+        return true;
+    }
+
+    public bool TryGetGateWorldEndpoints(out Vector3 start, out Vector3 end)
+    {
+        start = default;
+        end = default;
+        if (!_isVisible || !TrySyncGatePositions())
+        {
+            return false;
+        }
+
+        start = Elevate(_gateStart);
+        end = Elevate(_gateEnd);
+        return true;
+    }
+
     void Awake()
     {
         if (Instance != null && Instance != this)

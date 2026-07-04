@@ -66,6 +66,21 @@ public class CoinInputHandler : MonoBehaviour
             return;
         }
 
+        if (OnboardingGuideController.Instance != null
+            && OnboardingGuideController.Instance.IsOnboardingSceneInteractionBlocked)
+        {
+            if (_activeCoin != null)
+            {
+                _activeCoin.CancelAim();
+                _activeCoin = null;
+            }
+
+            GateIndicator.Instance?.Hide();
+            _cameraZoom?.SetDragState(0f);
+            _cameraZoom?.EndEdgeAssist();
+            return;
+        }
+
         if (!TryReadPointer(
                 out Vector2 screenPosition,
                 out bool isPressed,
@@ -91,6 +106,18 @@ public class CoinInputHandler : MonoBehaviour
         }
         else if (isPressed && _activeCoin != null)
         {
+            if (OnboardingGuideController.Instance != null && OnboardingGuideController.Instance.IsAimInputFrozen)
+            {
+                _cameraZoom?.SetDragState(0f, 0f);
+                return;
+            }
+
+            if (_activeCoin.IsAimPullLocked)
+            {
+                _cameraZoom?.SetDragState(0f, 0f);
+                return;
+            }
+
             _cameraZoom?.TryBeginEdgeAssist(_activeCoin);
 
             if (TryUpdateAim(screenPosition, out pullRatio, out float sideRatioFromAim))
@@ -100,6 +127,13 @@ public class CoinInputHandler : MonoBehaviour
         }
         else if (releasedThisFrame && _activeCoin != null)
         {
+            if (OnboardingGuideController.Instance != null
+                && !OnboardingGuideController.Instance.CanReleaseAim(_activeCoin))
+            {
+                _cameraZoom?.SetDragState(pullRatio, sideRatio);
+                return;
+            }
+
             CoinDragController releasedCoin = _activeCoin;
             CoinIdentity identity = releasedCoin.GetComponent<CoinIdentity>();
 

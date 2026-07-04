@@ -23,6 +23,7 @@ public class GameRulesManager : MonoBehaviour
     CoinIdentity _shotCoin;
     CoinIdentity _resolvingShotCoin;
     CoinIdentity _openingCoin;
+    CoinIdentity _guidedPlayableCoin;
     Vector3 _shotStartPosition;
     bool _goalEnteredDuringShot;
     bool _isResolvingMove;
@@ -47,10 +48,17 @@ public class GameRulesManager : MonoBehaviour
     public int PlayerShotNumber => _playerShotNumber;
 
     /// <summary>Sıradaki atış gate kuralına tabi mi (2. atış ve sonrası).</summary>
-    public bool RequiresGateValidationForNextShot => _playerShotNumber > OpeningShotCount;
+    public bool RequiresGateValidationForNextShot =>
+        _playerShotNumber > OpeningShotCount && !IsOnboardingTutorialActive();
 
     /// <summary>GateIndicator 2. atıştan itibaren gösterilir.</summary>
     public bool ShouldShowGateIndicatorForNextShot => RequiresGateValidationForNextShot;
+
+    static bool IsOnboardingTutorialActive()
+    {
+        return OnboardingGuideController.Instance != null
+               && OnboardingGuideController.Instance.ShouldSuppressInvalidMoveRules;
+    }
 
     public static bool IsOpeningShotNumber(int shotNumber) => shotNumber <= OpeningShotCount;
 
@@ -129,6 +137,50 @@ public class GameRulesManager : MonoBehaviour
         DiscoverPlayerCoins();
     }
 
+    /// <summary>
+    /// Tutorial sonrası 3 coin aşaması: ilk atış orta coin ile açılış sayılır, gate doğrulaması uygulanmaz.
+    /// </summary>
+    public void PrepareForPostTutorialOpeningShot()
+    {
+        _playerShotNumber = 1;
+        _isFirstPlayerMove = true;
+        _isOpeningShot = false;
+        GateIndicator.Instance?.Hide();
+        CacheInitialPositions();
+        DiscoverPlayerCoins();
+    }
+
+    /// <summary>
+    /// Aşama 10+: yalnızca guided coin seçilebilir; gate ve InvalidMove kuralları aktif.
+    /// </summary>
+    public void PrepareForGuidedCoinShot(CoinIdentity guidedCoin)
+    {
+        _guidedPlayableCoin = guidedCoin;
+        _isFirstPlayerMove = true;
+        _isOpeningShot = false;
+        _playerShotNumber = Mathf.Max(_playerShotNumber, OpeningShotCount + 1);
+        CacheInitialPositions();
+        DiscoverPlayerCoins();
+
+        if (guidedCoin != null)
+        {
+            _openingCoin = guidedCoin;
+        }
+
+        ApplyOpeningRestrictions();
+    }
+
+    public void PrepareForStageTenElevenGuidedShot(CoinIdentity guidedCoin)
+    {
+        PrepareForGuidedCoinShot(guidedCoin);
+    }
+
+    public void ClearGuidedPlayableCoin()
+    {
+        _guidedPlayableCoin = null;
+        DiscoverPlayerCoins();
+    }
+
     void OnDestroy()
     {
         if (Instance == this)
@@ -190,17 +242,18 @@ public class GameRulesManager : MonoBehaviour
 
     void ApplyOpeningRestrictions()
     {
-        if (_openingCoin == null)
+        CoinIdentity activeCoin = _guidedPlayableCoin != null ? _guidedPlayableCoin : _openingCoin;
+        if (activeCoin == null)
         {
             return;
         }
 
-        SetCoinPassiveState(_openingCoin, false);
+        SetCoinPassiveState(activeCoin, false);
 
         for (int i = 0; i < _playerCoins.Count; i++)
         {
             CoinIdentity coin = _playerCoins[i];
-            if (coin == _openingCoin)
+            if (coin == activeCoin)
             {
                 continue;
             }
@@ -288,6 +341,11 @@ public class GameRulesManager : MonoBehaviour
         }
 
         if (coin.DragController.IsSliding || coin.DragController.IsAiming)
+        {
+            return false;
+        }
+
+        if (_guidedPlayableCoin != null && coin != _guidedPlayableCoin)
         {
             return false;
         }
@@ -465,13 +523,21 @@ public class GameRulesManager : MonoBehaviour
 
         bool shotValid;
         bool pendingInvalidRollbackFinished = false;
-        if (isOpeningShot)
+        bool requiresGateValidation = !isOpeningShot && !IsOnboardingTutorialActive();
+        if (!requiresGateValidation)
         {
-            _isFirstPlayerMove = false;
-            _isOpeningShot = false;
+            if (isOpeningShot)
+            {
+                _isFirstPlayerMove = false;
+                _isOpeningShot = false;
+                if (!IsOnboardingTutorialActive())
+                {
+                    UnlockOpeningSideCoins();
+                }
+            }
+
             shotValid = true;
-            UnlockOpeningSideCoins();
-            Debug.Log($"[Shot] {coin.gameObject.name} açılış #{_playerShotNumber} geçerli");
+            Debug.Log($"[Shot] {coin.gameObject.name} geçerli (gate kontrolü yok)");
         }
         else
         {
@@ -558,7 +624,7 @@ public class GameRulesManager : MonoBehaviour
 
     void UnlockAllPlayerCoins()
     {
-        if (_isFirstPlayerMove)
+        if (_guidedPlayableCoin != null || _isFirstPlayerMove)
         {
             ApplyOpeningRestrictions();
             return;
@@ -686,14 +752,65 @@ public class GameRulesManager : MonoBehaviour
         GameFeedback.EnsureInstance()?.PlayGoal();
         InvokePlayerGoalScoredSafely();
 
+        OnboardingGuideController onboarding = OnboardingGuideController.Instance;
+        onboarding?.NotifyPlayerGoalCelebrationStarting();
+        bool deferRoundReset = onboarding != null && onboarding.ShouldDeferGoalRoundReset;
+        bool deferForOnboardingComplete = onboarding != null && onboarding.ShouldDeferRoundResetForOnboardingCompletion;
+
         PlayerGoalEffectController effect = PlayerGoalEffectController.EnsureInstance();
         if (effect != null && effect.CanPlay())
         {
-            effect.Play(BeginRoundResetAfterGoal);
+            effect.Play(() =>
+            {
+                if (deferRoundReset)
+                {
+                    CompleteGoalSequenceWithoutRoundReset();
+                    onboarding.OnFinalGoalCelebrationFinished();
+                }
+                else if (deferForOnboardingComplete)
+                {
+                    CompleteGoalSequenceWithoutRoundReset();
+                    onboarding.NotifyGoalEffectFinishedForOnboarding();
+                }
+                else
+                {
+                    BeginRoundResetAfterGoal();
+                }
+            });
+            return;
+        }
+
+        if (deferRoundReset)
+        {
+            CompleteGoalSequenceWithoutRoundReset();
+            onboarding.OnFinalGoalCelebrationFinished();
+            return;
+        }
+
+        if (deferForOnboardingComplete)
+        {
+            CompleteGoalSequenceWithoutRoundReset();
+            onboarding.NotifyGoalEffectFinishedForOnboarding();
             return;
         }
 
         BeginRoundResetAfterGoal();
+    }
+
+    public void CompleteGoalSequenceWithoutRoundReset()
+    {
+        if (_roundResetRoutine != null)
+        {
+            StopCoroutine(_roundResetRoutine);
+            _roundResetRoutine = null;
+        }
+
+        _resolveRoutine = null;
+        _shotCoin = null;
+        _resolvingShotCoin = null;
+        _isResolvingMove = false;
+        _goalSequenceActive = false;
+        _pendingGoalFreeze = false;
     }
 
     public void HandleEnemyGoalCelebration()
