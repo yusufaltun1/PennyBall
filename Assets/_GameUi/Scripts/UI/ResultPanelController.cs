@@ -1,7 +1,6 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class ResultPanelController : MonoBehaviour
@@ -170,11 +169,11 @@ public class ResultPanelController : MonoBehaviour
         {
             gameObject.SetActive(false);
             leagueStatusPanel.SetActive(true);
+            return;
         }
-        else
-        {
-            SceneManager.LoadScene(GameSceneNames.MainMenu);
-        }
+
+        // League status yoksa doğrudan menüye — 3 maçta bir interstitial
+        AdsService.GoToMainMenuMaybeWithInterstitial();
     }
 
     private void OnEnable()

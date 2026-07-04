@@ -8,6 +8,10 @@ public static class WalletService
     public const int CoinsLoss = 0;
     public const int XpPerMatch = 10;
 
+    // Lig yükselme ödülleri (Claim / Claim x2)
+    public const int LeaguePromotionCoins = 100;
+    public const int LeaguePromotionXp = 50;
+
     static WalletData _data;
 
     public static event Action Changed;

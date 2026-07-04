@@ -13,13 +13,19 @@ public class PlayerProfilePresenter : MonoBehaviour
     {
         Refresh();
         if (LeagueService.Instance != null)
+        {
             LeagueService.Instance.AvatarChanged += Refresh;
+            LeagueService.Instance.DisplayNameChanged += Refresh;
+        }
     }
 
     void OnDisable()
     {
         if (LeagueService.Instance != null)
+        {
             LeagueService.Instance.AvatarChanged -= Refresh;
+            LeagueService.Instance.DisplayNameChanged -= Refresh;
+        }
     }
 
     void Refresh()

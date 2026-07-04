@@ -151,7 +151,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 684775323}
-  m_Father: {fileID: 1674004250}
+  m_Father: {fileID: 63828639}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
@@ -2030,6 +2030,9 @@ MonoBehaviour:
   coins: {fileID: 704788838}
   xp: {fileID: 2121588816}
   buttons: {fileID: 422079096}
+  titleLabel: {fileID: 0}
+  continueButton: {fileID: 0}
+  adButton: {fileID: 0}
   stepDelay: 0.25
   buttonsDelayAfterRewards: 0.25
   entryDuration: 0.5
@@ -2668,6 +2671,7 @@ RectTransform:
   m_Children:
   - {fileID: 1226593603}
   - {fileID: 53983113}
+  - {fileID: 842122287}
   m_Father: {fileID: 585451194}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -9108,8 +9112,8 @@ RectTransform:
   - {fileID: 40477311}
   - {fileID: 989927833}
   - {fileID: 659976157}
-  - {fileID: 35054505}
   - {fileID: 1674004261}
+  - {fileID: 63828639}
   m_Father: {fileID: 1799544533}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -9157,7 +9161,7 @@ MonoBehaviour:
   p1: {fileID: 1962805834}
   p2: {fileID: 1614979347}
   p3: {fileID: 438575386}
-  btnContinue: {fileID: 35054505}
+  buttons: {fileID: 0}
   confetti: {fileID: 1674004262}
   continueButton: {fileID: 0}
   leagueStatusPanel: {fileID: 585451193}
@@ -9535,6 +9539,7 @@ RectTransform:
   - {fileID: 2901001002}
   - {fileID: 726936418}
   - {fileID: 3100001002}
+  - {fileID: 411708297}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -12933,6 +12938,7 @@ MonoBehaviour:
   _tableHeight: 0.139
   _maxPickDistance: 50
   _cameraZoom: {fileID: 8808235878063149797}
+  _touchPickRadius: 0.08
 --- !u!114 &8808235878063149797
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12945,10 +12951,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62b8e73e47ae14690b92965dd1719ac7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraAimZoom
+  _dynamicZoom: 0
+  _dragSide: 1
   _maxPullBack: 0.8
   _sideZoomBoost: 2
   _lerpSpeed: 7
   _zoomCurveExponent: 2.75
+  _edgeOrbitHorizontal: 0.85
+  _focusHeight: 0.02
+  _edgeHeightLowering: 0.28
+  _edgePitchReduceDegrees: 8
+  _maxEdgeBlendAtFullPull: 1
+  _edgeBlendCurveExponent: 1.6
+  _edgeAimAlignStartPull: 0.02
+  _edgeAimAlignEndPull: 0.12
+  _dynamicZoomMaxPullBack: 0.8
+  _dragSideMaxPositionX: 0.3
+  _dragSideZoomMultiplier: 1.65
+  _dragSideMaxFieldOfView: 20
+  _dragSideHorizontalInfluence: 0.8
+  _dragSideVerticalInfluence: 0.2
+  _edgeRestoreDuration: 0.32
 --- !u!81 &8808235878063149798
 AudioListener:
   m_ObjectHideFlags: 0

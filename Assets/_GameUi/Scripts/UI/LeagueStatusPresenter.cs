@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
@@ -50,7 +49,9 @@ public class LeagueStatusPresenter : MonoBehaviour
 
     void OnContinueClicked()
     {
-        SceneManager.LoadScene(GameSceneNames.MainMenu);
+        // Ödüller zaten result panelde verildi; ana menüye dönmeden önce
+        // her 3 maçta bir skippable interstitial gösterilir.
+        AdsService.GoToMainMenuMaybeWithInterstitial();
     }
 
     void Update()
