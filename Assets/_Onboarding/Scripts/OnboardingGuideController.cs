@@ -173,7 +173,7 @@ public class OnboardingGuideController : MonoBehaviour
 
     [Header("Dev")]
     [Tooltip("Geçici: tutorial mesajlarının sonuna (Aşama no) ekler. Onboarding bitince kapatılacak.")]
-    [SerializeField] bool _appendStageNumberToGuideMessages = false;
+    [SerializeField] bool _appendStageNumberToGuideMessages = true;
 
     [Header("Tuning")]
     [SerializeField] float _minPullPower01 = 0.02f;
@@ -3225,8 +3225,25 @@ public class OnboardingGuideController : MonoBehaviour
         return stageNumber > 0;
     }
 
+    bool TryResolveStageElevenSpotlightAnchor(out Vector3 worldPosition)
+    {
+        if (TryGetGateArrowEndpoints(out Vector3 gateStart, out Vector3 gateEnd))
+        {
+            worldPosition = (gateStart + gateEnd) * 0.5f;
+            return true;
+        }
+
+        return TryGetStageElevenGateMidpoint(out worldPosition);
+    }
+
     bool TryGetSpotlightWorldPosition(out Vector3 worldPosition)
     {
+        if (_phase == GuidePhase.Stage11_ReleaseToShot
+            && TryResolveStageElevenSpotlightAnchor(out worldPosition))
+        {
+            return _guideAnchorMode == GuideAnchorMode.PullTarget || _openingCoin != null;
+        }
+
         worldPosition = _spotlightWorldAnchor;
         return _guideAnchorMode == GuideAnchorMode.PullTarget || _openingCoin != null;
     }

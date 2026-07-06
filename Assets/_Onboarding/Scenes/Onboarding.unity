@@ -3235,7 +3235,7 @@ MonoBehaviour:
   _nowReleaseMessage: Now release
   _releaseNowMessage: Release now
   _increasePowerMessage: Increase power
-  _appendStageNumberToGuideMessages: 0
+  _appendStageNumberToGuideMessages: 1
   _minPullPower01: 0.02
   _stageOneShotPower01: 0.25
   _stageFourShotPower01: 0.25
