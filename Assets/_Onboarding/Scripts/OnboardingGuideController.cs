@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(-900)]
 public class OnboardingGuideController : MonoBehaviour
 {
     enum GuidePhase
@@ -293,6 +294,8 @@ public class OnboardingGuideController : MonoBehaviour
 
         _canvasRect = GetComponentInParent<Canvas>()?.GetComponent<RectTransform>();
         ResolveReferences();
+        OnboardingSceneBootstrap.ApplyInitialSceneSetup();
+        HideSideCoinsForEarlyTutorial();
         EnsureTutorialOverlay();
         EnsureOverlay();
         PrepareGuideElement();
@@ -2200,6 +2203,19 @@ public class OnboardingGuideController : MonoBehaviour
         }
     }
 
+    void HideSideCoinsForEarlyTutorial()
+    {
+        if (_sideCoinLeft != null)
+        {
+            _sideCoinLeft.gameObject.SetActive(false);
+        }
+
+        if (_sideCoinRight != null)
+        {
+            _sideCoinRight.gameObject.SetActive(false);
+        }
+    }
+
     void BeginGuide()
     {
         if (_guideStarted || _phase != GuidePhase.Inactive)
@@ -2208,6 +2224,7 @@ public class OnboardingGuideController : MonoBehaviour
         }
 
         MatchIntroCameraFlythrough.Finished -= OnIntroFlythroughFinished;
+        HideSideCoinsForEarlyTutorial();
         CacheCoinSpawnPoses();
 
         _guideStarted = true;
@@ -2548,7 +2565,7 @@ public class OnboardingGuideController : MonoBehaviour
 
         if (_sideCoinLeft == null)
         {
-            GameObject leftCoin = GameObject.Find("Coin_P1");
+            GameObject leftCoin = OnboardingSceneBootstrap.FindSceneObject("Coin_P1");
             if (leftCoin != null)
             {
                 _sideCoinLeft = leftCoin.transform;
@@ -2557,7 +2574,7 @@ public class OnboardingGuideController : MonoBehaviour
 
         if (_sideCoinRight == null)
         {
-            GameObject rightCoin = GameObject.Find("Coin_P3");
+            GameObject rightCoin = OnboardingSceneBootstrap.FindSceneObject("Coin_P3");
             if (rightCoin != null)
             {
                 _sideCoinRight = rightCoin.transform;

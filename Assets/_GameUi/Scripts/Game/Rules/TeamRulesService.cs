@@ -29,6 +29,7 @@ public static class TeamRulesService
     {
         state.IsFirstMove = true;
         state.OpeningCoin = null;
+        state.LastCommittedShotCoin = null;
     }
 
     public static void ResolveOpeningCoin(TeamRoundState state)

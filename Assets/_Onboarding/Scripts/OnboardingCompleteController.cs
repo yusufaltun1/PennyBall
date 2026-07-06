@@ -6,6 +6,8 @@ using UnityEngine.UI;
 
 public class OnboardingCompleteController : MonoBehaviour
 {
+    public const int OnboardingBonusCoins = 40;
+
     [SerializeField] RectTransform _particleBurst;
     [SerializeField] RectTransform _imageContainer;
     [SerializeField] RectTransform _wellDoneContent;
@@ -48,6 +50,7 @@ public class OnboardingCompleteController : MonoBehaviour
     Vector2 _claimFinalPosition;
     Coroutine _sequenceRoutine;
     readonly UIParticleBurstPlayer _burstPlayer = new();
+    bool _claimed;
 
     void Awake()
     {
@@ -78,7 +81,14 @@ public class OnboardingCompleteController : MonoBehaviour
 
     public void ClaimToExercise()
     {
+        if (_claimed)
+        {
+            return;
+        }
+
+        _claimed = true;
         MainMenuClickSound.Play();
+        WalletService.AddReward(OnboardingBonusCoins, 0);
         SceneManager.LoadScene(GameSceneNames.Exercise);
     }
 

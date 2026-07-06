@@ -6,11 +6,35 @@ public static class OnboardingEditorSetup
 {
     const string OnboardingScenePath = "Assets/_Onboarding/Scenes/Onboarding.unity";
 
-    [MenuItem("PennyBall/Onboarding/Reset Progress")]
-    public static void ResetProgress()
+    [MenuItem("PennyBall/Reset ALL Progress (Recommended)")]
+    public static void ResetAllProgress()
     {
-        OnboardingProgress.ResetAll();
-        Debug.Log("[Onboarding] Progress sıfırlandı.");
+        GameProgressReset.ResetAll(keepFeedbackSettings: false);
+
+        if (EditorApplication.isPlaying)
+        {
+            Debug.LogWarning(
+                "[Progress] Play Mode açıkken bellek cache'i kalabilir. " +
+                "Play'i durdurup tekrar başlat veya Settings > Version'a tıkla.");
+            return;
+        }
+
+        Debug.Log("[Progress] Tüm kayıt silindi. Play'e bas → Splash → Onboarding açılmalı.");
+    }
+
+    [MenuItem("PennyBall/Onboarding/Reset Progress (Keep Settings)")]
+    public static void ResetProgressKeepSettings()
+    {
+        GameProgressReset.ResetAll(keepFeedbackSettings: true);
+
+        if (EditorApplication.isPlaying)
+        {
+            Debug.LogWarning(
+                "[Progress] Play Mode açıkken bellek cache'i kalabilir. Play'i durdurup tekrar başlat.");
+            return;
+        }
+
+        Debug.Log("[Progress] Oyun kaydı sıfırlandı (ses/müzik ayarları korundu).");
     }
 
     [MenuItem("PennyBall/Onboarding/Open Onboarding Scene")]

@@ -39,20 +39,13 @@ public class ByteBrewGameAnalytics : MonoBehaviour
         UnsubscribeLeague();
     }
 
-    void OnApplicationPause(bool paused)
-    {
-        if (!paused)
-        {
-            return;
-        }
-
-        TryAbandonActiveMatch("app_pause");
-    }
-
     void OnApplicationQuit()
     {
         TryAbandonActiveMatch("app_quit");
     }
+
+    // Arka plan: 10 sn altı maç devam; 10+ sn geri dönüşte LeagueMatchController hükmen 3-0 bitirir.
+    // Process kill: MatchSessionTracker + RecoverAbandonedMatchIfNeeded (sonraki açılışta loss).
 
     IEnumerator InitializeWhenReady()
     {
@@ -187,12 +180,19 @@ public class ByteBrewGameAnalytics : MonoBehaviour
             { "new_level", newLevel.ToString() },
             { "total_xp", WalletService.TotalXp.ToString() }
         });
+        MetaAppEventsService.TrackLevelAchieved(newLevel);
         SyncUserAttributes();
     }
 
     void OnGameAnalyticsEvent(string eventName, Dictionary<string, string> parameters)
     {
         TrackEvent(eventName, parameters);
+
+        if (eventName == "onboarding_completed")
+        {
+            MetaAppEventsService.TrackCompleteRegistration();
+            SyncUserAttributes();
+        }
     }
 
     static Dictionary<string, string> BuildMatchContextParameters()
@@ -247,6 +247,8 @@ public class ByteBrewGameAnalytics : MonoBehaviour
         {
             Debug.LogWarning($"[ByteBrew] Event '{eventName}' gönderilemedi: {ex.Message}");
         }
+
+        MetaAppEventsService.TrackEvent(eventName);
     }
 
     static void TrackEvent(string eventName, Dictionary<string, string> parameters)
@@ -259,5 +261,7 @@ public class ByteBrewGameAnalytics : MonoBehaviour
         {
             Debug.LogWarning($"[ByteBrew] Event '{eventName}' gönderilemedi: {ex.Message}");
         }
+
+        MetaAppEventsService.TrackEvent(eventName, parameters);
     }
 }

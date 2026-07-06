@@ -16,6 +16,25 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
     Coroutine _feedbackRoutine;
     bool _isPerformingStreakReset;
 
+    public static void SuppressForGoal()
+    {
+        InvalidMoveFeedbackPresenter presenter =
+            FindFirstObjectByType<InvalidMoveFeedbackPresenter>(FindObjectsInactive.Include);
+        presenter?.SuppressImmediately();
+    }
+
+    public void SuppressImmediately()
+    {
+        if (_feedbackRoutine != null)
+        {
+            StopCoroutine(_feedbackRoutine);
+            _feedbackRoutine = null;
+        }
+
+        _isPerformingStreakReset = false;
+        HideAllImmediate();
+    }
+
     void Awake()
     {
         ResolveReferences();
@@ -44,6 +63,7 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
         GameRulesManager.Instance.InvalidMoveRollbackFinished += OnInvalidMoveRollbackFinished;
         GameRulesManager.Instance.ValidShotCommitted += OnValidShotCommitted;
         GameRulesManager.Instance.RoundReset += OnRoundReset;
+        GameRulesManager.Instance.GoalCelebrationStarted += SuppressImmediately;
 
         while (OpponentBotController.Instance == null)
         {
@@ -63,6 +83,7 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
             GameRulesManager.Instance.InvalidMoveRollbackFinished -= OnInvalidMoveRollbackFinished;
             GameRulesManager.Instance.ValidShotCommitted -= OnValidShotCommitted;
             GameRulesManager.Instance.RoundReset -= OnRoundReset;
+            GameRulesManager.Instance.GoalCelebrationStarted -= SuppressImmediately;
         }
 
         if (OpponentBotController.Instance != null)
@@ -75,6 +96,11 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
 
     void OnInvalidMoveRollbackStarted(CoinTeam team)
     {
+        if (ShouldSuppressForGoal())
+        {
+            return;
+        }
+
         _consecutiveInvalidMoves++;
         UpdateCounterText();
         ShowInvalidMove();
@@ -82,6 +108,11 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
 
     void OnInvalidMoveRollbackFinished(CoinTeam team)
     {
+        if (ShouldSuppressForGoal())
+        {
+            SuppressImmediately();
+            return;
+        }
         if (_consecutiveInvalidMoves >= StreakResetThreshold)
         {
             if (_feedbackRoutine != null)
@@ -215,6 +246,17 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
     {
         HideInvalidMove();
         HideResettingGame();
+    }
+
+    bool ShouldSuppressForGoal()
+    {
+        if (GameRulesManager.Instance == null)
+        {
+            return false;
+        }
+
+        return GameRulesManager.Instance.IsGoalSequenceActive
+            || GameRulesManager.Instance.HasPendingGoalFreeze;
     }
 
     void ResolveReferences()

@@ -10,6 +10,7 @@ public class LeagueService : MonoBehaviour
     public event Action StandingsUpdated;
     public event Action<int> PlayerPromoted;
     public event Action AvatarChanged;
+    public event Action DisplayNameChanged;
     public event Action<MatchResultType, string, string, int> MatchResultRegistered;
 
     LeagueSaveData _save;
@@ -18,6 +19,7 @@ public class LeagueService : MonoBehaviour
     public int PlayerLeague => _save?.playerLeague ?? 1;
     public int PlayerAvatarIndex => _save?.playerAvatarIndex ?? 0;
     public TimeSpan SeasonRemaining => GetSeasonRemaining();
+    public bool HasPendingSeasonResult => _save != null && _save.hasPendingSeasonResult;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void EnsureService()
@@ -65,15 +67,151 @@ public class LeagueService : MonoBehaviour
             LeagueRepository.Save(_save);
         }
 
-        if (IsSeasonExpired())
-        {
-            ResolveSeasonEnd();
-        }
+        ResolveSeasonIfNeeded(invokeEvents: false);
 
         LeagueSimulation.SimulateUntilNow(_save);
         SortStandings();
         LeagueRepository.Save(_save);
         LeagueStandingsLogger.LogLeagueStandings(_save, isFirstLaunch);
+        StandingsUpdated?.Invoke();
+    }
+
+    /// <summary>
+    /// Sezon süresi dolduysa sıralamayı çözer ve pending sonucu kaydeder.
+    /// Main menü açılışında panel göstermek için çağrılır.
+    /// </summary>
+    public bool ResolveSeasonIfNeeded(bool invokeEvents = true)
+    {
+        if (_save == null || !IsSeasonExpired())
+        {
+            return false;
+        }
+
+        ResolveSeasonEnd();
+        LeagueSimulation.SimulateUntilNow(_save);
+        SortStandings();
+        LeagueRepository.Save(_save);
+
+        if (invokeEvents)
+        {
+            SeasonChanged?.Invoke();
+            StandingsUpdated?.Invoke();
+        }
+
+        return true;
+    }
+
+    public bool TryGetPendingSeasonResult(out LeagueSeasonResult result)
+    {
+        result = default;
+        if (_save == null || !_save.hasPendingSeasonResult)
+        {
+            return false;
+        }
+
+        result = new LeagueSeasonResult
+        {
+            Promoted = _save.pendingPromoted,
+            PreviousLeague = _save.pendingPreviousLeague,
+            NewLeague = _save.pendingNewLeague,
+            FinalRank = _save.pendingFinalRank,
+            RewardCoins = _save.pendingRewardCoins,
+            RewardXp = _save.pendingRewardXp
+        };
+        return true;
+    }
+
+    /// <summary>
+    /// Pending sezon ödülünü hesaba yazar (multiplier: Claim=1, Claim x2=2).
+    /// Pending sonucu consume eder. Bir kez çağrılmalıdır.
+    /// </summary>
+    public bool ClaimPendingSeasonReward(int multiplier = 1)
+    {
+        if (_save == null || !_save.hasPendingSeasonResult)
+        {
+            return false;
+        }
+
+        int safeMultiplier = Mathf.Max(1, multiplier);
+        int coins = _save.pendingRewardCoins * safeMultiplier;
+        int xp = _save.pendingRewardXp * safeMultiplier;
+        if (coins > 0 || xp > 0)
+        {
+            WalletService.AddReward(coins, xp);
+        }
+
+        ConsumePendingSeasonResult();
+        return true;
+    }
+
+    public void ConsumePendingSeasonResult()
+    {
+        if (_save == null || !_save.hasPendingSeasonResult)
+        {
+            return;
+        }
+
+        _save.hasPendingSeasonResult = false;
+        _save.pendingPromoted = false;
+        _save.pendingPreviousLeague = 0;
+        _save.pendingNewLeague = 0;
+        _save.pendingFinalRank = 0;
+        _save.pendingRewardCoins = 0;
+        _save.pendingRewardXp = 0;
+        LeagueRepository.Save(_save);
+    }
+
+    /// <summary>
+    /// Test: sezon bitiş anını UTC olarak ayarlar (seasonStart geriye kaydırılır).
+    /// </summary>
+    public void DebugSetSeasonEndUtc(DateTime seasonEndUtc)
+    {
+        if (_save == null)
+        {
+            return;
+        }
+
+        DateTime endUtc = DateTime.SpecifyKind(seasonEndUtc, DateTimeKind.Utc);
+        _save.seasonStartUtcTicks = endUtc.AddHours(-LeagueConfig.SeasonDurationHours).Ticks;
+        LeagueRepository.Save(_save);
+    }
+
+    /// <summary>
+    /// Test: sezondan kalan süreyi ayarlar.
+    /// </summary>
+    public void DebugSetSeasonRemaining(TimeSpan remaining)
+    {
+        DebugSetSeasonEndUtc(DateTime.UtcNow + remaining);
+    }
+
+    /// <summary>
+    /// Test: oyuncuyu 1. sıraya alır (promotion senaryosu için).
+    /// </summary>
+    public void DebugForcePlayerFirstPlace()
+    {
+        if (_save?.standings == null)
+        {
+            return;
+        }
+
+        LeagueStandingEntry player = FindPlayerStanding();
+        if (player == null)
+        {
+            return;
+        }
+
+        int maxPoints = 0;
+        for (int i = 0; i < _save.standings.Length; i++)
+        {
+            if (!_save.standings[i].isPlayer)
+            {
+                maxPoints = Mathf.Max(maxPoints, _save.standings[i].points);
+            }
+        }
+
+        player.points = maxPoints + LeagueConfig.PointsWin;
+        SortStandings();
+        LeagueRepository.Save(_save);
         StandingsUpdated?.Invoke();
     }
 
@@ -161,6 +299,8 @@ public class LeagueService : MonoBehaviour
             }
         }
 
+        _save.playerTotalGoals += Mathf.Max(0, MatchSessionContext.PlayerGoalsAtEnd);
+
         if (_save.currentOpponentBotId >= 0
             && TryGetBotStanding(_save.currentOpponentBotId, out LeagueStandingEntry botEntry))
         {
@@ -179,6 +319,7 @@ public class LeagueService : MonoBehaviour
         LeagueRepository.Save(_save);
         StandingsUpdated?.Invoke();
         MatchResultRegistered?.Invoke(result, abandonReason, matchId, durationSeconds);
+        MatchAdTracker.RegisterMatchCompleted();
         return true;
     }
 
@@ -205,6 +346,12 @@ public class LeagueService : MonoBehaviour
         return _save.standings.Length;
     }
 
+    public int GetPlayerPoints()
+    {
+        LeagueStandingEntry player = FindPlayerStanding();
+        return player?.points ?? 0;
+    }
+
     public void SetPlayerAvatar(int index)
     {
         if (_save == null) return;
@@ -218,6 +365,37 @@ public class LeagueService : MonoBehaviour
 
         LeagueRepository.Save(_save);
         AvatarChanged?.Invoke();
+    }
+
+    public void SetPlayerDisplayName(string displayName)
+    {
+        if (_save == null || string.IsNullOrWhiteSpace(displayName))
+        {
+            return;
+        }
+
+        string trimmed = displayName.Trim();
+        if (trimmed.Length == 0)
+        {
+            return;
+        }
+
+        if (trimmed.Length > 20)
+        {
+            trimmed = trimmed.Substring(0, 20);
+        }
+
+        _save.playerDisplayName = trimmed;
+
+        LeagueStandingEntry player = FindPlayerStanding();
+        if (player != null)
+        {
+            player.displayName = trimmed;
+        }
+
+        LeagueRepository.Save(_save);
+        StandingsUpdated?.Invoke();
+        DisplayNameChanged?.Invoke();
     }
 
     LeagueSaveData CreateNewSave()
@@ -294,14 +472,7 @@ public class LeagueService : MonoBehaviour
 
     void EnsureSeasonActive()
     {
-        if (IsSeasonExpired())
-        {
-            ResolveSeasonEnd();
-            LeagueSimulation.SimulateUntilNow(_save);
-            LeagueRepository.Save(_save);
-            SeasonChanged?.Invoke();
-            StandingsUpdated?.Invoke();
-        }
+        ResolveSeasonIfNeeded(invokeEvents: true);
     }
 
     bool IsSeasonExpired()
@@ -330,12 +501,28 @@ public class LeagueService : MonoBehaviour
     {
         SortStandings();
         int playerRank = GetPlayerRank();
+        int previousLeague = _save.playerLeague;
+        bool promoted = false;
 
         if (playerRank == 1 && _save.playerLeague < LeagueConfig.LeagueCount)
         {
             _save.playerLeague++;
+            promoted = true;
             PlayerPromoted?.Invoke(_save.playerLeague);
         }
+
+        _save.hasPendingSeasonResult = true;
+        _save.pendingPromoted = promoted;
+        _save.pendingPreviousLeague = previousLeague;
+        _save.pendingNewLeague = _save.playerLeague;
+        _save.pendingFinalRank = playerRank;
+        // Promote: tam ödül, lig değişmediyse yarısı
+        _save.pendingRewardCoins = promoted
+            ? WalletService.LeaguePromotionCoins
+            : WalletService.LeaguePromotionCoins / 2;
+        _save.pendingRewardXp = promoted
+            ? WalletService.LeaguePromotionXp
+            : WalletService.LeaguePromotionXp / 2;
 
         StartNewSeason();
     }

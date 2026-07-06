@@ -1,7 +1,6 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class ResultPanelController : MonoBehaviour
@@ -45,6 +44,7 @@ public class ResultPanelController : MonoBehaviour
     [SerializeField] private RectTransform buttons;
     [SerializeField] private ConfettiController confetti;
     [SerializeField] private Button continueButton;
+    [SerializeField] private Button adButton;
 
     [Header("Navigation")]
     [SerializeField] private GameObject leagueStatusPanel;
@@ -56,6 +56,7 @@ public class ResultPanelController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI earnedCoinsLabel;
     [SerializeField] private TextMeshProUGUI earnedXpLabel;
     [SerializeField] private float rewardsEntryOffset = 50f;
+    [SerializeField] private float rewardsRestYOffset = 70f;
     [SerializeField] private float rewardsDuration = 0.5f;
 
     [Header("Timing")]
@@ -89,6 +90,8 @@ public class ResultPanelController : MonoBehaviour
     private bool previousWon;
     private bool previousLost;
     private bool previousDraw;
+    private bool _rewardDoubled;
+    private bool _buttonsBound;
     private Coroutine playCoroutine;
 
     public void ShowResult(MatchResultType result)
@@ -96,15 +99,16 @@ public class ResultPanelController : MonoBehaviour
         won  = result == MatchResultType.Win;
         lost = result == MatchResultType.Loss;
         draw = result == MatchResultType.Draw;
+        _rewardDoubled = false;
 
         if (earnedCoinsLabel != null)
             earnedCoinsLabel.text = $"+{MatchSessionContext.EarnedCoins}";
         if (earnedXpLabel != null)
-        {
-            earnedXpLabel.text = MatchSessionContext.LeveledUp
-                ? $"+{MatchSessionContext.EarnedXp} XP  Seviye {MatchSessionContext.LevelAfter}!"
-                : $"+{MatchSessionContext.EarnedXp} XP";
-        }
+            earnedXpLabel.text = $"+{MatchSessionContext.EarnedXp} XP";
+
+        BindButtons();
+        RefreshAdButtonVisibility();
+        SetButtonsInteractable(true);
 
         if (!gameObject.activeSelf)
             gameObject.SetActive(true);  // OnEnable fires → HandleOutcomeChange çalışır
@@ -128,20 +132,12 @@ public class ResultPanelController : MonoBehaviour
     private void Awake()
     {
         canvasRect = GetComponentInParent<Canvas>()?.GetComponent<RectTransform>();
-        resultLabelImage = resultLabel.GetComponent<Image>();
-        iconImage = icon.GetComponent<Image>();
-        p1Image = p1.GetComponent<Image>();
-        p2Image = p2.GetComponent<Image>();
-        p3Image = p3.GetComponent<Image>();
+        ResolveReferences();
 
         if (confetti == null)
             confetti = GetComponentInChildren<ConfettiController>(true);
 
-        if (continueButton == null && buttons != null)
-            continueButton = buttons.GetComponentInChildren<Button>(true);
-
-        if (continueButton != null)
-            continueButton.onClick.AddListener(OnContinueClicked);
+        BindButtons();
 
         // Inspector'da atanmamışsa sahnedeki LeagueStatusPresenter'ı bul
         if (leagueStatusPanel == null)
@@ -158,23 +154,196 @@ public class ResultPanelController : MonoBehaviour
         CacheFinalStates();
     }
 
+    private void ResolveReferences()
+    {
+        if (buttons == null)
+        {
+            Transform buttonsTransform = transform.Find("Buttons");
+            if (buttonsTransform != null)
+                buttons = buttonsTransform as RectTransform;
+        }
+
+        resultLabelImage = resultLabel != null ? resultLabel.GetComponent<Image>() : null;
+        iconImage = icon != null ? icon.GetComponent<Image>() : null;
+        p1Image = p1 != null ? p1.GetComponent<Image>() : null;
+        p2Image = p2 != null ? p2.GetComponent<Image>() : null;
+        p3Image = p3 != null ? p3.GetComponent<Image>() : null;
+    }
+
     private void OnDestroy()
     {
+        UnbindButtons();
+    }
+
+    void BindButtons()
+    {
+        if (_buttonsBound)
+        {
+            return;
+        }
+
+        ResolveReferences();
+
+        if (continueButton == null)
+        {
+            continueButton = FindButtonByName("Btn_Continue");
+        }
+
+        if (adButton == null)
+        {
+            adButton = FindButtonByName("Btn_Ad");
+        }
+
         if (continueButton != null)
+        {
+            continueButton.onClick.AddListener(OnContinueClicked);
+        }
+
+        if (adButton != null)
+        {
+            adButton.onClick.AddListener(OnClaimX2Clicked);
+        }
+
+        _buttonsBound = continueButton != null || adButton != null;
+    }
+
+    void UnbindButtons()
+    {
+        if (continueButton != null)
+        {
             continueButton.onClick.RemoveListener(OnContinueClicked);
+        }
+
+        if (adButton != null)
+        {
+            adButton.onClick.RemoveListener(OnClaimX2Clicked);
+        }
+
+        _buttonsBound = false;
+    }
+
+    Button FindButtonByName(string buttonName)
+    {
+        if (buttons == null)
+        {
+            return null;
+        }
+
+        Transform found = FindDeepChild(buttons, buttonName);
+        return found != null ? found.GetComponent<Button>() : null;
+    }
+
+    static Transform FindDeepChild(Transform parent, string childName)
+    {
+        if (parent.name == childName)
+        {
+            return parent;
+        }
+
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform found = FindDeepChild(parent.GetChild(i), childName);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     public void OnContinueClicked()
     {
+        ProceedAfterResult();
+    }
+
+    void OnClaimX2Clicked()
+    {
+        if (_rewardDoubled || MatchSessionContext.EarnedCoins <= 0)
+        {
+            return;
+        }
+
+        SetButtonsInteractable(false);
+
+        if (AdsService.Instance == null)
+        {
+            Debug.LogWarning("[ResultPanel] AdsService yok, x2 reklam gösterilemedi.");
+            SetButtonsInteractable(true);
+            return;
+        }
+
+        AdsService.Instance.ShowRewarded(
+            onRewarded: ApplyDoubledRewardState,
+            onFailed: () =>
+            {
+                Debug.LogWarning("[ResultPanel] Rewarded reklam başarısız / izlenmedi.");
+                SetButtonsInteractable(true);
+            });
+    }
+
+    void ApplyDoubledRewardState()
+    {
+        if (_rewardDoubled)
+        {
+            return;
+        }
+
+        _rewardDoubled = true;
+        WalletService.AddReward(MatchSessionContext.EarnedCoins, 0);
+
+        if (earnedCoinsLabel != null)
+        {
+            earnedCoinsLabel.text = $"+{MatchSessionContext.EarnedCoins * 2} x2";
+        }
+
+        if (!gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+        }
+
+        StopPresentation();
+        ApplyFinalState(includeResultElements: false);
+        RefreshAdButtonVisibility();
+        SetButtonsInteractable(true);
+    }
+
+    void ProceedAfterResult()
+    {
+        SetButtonsInteractable(false);
+
         if (leagueStatusPanel != null)
         {
             gameObject.SetActive(false);
             leagueStatusPanel.SetActive(true);
+            return;
         }
-        else
+
+        // League status yoksa doğrudan menüye — 3 maçta bir interstitial
+        AdsService.GoToMainMenuMaybeWithInterstitial();
+    }
+
+    void SetButtonsInteractable(bool interactable)
+    {
+        if (continueButton != null)
         {
-            SceneManager.LoadScene(GameSceneNames.MainMenu);
+            continueButton.interactable = interactable;
         }
+
+        if (adButton != null)
+        {
+            adButton.interactable = interactable;
+        }
+    }
+
+    void RefreshAdButtonVisibility()
+    {
+        if (adButton == null)
+        {
+            return;
+        }
+
+        adButton.gameObject.SetActive(MatchSessionContext.EarnedCoins > 0 && !_rewardDoubled);
     }
 
     private void OnEnable()
@@ -320,6 +489,11 @@ public class ResultPanelController : MonoBehaviour
 
     private static RectState Capture(RectTransform rect)
     {
+        if (rect == null)
+        {
+            return default;
+        }
+
         return new RectState
         {
             AnchoredPosition = rect.anchoredPosition,
@@ -395,8 +569,8 @@ public class ResultPanelController : MonoBehaviour
         if (rewards != null)
         {
             rewards.SetActive(true);
-            Apply(rewardCoins, coinsFinal);
-            Apply(rewardXp, xpFinal);
+            Apply(rewardCoins, coinsFinal, rewardsRestYOffset);
+            Apply(rewardXp, xpFinal, rewardsRestYOffset);
             SetCanvasGroupAlpha(coinsCanvasGroup, 1f);
             SetCanvasGroupAlpha(xpCanvasGroup, 1f);
         }
@@ -539,6 +713,8 @@ public class ResultPanelController : MonoBehaviour
 
     private IEnumerator AnimateRewardsEntry()
     {
+        Vector2 coinsRest = GetRewardRestPosition(coinsFinal);
+        Vector2 xpRest = GetRewardRestPosition(xpFinal);
         Vector2 coinsStart = GetRewardStartPosition(coinsFinal);
         Vector2 xpStart = GetRewardStartPosition(xpFinal);
 
@@ -557,28 +733,36 @@ public class ResultPanelController : MonoBehaviour
 
             rewardCoins.anchoredPosition = Vector2.LerpUnclamped(
                 coinsStart,
-                coinsFinal.AnchoredPosition,
+                coinsRest,
                 moveT);
             rewardXp.anchoredPosition = Vector2.LerpUnclamped(
                 xpStart,
-                xpFinal.AnchoredPosition,
+                xpRest,
                 moveT);
             SetCanvasGroupAlpha(coinsCanvasGroup, progress);
             SetCanvasGroupAlpha(xpCanvasGroup, progress);
             yield return null;
         }
 
-        Apply(rewardCoins, coinsFinal);
-        Apply(rewardXp, xpFinal);
+        rewardCoins.anchoredPosition = coinsRest;
+        rewardXp.anchoredPosition = xpRest;
         SetCanvasGroupAlpha(coinsCanvasGroup, 1f);
         SetCanvasGroupAlpha(xpCanvasGroup, 1f);
     }
 
-    private Vector2 GetRewardStartPosition(RectState finalState)
+    private Vector2 GetRewardRestPosition(RectState finalState)
     {
         return new Vector2(
             finalState.AnchoredPosition.x,
-            finalState.AnchoredPosition.y - rewardsEntryOffset);
+            finalState.AnchoredPosition.y + rewardsRestYOffset);
+    }
+
+    private Vector2 GetRewardStartPosition(RectState finalState)
+    {
+        Vector2 rest = GetRewardRestPosition(finalState);
+        return new Vector2(
+            rest.x,
+            rest.y - rewardsEntryOffset);
     }
 
     private static CanvasGroup GetOrAddCanvasGroup(RectTransform rect)
@@ -600,9 +784,9 @@ public class ResultPanelController : MonoBehaviour
         }
     }
 
-    private static void Apply(RectTransform rect, RectState state)
+    private static void Apply(RectTransform rect, RectState state, float yOffset = 0f)
     {
-        rect.anchoredPosition = state.AnchoredPosition;
+        rect.anchoredPosition = state.AnchoredPosition + new Vector2(0f, yOffset);
         rect.localScale = state.LocalScale;
     }
 

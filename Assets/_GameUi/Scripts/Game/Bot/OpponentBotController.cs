@@ -11,16 +11,14 @@ public class OpponentBotController : MonoBehaviour
     public static OpponentBotController Instance { get; private set; }
 
     [Header("AI Gücü")]
-    [Tooltip("1 = zayıf, 10 = güçlü. Test için buradan ayarla.")]
-    [SerializeField] [Range(1, 10)] int _aiStrength = 7;
-    [Tooltip("Açıksa lig rakibinin zorluğu yerine yukarıdaki güç kullanılır.")]
-    [SerializeField] bool _useInspectorAiStrength = true;
+    [Tooltip("Kapalıyken varsayılan strength (7) veya level-up boost kullanılır.")]
+    [SerializeField] [Range(1, OpponentBotDifficulty.MaxStrengthLevel)] int _aiStrength = 7;
+    [SerializeField] bool _useInspectorAiStrength;
 
     [Header("Hamle Tempo")]
-    [Tooltip("Her atıştan önce beklenecek süre (saniye). AI gücünden bağımsız.")]
-    [SerializeField] [Min(0f)] float _turnThinkDelaySeconds = 2f;
-    [Tooltip("Açıksa yukarıdaki süre kullanılır; kapalıysa zorluk seviyesine göre otomatik.")]
-    [SerializeField] bool _useInspectorTurnDelay = true;
+    [Tooltip("Test için manuel süre. Kapalıyken maç sayısı veya level-up boost algoritması kullanılır.")]
+    [SerializeField] [Min(0f)] float _turnThinkDelaySeconds = 2.4f;
+    [SerializeField] bool _useInspectorTurnDelay;
 
     [Header("Oyun Kuralları")]
     [SerializeField] OpponentBotDifficulty _difficulty = new() { Level = 7 };
@@ -39,6 +37,7 @@ public class OpponentBotController : MonoBehaviour
     bool _isOpeningShot;
     int  _roundShotNumber = 1;   // bu turdaki atış sırası (1, 2, 3, 4+)
     Coroutine _playLoopRoutine;
+    BotLevelUpBoostPolicy.AiConfig _aiConfig;
 
     public event Action OpponentGoalScored;
 
@@ -84,17 +83,32 @@ public class OpponentBotController : MonoBehaviour
 
     public void ApplySessionOpponentDifficulty()
     {
-        if (!_useInspectorAiStrength && MatchSessionContext.HasOpponent)
-        {
-            _aiStrength = Mathf.Clamp(MatchSessionContext.CurrentOpponent.difficultyLevel, 1, 10);
-        }
-
-        SyncAiStrength();
+        SyncAiStrength(logSessionEvaluation: true);
     }
 
-    void SyncAiStrength()
+    void SyncAiStrength(bool logSessionEvaluation = false, int shotNumber = 0)
     {
-        _aiStrength = Mathf.Clamp(_aiStrength, 1, 10);
+        if (_useInspectorAiStrength)
+        {
+            _aiStrength = Mathf.Clamp(_aiStrength, 1, OpponentBotDifficulty.MaxStrengthLevel);
+            _difficulty.Level = _aiStrength;
+            _aiConfig = default;
+
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
+            if (logSessionEvaluation || shotNumber > 0)
+            {
+                BotLevelUpBoostPolicy.LogAiConfigInspector(_aiStrength, GetTurnThinkDelay());
+            }
+
+            return;
+        }
+
+        _aiConfig = BotLevelUpBoostPolicy.Evaluate(_useInspectorTurnDelay, _turnThinkDelaySeconds);
+        _aiStrength = _aiConfig.AppliedStrength;
         _difficulty.Level = _aiStrength;
 
         if (!Application.isPlaying)
@@ -102,18 +116,26 @@ public class OpponentBotController : MonoBehaviour
             return;
         }
 
-        Debug.Log(
-            $"[Bot] AI gücü={_aiStrength} | Think={GetTurnThinkDelay():F2}s | " +
-            $"AimNoise={_difficulty.AimNoiseDegrees:F1}° | PullNoise={_difficulty.PullNoise:F3} | " +
-            $"MaxPull={_difficulty.MaxPullScale:P0} | GoalPull={_difficulty.GoalFinishPullScale:P0} | " +
-            $"GoalFocus={_difficulty.GoalFocus:F2} | " +
-            $"Kaynak={(_useInspectorAiStrength ? "Inspector" : "Lig")} | " +
-            $"Tempo={(_useInspectorTurnDelay ? "Inspector" : "Zorluk")}");
+        if (logSessionEvaluation || shotNumber > 0)
+        {
+            BotLevelUpBoostPolicy.LogAiConfig(_aiStrength, GetTurnThinkDelay(), _aiConfig, shotNumber);
+        }
     }
 
     float GetTurnThinkDelay()
     {
-        return _useInspectorTurnDelay ? _turnThinkDelaySeconds : _difficulty.ThinkDelaySeconds;
+        if (_useInspectorTurnDelay)
+        {
+            return _turnThinkDelaySeconds;
+        }
+
+        if (!_useInspectorAiStrength
+            && _aiConfig.Mode == BotLevelUpBoostPolicy.AiConfigMode.LevelUpBoost)
+        {
+            return BotLevelUpBoostPolicy.MilestoneThinkDelaySeconds;
+        }
+
+        return BotTurnThinkDelay.GetDelayForCurrentPlayer();
     }
 
     void OnDestroy()
@@ -208,9 +230,9 @@ public class OpponentBotController : MonoBehaviour
                 yield return null;
             }
 
-            yield return new WaitForSeconds(GetTurnThinkDelay());
+            SyncAiStrength(shotNumber: _roundShotNumber);
 
-            SyncAiStrength();
+            yield return new WaitForSeconds(GetTurnThinkDelay());
 
             if (!OpponentBotBrain.TryChooseShot(
                     _state, _difficulty, _isResolving, _gateMargin,
@@ -265,6 +287,40 @@ public class OpponentBotController : MonoBehaviour
         _pathSamples.Clear();
         yield return WaitUntilCoinStops(coin.DragController, coin, _pathSamples);
 
+        bool requiresGateValidation = !isOpeningShot;
+        bool goalTriggered = _goalEnteredDuringShot || IsCoinInPlayerGoal(coin);
+
+        if (requiresGateValidation && _state.LastCommittedShotCoin == coin)
+        {
+            yield return RollbackInvalidBotShot(coin, "aynı coin üst üste atılamaz");
+            yield break;
+        }
+
+        if (goalTriggered)
+        {
+            if (requiresGateValidation
+                && !TeamRulesService.ValidatePassBetween(_state, coin, _pathSamples, _gateMargin))
+            {
+                yield return RollbackInvalidBotShot(coin, "kapıdan geçmeden gol");
+                yield break;
+            }
+
+            Debug.Log($"[Bot] {coin.gameObject.name} GOL");
+            _resolvingCoin = null;
+            _isResolving = false;
+
+            if (GameRulesManager.Instance == null
+                || !GameRulesManager.Instance.TryBeginGoalSequence(pauseOpponent: false))
+            {
+                yield break;
+            }
+
+            InvokeOpponentGoalScoredSafely();
+            GameRulesManager.Instance.HandleEnemyGoalCelebration();
+            StopPlayLoop();
+            yield break;
+        }
+
         bool shotValid;
         bool pendingInvalidRollbackFinished = false;
         if (isOpeningShot)
@@ -287,6 +343,7 @@ public class OpponentBotController : MonoBehaviour
             {
                 Debug.Log($"[Bot] {coin.gameObject.name} GEÇERSİZ — kapıdan geçemedi | " +
                           $"son pozisyon={coin.transform.position:F2}");
+                GameRulesManager.Instance?.CancelPendingGoalPreview();
                 InvalidMoveRollbackStarted?.Invoke(CoinTeam.Opponent);
                 yield return RollbackCoin(coin, _shotStartPosition);
                 pendingInvalidRollbackFinished = true;
@@ -301,31 +358,14 @@ public class OpponentBotController : MonoBehaviour
 
         if (shotValid)
         {
+            _state.LastCommittedShotCoin = coin;
+
             if (!isOpeningShot)
             {
                 ValidShotCommitted?.Invoke(CoinTeam.Opponent);
             }
 
             _roundShotNumber++;
-        }
-
-        bool inGoal = IsCoinInPlayerGoal(coin);
-        if (shotValid && (_goalEnteredDuringShot || inGoal))
-        {
-            Debug.Log($"[Bot] {coin.gameObject.name} GOL");
-            _resolvingCoin = null;
-            _isResolving = false;
-
-            if (GameRulesManager.Instance == null
-                || !GameRulesManager.Instance.TryBeginGoalSequence(pauseOpponent: false))
-            {
-                yield break;
-            }
-
-            InvokeOpponentGoalScoredSafely();
-            GameRulesManager.Instance.HandleEnemyGoalCelebration();
-            StopPlayLoop();
-            yield break;
         }
 
         if (GameRulesManager.Instance != null && GameRulesManager.Instance.HasPendingGoalFreeze)
@@ -342,6 +382,20 @@ public class OpponentBotController : MonoBehaviour
             InvalidMoveRollbackFinished?.Invoke(CoinTeam.Opponent);
         }
 
+        TeamRulesService.UnlockAllCoins(_state, SetCoinPassive);
+        TeamRulesService.EnsureAtLeastOneSelectable(_state, SetCoinPassive);
+    }
+
+    IEnumerator RollbackInvalidBotShot(CoinIdentity coin, string reason)
+    {
+        Debug.Log($"[Bot] {coin.gameObject.name} GEÇERSİZ — {reason}");
+        GameRulesManager.Instance?.CancelPendingGoalPreview();
+        InvalidMoveRollbackStarted?.Invoke(CoinTeam.Opponent);
+        yield return RollbackCoin(coin, _shotStartPosition);
+
+        _resolvingCoin = null;
+        _isResolving = false;
+        InvalidMoveRollbackFinished?.Invoke(CoinTeam.Opponent);
         TeamRulesService.UnlockAllCoins(_state, SetCoinPassive);
         TeamRulesService.EnsureAtLeastOneSelectable(_state, SetCoinPassive);
     }

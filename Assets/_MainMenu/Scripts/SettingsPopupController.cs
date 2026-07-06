@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class SettingsPopupController : MonoBehaviour
@@ -21,6 +22,17 @@ public class SettingsPopupController : MonoBehaviour
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void WireInactivePopups()
+    {
+        WireAllInLoadedScenes();
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        WireAllInLoadedScenes();
+    }
+
+    static void WireAllInLoadedScenes()
     {
         SettingsPopupController[] controllers = Object.FindObjectsByType<SettingsPopupController>(
             FindObjectsInactive.Include,
@@ -102,6 +114,7 @@ public class SettingsPopupController : MonoBehaviour
         BindToggle("PanelRoot/Container/Wrapper/Control-Music/Button", SettingsToggleControl.SettingKind.Music);
         BindToggle("PanelRoot/Container/Wrapper/Control-SoundEffects/Button", SettingsToggleControl.SettingKind.SoundEffects);
         BindToggle("PanelRoot/Container/Wrapper/Control-Vibrations/Button", SettingsToggleControl.SettingKind.Vibration);
+        BindVersionDebugGate();
         _settingsBound = true;
     }
 
@@ -134,6 +147,27 @@ public class SettingsPopupController : MonoBehaviour
             : toggleTransform.gameObject.AddComponent<SettingsToggleControl>();
 
         toggle.Initialize(kind);
+    }
+
+    void BindVersionDebugGate()
+    {
+        Transform versionTransform = transform.Find("PanelRoot/Container/Wrapper/VersionText");
+        if (versionTransform == null)
+        {
+            Debug.LogWarning("[Settings] VersionText bulunamadı.");
+            return;
+        }
+
+        SettingsVersionDebugGate[] existing = versionTransform.GetComponents<SettingsVersionDebugGate>();
+        for (int i = 1; i < existing.Length; i++)
+        {
+            Destroy(existing[i]);
+        }
+
+        if (existing.Length == 0)
+        {
+            versionTransform.gameObject.AddComponent<SettingsVersionDebugGate>();
+        }
     }
 
     private void OnDestroy()

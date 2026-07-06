@@ -11,7 +11,8 @@ public class MatchingPanelController : MonoBehaviour
     [SerializeField] private Image opponentAvatarImage;
     [SerializeField] private Image loopImage;
     [SerializeField] private TextMeshProUGUI opponentNameText;
-    [SerializeField] private TextMeshProUGUI scoreText;
+    [SerializeField] private TextMeshProUGUI playerLevelText;
+    [SerializeField] private TextMeshProUGUI opponentLevelText;
     [SerializeField] private GameObject findingObject;
     [SerializeField] private TextMeshProUGUI findingText;
     [SerializeField] private GameObject sayacObject;
@@ -274,6 +275,14 @@ public class MatchingPanelController : MonoBehaviour
             findingText.fontSize = 64f;
             findingText.text = "Finding a match...";
         }
+
+        RefreshPlayerLevel();
+        opponentLevelText?.SetText("?");
+    }
+
+    private void RefreshPlayerLevel()
+    {
+        playerLevelText?.SetText(WalletService.Level.ToString());
     }
 
     private IEnumerator DoMatchmakingSequence()
@@ -365,7 +374,7 @@ public class MatchingPanelController : MonoBehaviour
 
         SetAvatar(bot.avatarIndex);
 
-        scoreText?.SetText(Random.Range(50, 600).ToString());
+        opponentLevelText?.SetText(GetOpponentDisplayLevel(bot).ToString());
     }
 
     private void ShowOpponent(BotPlayerEntry opponent)
@@ -380,7 +389,7 @@ public class MatchingPanelController : MonoBehaviour
 
         SetAvatar(opponent.avatarIndex);
 
-        scoreText?.SetText(GetOpponentStandingPoints(opponent).ToString());
+        opponentLevelText?.SetText(GetOpponentDisplayLevel(opponent).ToString());
     }
 
     private void SetAvatar(int avatarIndex)
@@ -397,30 +406,26 @@ public class MatchingPanelController : MonoBehaviour
             opponentAvatarImage.sprite = sprite;
     }
 
-    private int GetOpponentStandingPoints(BotPlayerEntry bot)
+    /// <summary>
+    /// Bot zorluğuna göre oyuncu seviyesine yakın bir görüntü seviyesi üretir.
+    /// </summary>
+    private static int GetOpponentDisplayLevel(BotPlayerEntry bot)
     {
-        LeagueSaveData save = LeagueService.Instance?.Save;
-        if (save?.standings == null)
+        if (bot == null)
         {
-            return 0;
+            return 1;
         }
 
-        for (int i = 0; i < save.standings.Length; i++)
-        {
-            LeagueStandingEntry entry = save.standings[i];
-            if (!entry.isPlayer && entry.botId == bot.id)
-            {
-                return entry.points;
-            }
-        }
-
-        return 0;
+        int playerLevel = WalletService.Level;
+        int difficulty = Mathf.Clamp(bot.difficultyLevel, 1, 10);
+        int delta = (difficulty - 5) * 2 + (bot.id % 5) - 2;
+        return Mathf.Clamp(playerLevel + delta, 1, PlayerLevelProgression.MaxLevel);
     }
 
     private void ShowPlaceholder()
     {
         opponentNameText?.SetText("---");
-        scoreText?.SetText("0");
+        opponentLevelText?.SetText("?");
     }
 
     private IEnumerator SlidePanelUp()

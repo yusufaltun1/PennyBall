@@ -53,6 +53,12 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
+        if (!OnboardingProgress.IsCompleted)
+        {
+            SceneManager.LoadScene(OnboardingSceneNames.Onboarding);
+            return;
+        }
+
         if (!SceneManager.GetSceneByName("3d_Saha_Studio").isLoaded)
         {
             SceneManager.LoadScene("3d_Saha_Studio", LoadSceneMode.Additive);

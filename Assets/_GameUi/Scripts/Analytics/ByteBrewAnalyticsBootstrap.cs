@@ -22,6 +22,20 @@ public static class ByteBrewAnalyticsBootstrap
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void InitializeByteBrew()
     {
+#if UNITY_IOS && !UNITY_EDITOR
+        // ATT sonrası AppTrackingTransparencyService başlatır.
+        return;
+#endif
+        ByteBrew.InitializeByteBrew();
+    }
+
+    public static void InitializeAfterTrackingPrompt()
+    {
+        if (ByteBrew.IsByteBrewInitialized())
+        {
+            return;
+        }
+
         ByteBrew.InitializeByteBrew();
     }
 }

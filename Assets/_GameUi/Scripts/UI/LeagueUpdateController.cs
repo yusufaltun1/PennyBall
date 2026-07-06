@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class LeagueUpdateController : MonoBehaviour
@@ -74,7 +73,7 @@ public class LeagueUpdateController : MonoBehaviour
     public void ClaimToMainMenu()
     {
         MainMenuClickSound.Play();
-        SceneManager.LoadScene(GameSceneNames.MainMenu);
+        AdsService.GoToMainMenuMaybeWithInterstitial();
     }
 
     void ResolveReferences()

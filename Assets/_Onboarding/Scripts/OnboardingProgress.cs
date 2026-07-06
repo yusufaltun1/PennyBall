@@ -11,9 +11,15 @@ public static class OnboardingProgress
 
     public static void MarkCompleted()
     {
+        if (IsCompleted)
+        {
+            return;
+        }
+
         PlayerPrefs.SetInt(CompletedKey, 1);
         PlayerPrefs.SetInt(PlayHighlightPendingKey, 1);
         PlayerPrefs.Save();
+        GameAnalytics.Track("onboarding_completed");
     }
 
     public static void MarkPlayHighlightShown()
