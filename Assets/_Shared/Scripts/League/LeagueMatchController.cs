@@ -24,6 +24,12 @@ public class LeagueMatchController : MonoBehaviour
     Coroutine _initializeRoutine;
 
     const float MaxTimerDeltaSeconds = 0.1f;
+    const float BackgroundForfeitThresholdSeconds = 10f;
+    const int BackgroundForfeitPlayerGoals = 0;
+    const int BackgroundForfeitOpponentGoals = 3;
+
+    long _backgroundEnteredUtcTicks;
+    bool _backgroundTimeTracked;
 
     public int PlayerGoals => _playerGoals;
     public int OpponentGoals => _opponentGoals;
@@ -129,18 +135,82 @@ public class LeagueMatchController : MonoBehaviour
             return;
         }
 
-        _applicationPaused = paused;
-
-        if (!paused && _matchActive && !_matchReported)
+        if (paused)
         {
-            if (!IsGoalFlowBlockingTimer() && !MatchBeginningCountdownController.IsActive)
+            _applicationPaused = true;
+
+            if (CanForfeitFromBackground())
             {
-                _matchTimerPaused = false;
+                _backgroundEnteredUtcTicks = DateTime.UtcNow.Ticks;
+                _backgroundTimeTracked = true;
             }
 
-            EnsureTimerRunning();
-            ScoresChanged?.Invoke();
+            return;
         }
+
+        _applicationPaused = false;
+
+        if (CanForfeitFromBackground() && _backgroundTimeTracked)
+        {
+            _backgroundTimeTracked = false;
+            double elapsedSeconds = TimeSpan.FromTicks(DateTime.UtcNow.Ticks - _backgroundEnteredUtcTicks).TotalSeconds;
+
+            if (elapsedSeconds >= BackgroundForfeitThresholdSeconds)
+            {
+                Debug.Log(
+                    $"[Match] Arka plan {elapsedSeconds:F1}s (≥{BackgroundForfeitThresholdSeconds:F0}s) — " +
+                    $"hükmen {BackgroundForfeitOpponentGoals}-{BackgroundForfeitPlayerGoals} mağlubiyet.");
+                ForfeitMatchFromBackground();
+                return;
+            }
+
+            Debug.Log($"[Match] Arka plan {elapsedSeconds:F1}s — maç devam ediyor.");
+        }
+        else
+        {
+            _backgroundTimeTracked = false;
+        }
+
+        if (!_matchActive || _matchReported)
+        {
+            return;
+        }
+
+        if (!IsGoalFlowBlockingTimer() && !MatchBeginningCountdownController.IsActive)
+        {
+            _matchTimerPaused = false;
+        }
+
+        EnsureTimerRunning();
+        ScoresChanged?.Invoke();
+    }
+
+    static bool IsInGameScene()
+    {
+        return SceneManager.GetActiveScene().name == GameSceneNames.Game;
+    }
+
+    bool CanForfeitFromBackground()
+    {
+        return IsInGameScene() && _matchActive && !_matchReported;
+    }
+
+    void ForfeitMatchFromBackground()
+    {
+        if (!CanForfeitFromBackground())
+        {
+            return;
+        }
+
+        _playerGoals = BackgroundForfeitPlayerGoals;
+        _opponentGoals = BackgroundForfeitOpponentGoals;
+        _matchTimeRemaining = 0f;
+        _matchTimerPaused = false;
+
+        StopMatchTimer();
+        MatchSessionTracker.MarkAbandon("background_forfeit");
+        ScoresChanged?.Invoke();
+        MatchTimerExpired?.Invoke();
     }
 
     IEnumerator InitializeWhenReady()
@@ -207,6 +277,7 @@ public class LeagueMatchController : MonoBehaviour
         _matchReported = false;
         _matchTimerPaused = false;
         _applicationPaused = false;
+        _backgroundTimeTracked = false;
         MatchSessionContext.SetFinalScore(0, 0);
 
         if (LeagueService.Instance == null)

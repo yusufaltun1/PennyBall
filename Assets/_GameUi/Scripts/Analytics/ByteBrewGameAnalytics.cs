@@ -44,7 +44,7 @@ public class ByteBrewGameAnalytics : MonoBehaviour
         TryAbandonActiveMatch("app_quit");
     }
 
-    // Arka plana alınca maçı bitirme — kullanıcı geri dönünce kaldığı yerden devam etmeli.
+    // Arka plan: 10 sn altı maç devam; 10+ sn geri dönüşte LeagueMatchController hükmen 3-0 bitirir.
     // Process kill: MatchSessionTracker + RecoverAbandonedMatchIfNeeded (sonraki açılışta loss).
 
     IEnumerator InitializeWhenReady()

@@ -9565,11 +9565,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c88d4269ddbf64580a0aa87880798a77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OpponentBotController
-  _aiStrength: 10
-  _turnThinkDelaySeconds: 2.5
+  _aiStrength: 7
+  _turnThinkDelaySeconds: 2.4
   _useInspectorTurnDelay: 0
   _difficulty:
-    Level: 10
+    Level: 7
   _gateMargin: 0.09
   _rollbackDuration: 0.45
   _coinStopTimeout: 8

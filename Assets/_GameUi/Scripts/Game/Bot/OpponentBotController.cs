@@ -10,19 +10,18 @@ public class OpponentBotController : MonoBehaviour
 {
     public static OpponentBotController Instance { get; private set; }
 
-    const int FixedAiStrength = 10;
-
     [Header("AI Gücü")]
-    [Tooltip("Her zaman 10 (max). Lig zorluğu uygulanmaz.")]
-    [SerializeField] [Range(1, 10)] int _aiStrength = FixedAiStrength;
+    [Tooltip("Kapalıyken varsayılan strength (7) veya level-up boost kullanılır.")]
+    [SerializeField] [Range(1, OpponentBotDifficulty.MaxStrengthLevel)] int _aiStrength = 7;
+    [SerializeField] bool _useInspectorAiStrength;
 
     [Header("Hamle Tempo")]
-    [Tooltip("Test için manuel süre. Kapalıyken tamamlanan maç sayısına göre hesaplanır.")]
-    [SerializeField] [Min(0f)] float _turnThinkDelaySeconds = 2.5f;
+    [Tooltip("Test için manuel süre. Kapalıyken maç sayısı veya level-up boost algoritması kullanılır.")]
+    [SerializeField] [Min(0f)] float _turnThinkDelaySeconds = 2.4f;
     [SerializeField] bool _useInspectorTurnDelay;
 
     [Header("Oyun Kuralları")]
-    [SerializeField] OpponentBotDifficulty _difficulty = new() { Level = FixedAiStrength };
+    [SerializeField] OpponentBotDifficulty _difficulty = new() { Level = 7 };
     [SerializeField] float _gateMargin        = 0.09f;
     [SerializeField] float _rollbackDuration  = 0.45f;
     [SerializeField] float _coinStopTimeout   = 8f;
@@ -38,6 +37,7 @@ public class OpponentBotController : MonoBehaviour
     bool _isOpeningShot;
     int  _roundShotNumber = 1;   // bu turdaki atış sırası (1, 2, 3, 4+)
     Coroutine _playLoopRoutine;
+    BotLevelUpBoostPolicy.AiConfig _aiConfig;
 
     public event Action OpponentGoalScored;
 
@@ -83,32 +83,59 @@ public class OpponentBotController : MonoBehaviour
 
     public void ApplySessionOpponentDifficulty()
     {
-        SyncAiStrength();
+        SyncAiStrength(logSessionEvaluation: true);
     }
 
-    void SyncAiStrength()
+    void SyncAiStrength(bool logSessionEvaluation = false, int shotNumber = 0)
     {
-        _aiStrength = FixedAiStrength;
-        _difficulty.Level = FixedAiStrength;
+        if (_useInspectorAiStrength)
+        {
+            _aiStrength = Mathf.Clamp(_aiStrength, 1, OpponentBotDifficulty.MaxStrengthLevel);
+            _difficulty.Level = _aiStrength;
+            _aiConfig = default;
+
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
+            if (logSessionEvaluation || shotNumber > 0)
+            {
+                BotLevelUpBoostPolicy.LogAiConfigInspector(_aiStrength, GetTurnThinkDelay());
+            }
+
+            return;
+        }
+
+        _aiConfig = BotLevelUpBoostPolicy.Evaluate(_useInspectorTurnDelay, _turnThinkDelaySeconds);
+        _aiStrength = _aiConfig.AppliedStrength;
+        _difficulty.Level = _aiStrength;
 
         if (!Application.isPlaying)
         {
             return;
         }
 
-        Debug.Log(
-            $"[Bot] AI gücü={_aiStrength} | Think={GetTurnThinkDelay():F2}s | " +
-            $"AimNoise={_difficulty.AimNoiseDegrees:F1}° | PullNoise={_difficulty.PullNoise:F3} | " +
-            $"MaxPull={_difficulty.MaxPullScale:P0} | GoalPull={_difficulty.GoalFinishPullScale:P0} | " +
-            $"GoalFocus={_difficulty.GoalFocus:F2} | " +
-            $"Tempo={(_useInspectorTurnDelay ? "Inspector" : $"Maç#{MatchAdTracker.CompletedMatchCount}")}");
+        if (logSessionEvaluation || shotNumber > 0)
+        {
+            BotLevelUpBoostPolicy.LogAiConfig(_aiStrength, GetTurnThinkDelay(), _aiConfig, shotNumber);
+        }
     }
 
     float GetTurnThinkDelay()
     {
-        return _useInspectorTurnDelay
-            ? _turnThinkDelaySeconds
-            : BotTurnThinkDelay.GetDelayForCurrentPlayer();
+        if (_useInspectorTurnDelay)
+        {
+            return _turnThinkDelaySeconds;
+        }
+
+        if (!_useInspectorAiStrength
+            && _aiConfig.Mode == BotLevelUpBoostPolicy.AiConfigMode.LevelUpBoost)
+        {
+            return BotLevelUpBoostPolicy.MilestoneThinkDelaySeconds;
+        }
+
+        return BotTurnThinkDelay.GetDelayForCurrentPlayer();
     }
 
     void OnDestroy()
@@ -203,9 +230,9 @@ public class OpponentBotController : MonoBehaviour
                 yield return null;
             }
 
-            yield return new WaitForSeconds(GetTurnThinkDelay());
+            SyncAiStrength(shotNumber: _roundShotNumber);
 
-            SyncAiStrength();
+            yield return new WaitForSeconds(GetTurnThinkDelay());
 
             if (!OpponentBotBrain.TryChooseShot(
                     _state, _difficulty, _isResolving, _gateMargin,
