@@ -299,6 +299,8 @@ public class LeagueService : MonoBehaviour
             }
         }
 
+        _save.playerTotalGoals += Mathf.Max(0, MatchSessionContext.PlayerGoalsAtEnd);
+
         if (_save.currentOpponentBotId >= 0
             && TryGetBotStanding(_save.currentOpponentBotId, out LeagueStandingEntry botEntry))
         {
@@ -342,6 +344,12 @@ public class LeagueService : MonoBehaviour
         }
 
         return _save.standings.Length;
+    }
+
+    public int GetPlayerPoints()
+    {
+        LeagueStandingEntry player = FindPlayerStanding();
+        return player?.points ?? 0;
     }
 
     public void SetPlayerAvatar(int index)

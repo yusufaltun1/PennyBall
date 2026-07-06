@@ -23,4 +23,9 @@ public static class MatchAdTracker
         int count = CompletedMatchCount;
         return count > 0 && count % InterstitialEveryNMatches == 0;
     }
+
+    public static void Reset()
+    {
+        PlayerPrefs.DeleteKey(MatchCountKey);
+    }
 }

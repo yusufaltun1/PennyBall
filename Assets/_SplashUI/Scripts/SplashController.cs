@@ -7,7 +7,6 @@ using UnityEngine.UI;
 public class SplashController : MonoBehaviour
 {
     [SerializeField] Slider _loadingSlider;
-    [SerializeField] string _nextSceneName = GameSceneNames.MainMenu;
     [SerializeField] float _minDisplaySeconds = 1.5f;
     [SerializeField] float _fillSpeed = 1.75f;
 
@@ -39,7 +38,8 @@ public class SplashController : MonoBehaviour
     {
         SetProgress(0f);
 
-        AsyncOperation loadOperation = SceneManager.LoadSceneAsync(_nextSceneName);
+        string nextSceneName = ResolveNextSceneName();
+        AsyncOperation loadOperation = SceneManager.LoadSceneAsync(nextSceneName);
         loadOperation.allowSceneActivation = false;
 
         float elapsed = 0f;
@@ -81,5 +81,12 @@ public class SplashController : MonoBehaviour
         }
 
         _loadingSlider.value = Mathf.Clamp01(value);
+    }
+
+    static string ResolveNextSceneName()
+    {
+        return OnboardingProgress.IsCompleted
+            ? GameSceneNames.MainMenu
+            : OnboardingSceneNames.Onboarding;
     }
 }

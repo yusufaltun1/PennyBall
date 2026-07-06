@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Advertisements;
@@ -32,6 +33,7 @@ public class AdsService : MonoBehaviour,
     Action _onInterstitialClosed;
     PendingShowType _pendingShow;
     bool _showInProgress;
+    static bool _mainMenuNavigationPending;
     GameObject _editorMockRoot;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -45,6 +47,12 @@ public class AdsService : MonoBehaviour,
         var go = new GameObject("AdsService");
         Instance = go.AddComponent<AdsService>();
         DontDestroyOnLoad(go);
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        _mainMenuNavigationPending = false;
     }
 
     void Awake()
@@ -235,19 +243,80 @@ public class AdsService : MonoBehaviour,
     /// </summary>
     public static void GoToMainMenuMaybeWithInterstitial()
     {
+        if (_mainMenuNavigationPending)
+        {
+            return;
+        }
+
+        _mainMenuNavigationPending = true;
+
         if (Instance != null && MatchAdTracker.ShouldShowInterstitial())
         {
             Debug.Log($"[Ads] Interstitial gösterilecek (match #{MatchAdTracker.CompletedMatchCount}).");
-            Instance.ShowInterstitial(() => SceneManager.LoadScene(GameSceneNames.MainMenu));
+            Instance.StartCoroutine(Instance.NavigateToMainMenuWithInterstitial());
             return;
         }
 
         SceneManager.LoadScene(GameSceneNames.MainMenu);
     }
 
+    IEnumerator NavigateToMainMenuWithInterstitial()
+    {
+        yield return WaitUntilCanShowAd();
+        yield return WaitForInterstitialReady(4f);
+        ShowInterstitial(() => SceneManager.LoadScene(GameSceneNames.MainMenu));
+    }
+
+    IEnumerator WaitUntilCanShowAd()
+    {
+        const float maxWait = 12f;
+        float elapsed = 0f;
+
+        while (_showInProgress && elapsed < maxWait)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+    }
+
+    IEnumerator WaitForInterstitialReady(float maxWaitSeconds)
+    {
+#if UNITY_EDITOR
+        if (AdsConfig.UseEditorMockAd)
+        {
+            yield break;
+        }
+#endif
+
+        if (IsInterstitialReady)
+        {
+            yield break;
+        }
+
+        float elapsed = 0f;
+        while (!IsInterstitialReady && elapsed < maxWaitSeconds)
+        {
+            if (!IsInitialized)
+            {
+                Debug.LogWarning("[Ads] Interstitial beklenemedi: Unity Ads henüz init olmadı.");
+                yield break;
+            }
+
+            LoadInterstitialAd();
+            yield return new WaitForSecondsRealtime(0.5f);
+            elapsed += 0.5f;
+        }
+
+        if (!IsInterstitialReady)
+        {
+            Debug.LogWarning("[Ads] Interstitial süre içinde yüklenemedi, menüye devam ediliyor.");
+        }
+    }
+
     public void OnUnityAdsShowStart(string placementId)
     {
         Debug.Log($"[Ads] Show start: {placementId}");
+        TrackAdEvent("ad_show_start", placementId);
     }
 
     public void OnUnityAdsShowClick(string placementId)
@@ -269,10 +338,12 @@ public class AdsService : MonoBehaviour,
         {
             if (showCompletionState == UnityAdsShowCompletionState.COMPLETED)
             {
+                TrackAdEvent("rewarded_ad_completed", placementId);
                 rewarded?.Invoke();
             }
             else
             {
+                TrackAdEvent("rewarded_ad_skipped", placementId);
                 failed?.Invoke();
             }
 
@@ -282,6 +353,7 @@ public class AdsService : MonoBehaviour,
 
         if (type == PendingShowType.Interstitial)
         {
+            TrackAdEvent("interstitial_ad_shown", placementId);
             // Skip veya tamamla — ikisi de menüye devam
             interstitialClosed?.Invoke();
             LoadInterstitialAd();
@@ -319,6 +391,15 @@ public class AdsService : MonoBehaviour,
         _onFailed = null;
         _onInterstitialClosed = null;
         _showInProgress = false;
+    }
+
+    static void TrackAdEvent(string eventName, string placementId)
+    {
+        MetaAppEventsService.TrackEvent(eventName, new Dictionary<string, string>
+        {
+            { "placement", placementId ?? "unknown" },
+            { "network", "unity_ads" }
+        });
     }
 
     IEnumerator PlayEditorMockAd(string title, float duration, Action onSuccess, Action onFail)

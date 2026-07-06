@@ -17,4 +17,9 @@ public static class WalletRepository
         PlayerPrefs.SetString(Key, JsonUtility.ToJson(data));
         PlayerPrefs.Save();
     }
+
+    public static void Delete()
+    {
+        PlayerPrefs.DeleteKey(Key);
+    }
 }

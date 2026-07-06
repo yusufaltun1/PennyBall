@@ -11,6 +11,7 @@ public class LeagueStatusPresenter : MonoBehaviour
     [SerializeField] Text _pointsLabel;
     [SerializeField] Text _seasonTimeLabel;
     [SerializeField] Button _continueButton;
+    [SerializeField] GameObject _levelUpPanel;
 
     void Awake()
     {
@@ -19,6 +20,15 @@ public class LeagueStatusPresenter : MonoBehaviour
 
         if (_continueButton != null)
             _continueButton.onClick.AddListener(OnContinueClicked);
+
+        if (_levelUpPanel == null)
+        {
+            LevelUpController panel = LevelUpController.FindPanel();
+            if (panel != null)
+            {
+                _levelUpPanel = panel.gameObject;
+            }
+        }
     }
 
     void OnDestroy()
@@ -49,9 +59,32 @@ public class LeagueStatusPresenter : MonoBehaviour
 
     void OnContinueClicked()
     {
+        gameObject.SetActive(false);
+
+        if (MatchSessionContext.LeveledUp && TryShowLevelUpPanel())
+        {
+            return;
+        }
+
         // Ödüller zaten result panelde verildi; ana menüye dönmeden önce
         // her 3 maçta bir skippable interstitial gösterilir.
         AdsService.GoToMainMenuMaybeWithInterstitial();
+    }
+
+    bool TryShowLevelUpPanel()
+    {
+        LevelUpController panel = _levelUpPanel != null
+            ? _levelUpPanel.GetComponent<LevelUpController>()
+            : null;
+        panel ??= LevelUpController.FindPanel();
+
+        if (panel == null)
+        {
+            return false;
+        }
+
+        panel.Show(MatchSessionContext.LevelAfter);
+        return true;
     }
 
     void Update()

@@ -8,6 +8,7 @@ public class MatchScoreboardPresenter : MonoBehaviour
     [SerializeField] TextMeshProUGUI _opponentScoreText;
 
     bool _handleMatchEnd;
+    bool _bound;
 
     void Awake()
     {
@@ -24,19 +25,43 @@ public class MatchScoreboardPresenter : MonoBehaviour
         StartCoroutine(BindWhenReady());
     }
 
-    void OnDestroy()
+    void OnApplicationPause(bool paused)
     {
-        if (LeagueMatchController.Instance != null)
+        if (!paused)
         {
-            LeagueMatchController.Instance.ScoresChanged -= RefreshDisplay;
-            LeagueMatchController.Instance.MatchTimerExpired -= OnMatchTimerExpired;
+            TryRebindAndRefresh();
         }
     }
 
-    IEnumerator BindWhenReady()
+    void OnApplicationFocus(bool hasFocus)
     {
-        while (LeagueMatchController.Instance == null)
-            yield return null;
+        if (hasFocus)
+        {
+            TryRebindAndRefresh();
+        }
+    }
+
+    void OnDestroy()
+    {
+        Unbind();
+    }
+
+    void TryRebindAndRefresh()
+    {
+        if (LeagueMatchController.Instance != null)
+        {
+            BindToController();
+        }
+
+        RefreshDisplay();
+    }
+
+    void BindToController()
+    {
+        if (LeagueMatchController.Instance == null)
+        {
+            return;
+        }
 
         LeagueMatchController.Instance.ScoresChanged -= RefreshDisplay;
         LeagueMatchController.Instance.ScoresChanged += RefreshDisplay;
@@ -47,6 +72,32 @@ public class MatchScoreboardPresenter : MonoBehaviour
             LeagueMatchController.Instance.MatchTimerExpired += OnMatchTimerExpired;
         }
 
+        _bound = true;
+    }
+
+    void Unbind()
+    {
+        if (!_bound || LeagueMatchController.Instance == null)
+        {
+            return;
+        }
+
+        LeagueMatchController.Instance.ScoresChanged -= RefreshDisplay;
+
+        if (_handleMatchEnd)
+        {
+            LeagueMatchController.Instance.MatchTimerExpired -= OnMatchTimerExpired;
+        }
+
+        _bound = false;
+    }
+
+    IEnumerator BindWhenReady()
+    {
+        while (LeagueMatchController.Instance == null)
+            yield return null;
+
+        BindToController();
         RefreshDisplay();
     }
 

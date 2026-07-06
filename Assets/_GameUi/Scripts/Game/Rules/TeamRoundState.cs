@@ -8,5 +8,6 @@ public sealed class TeamRoundState
     public readonly List<CoinIdentity> Coins = new(3);
 
     public CoinIdentity OpeningCoin;
+    public CoinIdentity LastCommittedShotCoin;
     public bool IsFirstMove = true;
 }

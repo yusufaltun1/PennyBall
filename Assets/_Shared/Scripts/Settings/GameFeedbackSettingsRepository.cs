@@ -25,4 +25,9 @@ public static class GameFeedbackSettingsRepository
         PlayerPrefs.SetString(SaveKey, JsonUtility.ToJson(data));
         PlayerPrefs.Save();
     }
+
+    public static void Delete()
+    {
+        PlayerPrefs.DeleteKey(SaveKey);
+    }
 }

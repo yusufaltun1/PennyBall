@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 /// Yan coinler başlangıçta gizlenir; coin spawn pozisyonları ve rotasyonları kaydedilir.
 /// </summary>
 [DisallowMultipleComponent]
-[DefaultExecutionOrder(-200)]
+[DefaultExecutionOrder(-1000)]
 public class OnboardingSceneBootstrap : MonoBehaviour
 {
     public static Vector3 CenterCoinSpawnPosition { get; private set; }
@@ -15,6 +15,20 @@ public class OnboardingSceneBootstrap : MonoBehaviour
     public static Quaternion SideCoinLeftSpawnRotation { get; private set; } = Quaternion.identity;
     public static Vector3 SideCoinRightSpawnPosition { get; private set; }
     public static Quaternion SideCoinRightSpawnRotation { get; private set; } = Quaternion.identity;
+
+    static bool _prepared;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetPreparedFlag()
+    {
+        _prepared = false;
+        CenterCoinSpawnPosition = default;
+        CenterCoinSpawnRotation = Quaternion.identity;
+        SideCoinLeftSpawnPosition = default;
+        SideCoinLeftSpawnRotation = Quaternion.identity;
+        SideCoinRightSpawnPosition = default;
+        SideCoinRightSpawnRotation = Quaternion.identity;
+    }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void EnsureBootstrap()
@@ -25,6 +39,8 @@ public class OnboardingSceneBootstrap : MonoBehaviour
             return;
         }
 
+        ApplyInitialSceneSetup(activeScene);
+
         if (FindFirstObjectByType<OnboardingSceneBootstrap>() != null)
         {
             return;
@@ -34,36 +50,50 @@ public class OnboardingSceneBootstrap : MonoBehaviour
         bootstrapObject.AddComponent<OnboardingSceneBootstrap>();
     }
 
+    public static void ApplyInitialSceneSetup()
+    {
+        ApplyInitialSceneSetup(SceneManager.GetActiveScene());
+    }
+
+    public static void ApplyInitialSceneSetup(Scene scene)
+    {
+        if (_prepared || !scene.IsValid() || scene.name != OnboardingSceneNames.Onboarding)
+        {
+            return;
+        }
+
+        _prepared = true;
+        CacheCoinSpawnPoses(scene);
+
+        DestroyIfExists(scene, "Coin_E1");
+        DestroyIfExists(scene, "Coin_E2");
+        DestroyIfExists(scene, "Coin_E3");
+        DestroyIfExists(scene, "Kale_P");
+        DestroyIfExists(scene, "OpponentBot");
+
+        DeactivateIfExists(scene, "Coin_P1");
+        DeactivateIfExists(scene, "Coin_P3");
+        DeactivateIfExists(scene, "InvalidMove");
+    }
+
     void Awake()
     {
         if (SceneManager.GetActiveScene().name != OnboardingSceneNames.Onboarding)
         {
             Destroy(gameObject);
-            return;
         }
-
-        DestroyIfExists("Coin_E1");
-        DestroyIfExists("Coin_E2");
-        DestroyIfExists("Coin_E3");
-        DestroyIfExists("Kale_P");
-        DestroyIfExists("OpponentBot");
-
-        CacheCoinSpawnPoses();
-        DeactivateIfExists("Coin_P1");
-        DeactivateIfExists("Coin_P3");
-        DeactivateIfExists("InvalidMove");
     }
 
-    void CacheCoinSpawnPoses()
+    static void CacheCoinSpawnPoses(Scene scene)
     {
-        (CenterCoinSpawnPosition, CenterCoinSpawnRotation) = ReadCoinPose("Coin_P2");
-        (SideCoinLeftSpawnPosition, SideCoinLeftSpawnRotation) = ReadCoinPose("Coin_P1");
-        (SideCoinRightSpawnPosition, SideCoinRightSpawnRotation) = ReadCoinPose("Coin_P3");
+        (CenterCoinSpawnPosition, CenterCoinSpawnRotation) = ReadCoinPose(scene, "Coin_P2");
+        (SideCoinLeftSpawnPosition, SideCoinLeftSpawnRotation) = ReadCoinPose(scene, "Coin_P1");
+        (SideCoinRightSpawnPosition, SideCoinRightSpawnRotation) = ReadCoinPose(scene, "Coin_P3");
     }
 
-    static (Vector3 position, Quaternion rotation) ReadCoinPose(string objectName)
+    static (Vector3 position, Quaternion rotation) ReadCoinPose(Scene scene, string objectName)
     {
-        GameObject coinObject = GameObject.Find(objectName);
+        GameObject coinObject = FindInSceneByName(scene, objectName);
         if (coinObject == null)
         {
             return (default, Quaternion.identity);
@@ -73,18 +103,57 @@ public class OnboardingSceneBootstrap : MonoBehaviour
         return (coinTransform.position, coinTransform.rotation);
     }
 
-    static void DestroyIfExists(string objectName)
+    public static GameObject FindSceneObject(string objectName)
     {
-        GameObject target = GameObject.Find(objectName);
+        return FindInSceneByName(SceneManager.GetActiveScene(), objectName);
+    }
+
+    static GameObject FindInSceneByName(Scene scene, string objectName)
+    {
+        GameObject[] roots = scene.GetRootGameObjects();
+        for (int i = 0; i < roots.Length; i++)
+        {
+            Transform found = FindDeepChild(roots[i].transform, objectName);
+            if (found != null)
+            {
+                return found.gameObject;
+            }
+        }
+
+        return null;
+    }
+
+    static Transform FindDeepChild(Transform parent, string objectName)
+    {
+        if (parent.name == objectName)
+        {
+            return parent;
+        }
+
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform found = FindDeepChild(parent.GetChild(i), objectName);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
+    static void DestroyIfExists(Scene scene, string objectName)
+    {
+        GameObject target = FindInSceneByName(scene, objectName);
         if (target != null)
         {
-            Destroy(target);
+            Object.Destroy(target);
         }
     }
 
-    static void DeactivateIfExists(string objectName)
+    static void DeactivateIfExists(Scene scene, string objectName)
     {
-        GameObject target = GameObject.Find(objectName);
+        GameObject target = FindInSceneByName(scene, objectName);
         if (target != null)
         {
             target.SetActive(false);

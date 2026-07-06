@@ -5,7 +5,7 @@ public static class WalletService
     // Maç başına sabit ödüller
     public const int CoinsWin  = 40;
     public const int CoinsDraw = 20;
-    public const int CoinsLoss = 0;
+    public const int CoinsLoss = 10;
     public const int XpPerMatch = 10;
 
     // Lig yükselme ödülleri (Claim / Claim x2)
@@ -57,5 +57,17 @@ public static class WalletService
         int levelAfter = Level;
         if (levelAfter > levelBefore)
             LevelChanged?.Invoke(levelBefore, levelAfter);
+    }
+
+    public static void InvalidateCache()
+    {
+        _data = null;
+    }
+
+    public static void ReloadAfterProgressReset()
+    {
+        InvalidateCache();
+        _ = Data;
+        Changed?.Invoke();
     }
 }

@@ -24,6 +24,7 @@ public class GameRulesManager : MonoBehaviour
     CoinIdentity _resolvingShotCoin;
     CoinIdentity _openingCoin;
     CoinIdentity _guidedPlayableCoin;
+    CoinIdentity _lastCommittedShotCoin;
     Vector3 _shotStartPosition;
     bool _goalEnteredDuringShot;
     bool _isResolvingMove;
@@ -72,6 +73,9 @@ public class GameRulesManager : MonoBehaviour
 
     /// <summary>Tüm coinler başlangıca döndüğünde tetiklenir.</summary>
     public event Action RoundReset;
+
+    /// <summary>Gol kutlaması / reset akışı başladığında UI geri bildirimini kapatmak için.</summary>
+    public event Action GoalCelebrationStarted;
 
     /// <summary>Oyuncu gol attığında tetiklenir.</summary>
     public event Action PlayerGoalScored;
@@ -199,6 +203,7 @@ public class GameRulesManager : MonoBehaviour
         _playerShotNumber = 1;
         _shotCoin = null;
         _resolvingShotCoin = null;
+        _lastCommittedShotCoin = null;
         _goalEnteredDuringShot = false;
         GateIndicator.Instance?.Hide();
     }
@@ -207,7 +212,7 @@ public class GameRulesManager : MonoBehaviour
     {
         _playerCoins.Clear();
 
-        CoinIdentity[] coins = FindObjectsByType<CoinIdentity>(FindObjectsSortMode.None);
+        CoinIdentity[] coins = FindObjectsByType<CoinIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         for (int i = 0; i < coins.Length; i++)
         {
             CoinIdentity coin = coins[i];
@@ -226,7 +231,7 @@ public class GameRulesManager : MonoBehaviour
         _roundCoins.Clear();
         _initialPositions.Clear();
 
-        CoinIdentity[] coins = FindObjectsByType<CoinIdentity>(FindObjectsSortMode.None);
+        CoinIdentity[] coins = FindObjectsByType<CoinIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         for (int i = 0; i < coins.Length; i++)
         {
             CoinIdentity coin = coins[i];
@@ -420,6 +425,22 @@ public class GameRulesManager : MonoBehaviour
         _pendingGoalFreeze = true;
     }
 
+    /// <summary>
+    /// Coin kaleye girdi ama hamle geçersiz sayılacak — gol ön izlemesini temizle, Invalid Move UI gösterilebilsin.
+    /// </summary>
+    public void CancelPendingGoalPreview()
+    {
+        _goalEnteredDuringShot = false;
+
+        if (!_pendingGoalFreeze || _goalSequenceActive)
+        {
+            return;
+        }
+
+        UnfreezeAllRoundCoins();
+        OpponentBotController.Instance?.ResumePlayIfIdle();
+    }
+
     public bool TryBeginGoalSequence(bool cancelActiveResolve = true, bool pauseOpponent = true)
     {
         if (_goalSequenceActive)
@@ -431,6 +452,8 @@ public class GameRulesManager : MonoBehaviour
         _isResolvingMove = true;
         _pendingGoalFreeze = false;
         FreezeAllRoundCoins();
+        GoalCelebrationStarted?.Invoke();
+        InvalidMoveFeedbackPresenter.SuppressForGoal();
 
         if (pauseOpponent)
         {
@@ -521,9 +544,39 @@ public class GameRulesManager : MonoBehaviour
         _shotPathSamples.Clear();
         yield return WaitUntilCoinStops(coin.DragController, coin, _shotPathSamples);
 
+        bool requiresGateValidation = !isOpeningShot && !IsOnboardingTutorialActive();
+        bool goalTriggered = _goalEnteredDuringShot || IsCoinInOpponentGoal(coin);
+
+        if (requiresGateValidation && _lastCommittedShotCoin == coin)
+        {
+            yield return RollbackInvalidShot(coin, "aynı coin üst üste atılamaz");
+            yield break;
+        }
+
+        if (goalTriggered)
+        {
+            if (requiresGateValidation && !ValidatePassBetween(coin, _shotPathSamples))
+            {
+                yield return RollbackInvalidShot(coin, "kapıdan geçmeden gol");
+                yield break;
+            }
+
+            if (!TryBeginGoalSequence(cancelActiveResolve: false))
+            {
+                _resolvingShotCoin = null;
+                _resolveRoutine = null;
+                yield break;
+            }
+
+            Debug.Log($"[Shot] {coin.gameObject.name} GOL | trigger={_goalEnteredDuringShot}");
+            HandlePlayerGoalCelebration();
+            _resolvingShotCoin = null;
+            _resolveRoutine = null;
+            yield break;
+        }
+
         bool shotValid;
         bool pendingInvalidRollbackFinished = false;
-        bool requiresGateValidation = !isOpeningShot && !IsOnboardingTutorialActive();
         if (!requiresGateValidation)
         {
             if (isOpeningShot)
@@ -545,6 +598,7 @@ public class GameRulesManager : MonoBehaviour
             if (!passedBetween)
             {
                 Debug.Log($"[Shot] {coin.gameObject.name} geçersiz — diğer iki coin arasından geçmedi");
+                CancelPendingGoalPreview();
                 InvalidMoveRollbackStarted?.Invoke(CoinTeam.Player);
                 yield return RollbackCoin(coin, _shotStartPosition);
                 pendingInvalidRollbackFinished = true;
@@ -557,33 +611,16 @@ public class GameRulesManager : MonoBehaviour
             }
         }
 
-        bool inGoal = IsCoinInOpponentGoal(coin);
-        bool scoredGoal = shotValid && (_goalEnteredDuringShot || inGoal);
-
-        if (shotValid && !scoredGoal)
+        if (shotValid)
         {
+            _lastCommittedShotCoin = coin;
+
             if (!isOpeningShot)
             {
                 ValidShotCommitted?.Invoke(CoinTeam.Player);
             }
 
             _playerShotNumber++;
-        }
-
-        if (scoredGoal)
-        {
-            if (!TryBeginGoalSequence(cancelActiveResolve: false))
-            {
-                _resolvingShotCoin = null;
-                _resolveRoutine = null;
-                yield break;
-            }
-
-            Debug.Log($"[Shot] {coin.gameObject.name} GOL | trigger={_goalEnteredDuringShot} | içerde={inGoal}");
-            HandlePlayerGoalCelebration();
-            _resolvingShotCoin = null;
-            _resolveRoutine = null;
-            yield break;
         }
 
         if (_pendingGoalFreeze)
@@ -603,6 +640,24 @@ public class GameRulesManager : MonoBehaviour
         }
 
         PlayerShotResolved?.Invoke(coin, shotValid);
+        MoveResolved?.Invoke(CoinTeam.Player);
+        UnlockAllPlayerCoins();
+    }
+
+    IEnumerator RollbackInvalidShot(CoinIdentity coin, string reason)
+    {
+        Debug.Log($"[Shot] {coin.gameObject.name} geçersiz — {reason}");
+        CancelPendingGoalPreview();
+        InvalidMoveRollbackStarted?.Invoke(CoinTeam.Player);
+        yield return RollbackCoin(coin, _shotStartPosition);
+
+        _resolvingShotCoin = null;
+        _shotCoin = null;
+        _isResolvingMove = false;
+        _resolveRoutine = null;
+
+        InvalidMoveRollbackFinished?.Invoke(CoinTeam.Player);
+        PlayerShotResolved?.Invoke(coin, false);
         MoveResolved?.Invoke(CoinTeam.Player);
         UnlockAllPlayerCoins();
     }
@@ -914,6 +969,7 @@ public class GameRulesManager : MonoBehaviour
             _playerShotNumber = 1;
             _isFirstPlayerMove = true;
             _isOpeningShot = false;
+            _lastCommittedShotCoin = null;
             GateIndicator.Instance?.Hide();
         }
 
