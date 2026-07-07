@@ -39,6 +39,7 @@ public class OpponentBotController : MonoBehaviour
     bool _isOpeningShot;
     int  _roundShotNumber = 1;   // bu turdaki atış sırası (1, 2, 3, 4+)
     Coroutine _playLoopRoutine;
+    bool _resumePlayPending;
 
     public event Action OpponentGoalScored;
 
@@ -166,6 +167,7 @@ public class OpponentBotController : MonoBehaviour
     {
         StopPlayLoop();
         ClearResolvingState();
+        _resumePlayPending = false;
     }
 
     public void PauseForRoundReset()
@@ -181,13 +183,35 @@ public class OpponentBotController : MonoBehaviour
             return;
         }
 
-        if (GameRulesManager.Instance != null
-            && (GameRulesManager.Instance.IsGoalSequenceActive
-                || GameRulesManager.Instance.IsResolvingMove))
+        if (!CanResumePlayLoop())
+        {
+            _resumePlayPending = true;
+            return;
+        }
+
+        _resumePlayPending = false;
+        BeginPlayLoop();
+    }
+
+    bool CanResumePlayLoop()
+    {
+        GameRulesManager rules = GameRulesManager.Instance;
+        return rules == null || !rules.IsGoalSequenceActive;
+    }
+
+    void Update()
+    {
+        if (!_resumePlayPending || _playLoopRoutine != null)
         {
             return;
         }
 
+        if (!CanResumePlayLoop())
+        {
+            return;
+        }
+
+        _resumePlayPending = false;
         BeginPlayLoop();
     }
 

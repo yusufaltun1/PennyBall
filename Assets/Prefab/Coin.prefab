@@ -190,12 +190,12 @@ MonoBehaviour:
   _dashGap: 0.005
   _animationSpeed: 0.1
   _glowWidthMultiplier: 2.4
-  _glowAlpha: 0
+  _glowAlpha: 0.25
   _glowPulseSpeed: 0.001
-  _glowPulseAmount: 0.188
+  _glowPulseAmount: 0.271
   _showFromShotNumber: 2
-  _lineColor: {r: 0, g: 1, b: 0, a: 1}
-  _glowColor: {r: 1, g: 0.98333335, b: 0, a: 0}
+  _lineColor: {r: 1, g: 1, b: 1, a: 0.74509805}
+  _glowColor: {r: 0, g: 0.7323947, b: 1, a: 0.5019608}
 --- !u!1 &6853097355249902552
 GameObject:
   m_ObjectHideFlags: 0

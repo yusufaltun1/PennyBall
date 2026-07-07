@@ -589,7 +589,6 @@ public class GameRulesManager : MonoBehaviour
         if (_pendingGoalFreeze)
         {
             UnfreezeAllRoundCoins();
-            OpponentBotController.Instance?.ResumePlayIfIdle();
         }
 
         _resolvingShotCoin = null;
@@ -605,6 +604,7 @@ public class GameRulesManager : MonoBehaviour
         PlayerShotResolved?.Invoke(coin, shotValid);
         MoveResolved?.Invoke(CoinTeam.Player);
         UnlockAllPlayerCoins();
+        OpponentBotController.Instance?.ResumePlayIfIdle();
     }
 
     static bool IsCoinInOpponentGoal(CoinIdentity coin)
