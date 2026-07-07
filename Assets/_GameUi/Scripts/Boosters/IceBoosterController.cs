@@ -9,17 +9,23 @@ public class IceBoosterController : MonoBehaviour
     [Header("UI")]
     [SerializeField] Button _iceButton;
     [SerializeField] GameObject _icon;
+    [SerializeField] GameObject _costText;
     [SerializeField] TextMeshProUGUI _remainingText;
+    [SerializeField] Image _backgroundImage;
+    [SerializeField] Image _iconImage;
+
+    [Header("Coins")]
+    [SerializeField] bool _hasCoins = true;
+    [SerializeField] Sprite _activeBackgroundSprite;
+    [SerializeField] Sprite _lockedBackgroundSprite;
+    [SerializeField] Sprite _activeIconSprite;
+    [SerializeField] Sprite _lockedIconSprite;
 
     [Header("Booster Süreleri")]
     [SerializeField] IceBoosterTimingSettings _boosterTiming = new();
 
     [Header("IceUsed Görsel Süreleri")]
     [SerializeField] IceUsedFeedbackTimingSettings _usedFeedbackTiming = new();
-
-    [Header("Audio")]
-    [SerializeField] AudioClip _freezeSound;
-    [SerializeField] [Range(0f, 1f)] float _freezeSoundVolume = 1f;
 
     [Header("Frost Visuals")]
     [SerializeField] IceCoinFrostVisual.Settings _frostSettings = new();
@@ -28,12 +34,13 @@ public class IceBoosterController : MonoBehaviour
     [SerializeField] IceUsedBoosterFeedback _iceUsedFeedback;
 
     Coroutine _activationRoutine;
-    AudioSource _audioSource;
+    Selectable.Transition _defaultButtonTransition;
 
     void Awake()
     {
         ResolveReferences();
-        ResetReadyVisuals();
+        CacheDefaultSprites();
+        ApplyCoinsAvailability();
     }
 
     void OnEnable()
@@ -41,6 +48,11 @@ public class IceBoosterController : MonoBehaviour
         if (_iceButton != null)
         {
             _iceButton.onClick.AddListener(OnIceButtonClicked);
+        }
+
+        if (_activationRoutine == null)
+        {
+            ApplyCoinsAvailability();
         }
     }
 
@@ -70,6 +82,11 @@ public class IceBoosterController : MonoBehaviour
             _iceButton = GetComponent<Button>();
         }
 
+        if (_backgroundImage == null)
+        {
+            _backgroundImage = GetComponent<Image>();
+        }
+
         if (_icon == null)
         {
             Transform iconTransform = transform.Find("Icon");
@@ -79,12 +96,26 @@ public class IceBoosterController : MonoBehaviour
             }
         }
 
+        if (_iconImage == null && _icon != null)
+        {
+            _iconImage = _icon.GetComponent<Image>();
+        }
+
         if (_remainingText == null)
         {
             Transform remainingTransform = transform.Find("Remaining");
             if (remainingTransform != null)
             {
                 _remainingText = remainingTransform.GetComponent<TextMeshProUGUI>();
+            }
+        }
+
+        if (_costText == null)
+        {
+            Transform costTransform = transform.Find("Cost");
+            if (costTransform != null)
+            {
+                _costText = costTransform.gameObject;
             }
         }
 
@@ -98,9 +129,27 @@ public class IceBoosterController : MonoBehaviour
         }
     }
 
+    void CacheDefaultSprites()
+    {
+        if (_iceButton != null)
+        {
+            _defaultButtonTransition = _iceButton.transition;
+        }
+
+        if (_activeBackgroundSprite == null && _backgroundImage != null)
+        {
+            _activeBackgroundSprite = _backgroundImage.sprite;
+        }
+
+        if (_activeIconSprite == null && _iconImage != null)
+        {
+            _activeIconSprite = _iconImage.sprite;
+        }
+    }
+
     void OnIceButtonClicked()
     {
-        if (_activationRoutine != null)
+        if (!_hasCoins || _activationRoutine != null)
         {
             return;
         }
@@ -121,7 +170,6 @@ public class IceBoosterController : MonoBehaviour
             IceOpponentFreezeUtility.FreezeAllOpponentCoins(
                 _boosterTiming.FreezeDurationSeconds,
                 _frostSettings);
-            PlayFreezeSound();
             _iceUsedFeedback?.Play(_usedFeedbackTiming);
             BeginCooldownVisuals(_boosterTiming.CooldownSeconds);
 
@@ -168,6 +216,11 @@ public class IceBoosterController : MonoBehaviour
             _icon.SetActive(false);
         }
 
+        if (_costText != null)
+        {
+            _costText.SetActive(false);
+        }
+
         if (_remainingText != null)
         {
             _remainingText.gameObject.SetActive(true);
@@ -177,9 +230,20 @@ public class IceBoosterController : MonoBehaviour
 
     void ResetReadyVisuals()
     {
+        if (!_hasCoins)
+        {
+            ApplyLockedVisuals();
+            return;
+        }
+
         if (_icon != null)
         {
             _icon.SetActive(true);
+        }
+
+        if (_costText != null)
+        {
+            _costText.SetActive(true);
         }
 
         if (_remainingText != null)
@@ -187,7 +251,58 @@ public class IceBoosterController : MonoBehaviour
             _remainingText.gameObject.SetActive(false);
         }
 
+        ApplyActiveVisuals();
         SetButtonInteractable(true);
+    }
+
+    void ApplyCoinsAvailability()
+    {
+        if (!_hasCoins)
+        {
+            ApplyLockedVisuals();
+            return;
+        }
+
+        ApplyActiveVisuals();
+        SetButtonInteractable(_activationRoutine == null);
+    }
+
+    void ApplyLockedVisuals()
+    {
+        if (_backgroundImage != null && _lockedBackgroundSprite != null)
+        {
+            _backgroundImage.sprite = _lockedBackgroundSprite;
+        }
+
+        if (_iconImage != null && _lockedIconSprite != null)
+        {
+            _iconImage.sprite = _lockedIconSprite;
+        }
+
+        if (_iceButton != null)
+        {
+            _iceButton.transition = Selectable.Transition.None;
+        }
+
+        SetButtonInteractable(false);
+    }
+
+    void ApplyActiveVisuals()
+    {
+        if (_backgroundImage != null && _activeBackgroundSprite != null)
+        {
+            _backgroundImage.sprite = _activeBackgroundSprite;
+        }
+
+        if (_iconImage != null && _activeIconSprite != null)
+        {
+            _iconImage.sprite = _activeIconSprite;
+        }
+
+        if (_iceButton != null)
+        {
+            _iceButton.transition = _defaultButtonTransition;
+        }
     }
 
     void UpdateRemainingText(int remainingSeconds)
@@ -204,22 +319,5 @@ public class IceBoosterController : MonoBehaviour
         {
             _iceButton.interactable = interactable;
         }
-    }
-
-    void PlayFreezeSound()
-    {
-        if (_freezeSound == null)
-        {
-            return;
-        }
-
-        if (_audioSource == null)
-        {
-            _audioSource = gameObject.AddComponent<AudioSource>();
-            _audioSource.playOnAwake = false;
-            _audioSource.spatialBlend = 0f;
-        }
-
-        _audioSource.PlayOneShot(_freezeSound, _freezeSoundVolume);
     }
 }

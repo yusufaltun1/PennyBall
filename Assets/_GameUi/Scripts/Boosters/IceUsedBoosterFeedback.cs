@@ -7,18 +7,31 @@ public class IceUsedBoosterFeedback : MonoBehaviour
 {
     [SerializeField] RectTransform _iceUsed;
     [SerializeField] Image _iceUsedImage;
+    [SerializeField] RectTransform _timeUsed;
+    [SerializeField] Image _timeUsedImage;
 
     [Header("Varsayılan Süreler")]
     [SerializeField] IceUsedFeedbackTimingSettings _defaultTiming = new();
 
-    IceUsedFeedbackTimingSettings _activeTiming;
-    Coroutine _routine;
-    Color _baseColor = Color.white;
+    [Header("Used Sounds")]
+    [SerializeField] AudioClip _iceUsedSound;
+    [SerializeField] [Range(0f, 1f)] float _iceUsedSoundVolume = 1f;
+    [SerializeField] AudioClip _timeUsedSound;
+    [SerializeField] [Range(0f, 1f)] float _timeUsedSoundVolume = 1f;
+
+    IceUsedFeedbackTimingSettings _activeIceTiming;
+    IceUsedFeedbackTimingSettings _activeTimeTiming;
+    Coroutine _iceRoutine;
+    Coroutine _timeRoutine;
+    Color _iceBaseColor = Color.white;
+    Color _timeBaseColor = Color.white;
+    AudioSource _audioSource;
 
     void Awake()
     {
         ResolveReferences();
-        HideImmediate();
+        HideImmediate(_iceUsed, _iceUsedImage, _defaultTiming);
+        HideImmediate(_timeUsed, _timeUsedImage, _defaultTiming);
     }
 
     public void Play(IceUsedFeedbackTimingSettings timing = null)
@@ -28,18 +41,45 @@ public class IceUsedBoosterFeedback : MonoBehaviour
             return;
         }
 
-        _activeTiming = timing ?? _defaultTiming;
-        if (_activeTiming == null)
+        _activeIceTiming = timing ?? _defaultTiming ?? new IceUsedFeedbackTimingSettings();
+
+        if (_iceRoutine != null)
         {
-            _activeTiming = new IceUsedFeedbackTimingSettings();
+            StopCoroutine(_iceRoutine);
         }
 
-        if (_routine != null)
+        _iceRoutine = StartCoroutine(PlayIceRoutine());
+    }
+
+    public void PlayTime(IceUsedFeedbackTimingSettings timing = null)
+    {
+        if (_timeUsed == null)
         {
-            StopCoroutine(_routine);
+            return;
         }
 
-        _routine = StartCoroutine(PlayRoutine());
+        _activeTimeTiming = timing ?? _defaultTiming ?? new IceUsedFeedbackTimingSettings();
+
+        if (_timeRoutine != null)
+        {
+            StopCoroutine(_timeRoutine);
+        }
+
+        _timeRoutine = StartCoroutine(PlayTimeRoutine());
+    }
+
+    IEnumerator PlayIceRoutine()
+    {
+        PlayUsedSound(_iceUsedSound, _iceUsedSoundVolume);
+        yield return PlayRoutine(_iceUsed, _iceUsedImage, _activeIceTiming, _iceBaseColor);
+        _iceRoutine = null;
+    }
+
+    IEnumerator PlayTimeRoutine()
+    {
+        PlayUsedSound(_timeUsedSound, _timeUsedSoundVolume);
+        yield return PlayRoutine(_timeUsed, _timeUsedImage, _activeTimeTiming, _timeBaseColor);
+        _timeRoutine = null;
     }
 
     void ResolveReferences()
@@ -60,30 +100,54 @@ public class IceUsedBoosterFeedback : MonoBehaviour
 
         if (_iceUsedImage != null)
         {
-            _baseColor = _iceUsedImage.color;
+            _iceBaseColor = _iceUsedImage.color;
+        }
+
+        if (_timeUsed == null)
+        {
+            Transform timeUsedTransform = transform.Find("TimeUsed");
+            if (timeUsedTransform != null)
+            {
+                _timeUsed = timeUsedTransform as RectTransform;
+            }
+        }
+
+        if (_timeUsedImage == null && _timeUsed != null)
+        {
+            _timeUsedImage = _timeUsed.GetComponent<Image>();
+        }
+
+        if (_timeUsedImage != null)
+        {
+            _timeBaseColor = _timeUsedImage.color;
         }
     }
 
-    void HideImmediate()
+    static void HideImmediate(
+        RectTransform target,
+        Image targetImage,
+        IceUsedFeedbackTimingSettings timing)
     {
-        if (_iceUsed == null)
+        if (target == null)
         {
             return;
         }
 
-        IceUsedFeedbackTimingSettings timing = _activeTiming ?? _defaultTiming ?? new IceUsedFeedbackTimingSettings();
-        _iceUsed.localScale = Vector3.one * timing.BounceEndScale;
-        SetAlpha(1f);
-        _iceUsed.gameObject.SetActive(false);
+        IceUsedFeedbackTimingSettings safeTiming = timing ?? new IceUsedFeedbackTimingSettings();
+        target.localScale = Vector3.one * safeTiming.BounceEndScale;
+        SetAlpha(targetImage, 1f);
+        target.gameObject.SetActive(false);
     }
 
-    IEnumerator PlayRoutine()
+    IEnumerator PlayRoutine(
+        RectTransform target,
+        Image targetImage,
+        IceUsedFeedbackTimingSettings timing,
+        Color baseColor)
     {
-        IceUsedFeedbackTimingSettings timing = _activeTiming ?? _defaultTiming ?? new IceUsedFeedbackTimingSettings();
-
-        _iceUsed.gameObject.SetActive(true);
-        _iceUsed.localScale = Vector3.one * timing.BounceStartScale;
-        SetAlpha(1f);
+        target.gameObject.SetActive(true);
+        target.localScale = Vector3.one * timing.BounceStartScale;
+        SetAlpha(targetImage, baseColor, 1f);
 
         float elapsed = 0f;
         while (elapsed < timing.BounceInDuration)
@@ -91,11 +155,11 @@ public class IceUsedBoosterFeedback : MonoBehaviour
             elapsed += Time.unscaledDeltaTime;
             float t = EaseOutBack(Mathf.Clamp01(elapsed / timing.BounceInDuration));
             float scale = Mathf.LerpUnclamped(timing.BounceStartScale, timing.BounceEndScale, t);
-            _iceUsed.localScale = new Vector3(scale, scale, 1f);
+            target.localScale = new Vector3(scale, scale, 1f);
             yield return null;
         }
 
-        _iceUsed.localScale = Vector3.one * timing.BounceEndScale;
+        target.localScale = Vector3.one * timing.BounceEndScale;
 
         elapsed = 0f;
         Vector3 startScale = Vector3.one * timing.BounceEndScale;
@@ -104,25 +168,53 @@ public class IceUsedBoosterFeedback : MonoBehaviour
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / timing.ExpandFadeDuration);
-            _iceUsed.localScale = Vector3.Lerp(startScale, endScale, t);
-            SetAlpha(Mathf.Lerp(1f, 0f, t));
+            target.localScale = Vector3.Lerp(startScale, endScale, t);
+            SetAlpha(targetImage, baseColor, Mathf.Lerp(1f, 0f, t));
             yield return null;
         }
 
-        HideImmediate();
-        _routine = null;
+        HideImmediate(target, targetImage, timing);
     }
 
-    void SetAlpha(float alpha)
+    void PlayUsedSound(AudioClip clip, float volume)
     {
-        if (_iceUsedImage == null)
+        if (clip == null)
         {
             return;
         }
 
-        Color color = _baseColor;
+        if (_audioSource == null)
+        {
+            _audioSource = gameObject.AddComponent<AudioSource>();
+            _audioSource.playOnAwake = false;
+            _audioSource.spatialBlend = 0f;
+        }
+
+        _audioSource.PlayOneShot(clip, volume);
+    }
+
+    static void SetAlpha(Image targetImage, float alpha)
+    {
+        if (targetImage == null)
+        {
+            return;
+        }
+
+        Color color = targetImage.color;
         color.a = alpha;
-        _iceUsedImage.color = color;
+        targetImage.color = color;
+    }
+
+    static void SetAlpha(Image targetImage, Color baseColor, float alpha)
+    {
+        if (targetImage == null)
+        {
+            return;
+        }
+
+        Color color = baseColor;
+        color.a = alpha;
+        targetImage.color = color;
     }
 
     static float EaseOutBack(float t)

@@ -24,6 +24,17 @@ public class LeagueMatchController : MonoBehaviour
     public float MatchTimeRemaining => Mathf.Max(0f, _matchTimeRemaining);
     public bool IsMatchActive => _matchActive;
 
+    public bool AddMatchTime(float seconds)
+    {
+        if (!_matchActive || _matchReported || seconds <= 0f)
+        {
+            return false;
+        }
+
+        _matchTimeRemaining += seconds;
+        return true;
+    }
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void EnsureController()
     {

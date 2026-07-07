@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7a2b8c14e5d4a6f9b0c1d2e3f4a5b6c, type: 3}
   m_Name: GameFeedbackAudioLibrary
   m_EditorClassIdentifier: Assembly-CSharp::GameFeedbackAudioLibrary
+  cheers: {fileID: 8300000, guid: 832836b14d45147e7963aec4c12c2194, type: 3}
+  thunder: {fileID: 8300000, guid: bef8dcc1fcd4149a1ab5b22f0ad7e58c, type: 3}
   buttonClick: {fileID: 8300000, guid: 5c4327d18c5044af5885580c27f0427e, type: 3}
   levelUp: {fileID: 8300000, guid: 702229e65e57640fd9e591b7ebe0ddbc, type: 3}
   wellDone: {fileID: 8300000, guid: 702229e65e57640fd9e591b7ebe0ddbc, type: 3}

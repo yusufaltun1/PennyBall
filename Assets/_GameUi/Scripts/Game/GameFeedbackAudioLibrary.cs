@@ -3,6 +3,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "GameFeedbackAudioLibrary", menuName = "PennyBall/Game Feedback Audio Library")]
 public class GameFeedbackAudioLibrary : ScriptableObject
 {
+    public AudioClip cheers;
+    public AudioClip thunder;
     public AudioClip buttonClick;
     public AudioClip levelUp;
     public AudioClip wellDone;

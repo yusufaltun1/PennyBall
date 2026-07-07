@@ -137,6 +137,15 @@ public class ResultPanelController : MonoBehaviour
         if (confetti == null)
             confetti = GetComponentInChildren<ConfettiController>(true);
 
+        if (buttons == null)
+        {
+            Transform buttonsTransform = transform.Find("Buttons");
+            if (buttonsTransform != null)
+            {
+                buttons = buttonsTransform as RectTransform;
+            }
+        }
+
         if (continueButton == null && buttons != null)
             continueButton = buttons.GetComponentInChildren<Button>(true);
 
@@ -231,6 +240,12 @@ public class ResultPanelController : MonoBehaviour
         if (outcome != ResultOutcome.None)
         {
             ApplyOutcomeSprites(outcome);
+
+            if (outcome == ResultOutcome.Won)
+            {
+                CheersSound.Play();
+            }
+
             playCoroutine = StartCoroutine(RunPresentation());
             return;
         }

@@ -1077,8 +1077,8 @@ MonoBehaviour:
   - button: {fileID: 3982043829104094696}
     bgObject: {fileID: 4442255550580621336}
     iconImage: {fileID: 6583410775436871539}
-    defaultSprite: {fileID: 21300000, guid: b66785bd896714736a40554ee00f178a, type: 3}
-    pressedSprite: {fileID: 21300000, guid: 1d7eda869fd544000ab390d6fc1de64a, type: 3}
+    defaultSprite: {fileID: 21300000, guid: bcffe632fec834460a7803e8a22c6689, type: 3}
+    pressedSprite: {fileID: 21300000, guid: e6b879f4e132c433b878c75fb7bae6bc, type: 3}
   initialActiveIndex: 1
 --- !u!1 &8001470585218020587
 GameObject:

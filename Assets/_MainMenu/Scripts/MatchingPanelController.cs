@@ -16,6 +16,8 @@ public class MatchingPanelController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI findingText;
     [SerializeField] private GameObject sayacObject;
     [SerializeField] private TextMeshProUGUI sayacText;
+    [SerializeField] private RectTransform vsObject;
+    [SerializeField] private Image vsImage;
 
     [Header("Avatars")]
     [SerializeField] private AvatarSpriteLibrary avatarLibrary;
@@ -26,6 +28,10 @@ public class MatchingPanelController : MonoBehaviour
     [SerializeField] private float slideDuration = 0.5f;
     [SerializeField] private float countdownStepDuration = 1f;
     [SerializeField] private float hornLeadTime = 2f;
+    [SerializeField] private float vsRevealDuration = 0.22f;
+    [SerializeField] private float vsStartScale = 20f;
+    [SerializeField] private float vsEndScale = 1f;
+    [SerializeField] private float vsEasePower = 3f;
 
     private bool isShuffling;
     private bool isRunning;
@@ -53,6 +59,24 @@ public class MatchingPanelController : MonoBehaviour
         findingSource.loop = true;
 
         ResolveAudioLibrary();
+        ResolveReferences();
+    }
+
+    private void ResolveReferences()
+    {
+        if (vsObject == null)
+        {
+            Transform vsTransform = transform.Find("Players/VS");
+            if (vsTransform != null)
+            {
+                vsObject = vsTransform as RectTransform;
+            }
+        }
+
+        if (vsImage == null && vsObject != null)
+        {
+            vsImage = vsObject.GetComponent<Image>();
+        }
     }
 
     private void ResolveAudioLibrary()
@@ -144,6 +168,23 @@ public class MatchingPanelController : MonoBehaviour
 
         BeginFindingFadeOut(findingFadeDuration);
         audioSource.PlayOneShot(audioLibrary.horn, 1f);
+    }
+
+    private void PlayThunderSound()
+    {
+        GameFeedbackSettingsService.EnsureLoaded();
+        if (!GameFeedbackSettingsService.SoundEffectsEnabled)
+        {
+            return;
+        }
+
+        ResolveAudioLibrary();
+        if (audioLibrary == null || audioLibrary.thunder == null || audioSource == null)
+        {
+            return;
+        }
+
+        audioSource.PlayOneShot(audioLibrary.thunder, 1f);
     }
 
     private void BeginFindingFadeOut(float duration)
@@ -268,6 +309,7 @@ public class MatchingPanelController : MonoBehaviour
         loopImage?.gameObject.SetActive(true);
         findingObject?.SetActive(true);
         sayacObject?.SetActive(false);
+        PrepareVsHiddenState();
 
         if (findingText != null)
         {
@@ -302,6 +344,8 @@ public class MatchingPanelController : MonoBehaviour
 
         // Shuffle bitti — gerçek rakibi kilitle
         ShowOpponent(opponent);
+
+        yield return PlayVsRevealAnimation();
 
         sayacObject?.SetActive(true);
 
@@ -457,5 +501,64 @@ public class MatchingPanelController : MonoBehaviour
         }
 
         rectTransform.anchoredPosition = new Vector2(0f, targetY);
+    }
+
+    private void PrepareVsHiddenState()
+    {
+        if (vsObject == null)
+        {
+            return;
+        }
+
+        vsObject.localScale = Vector3.one * vsStartScale;
+        SetVsAlpha(0f);
+        vsObject.gameObject.SetActive(false);
+    }
+
+    private IEnumerator PlayVsRevealAnimation()
+    {
+        if (vsObject == null)
+        {
+            yield break;
+        }
+
+        vsObject.gameObject.SetActive(true);
+        vsObject.localScale = Vector3.one * vsStartScale;
+        SetVsAlpha(0f);
+        PlayThunderSound();
+
+        float elapsed = 0f;
+        float safeDuration = Mathf.Max(0.01f, vsRevealDuration);
+        float easePower = Mathf.Max(1f, vsEasePower);
+
+        while (elapsed < safeDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = EaseInPower(Mathf.Clamp01(elapsed / safeDuration), easePower);
+            float scale = Mathf.LerpUnclamped(vsStartScale, vsEndScale, t);
+            vsObject.localScale = new Vector3(scale, scale, 1f);
+            SetVsAlpha(t);
+            yield return null;
+        }
+
+        vsObject.localScale = Vector3.one * vsEndScale;
+        SetVsAlpha(1f);
+    }
+
+    private void SetVsAlpha(float alpha)
+    {
+        if (vsImage == null)
+        {
+            return;
+        }
+
+        Color color = vsImage.color;
+        color.a = alpha;
+        vsImage.color = color;
+    }
+
+    private static float EaseInPower(float t, float power)
+    {
+        return Mathf.Pow(t, power);
     }
 }
