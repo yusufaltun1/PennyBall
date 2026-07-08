@@ -1,8 +1,8 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 /// <summary>
-/// Exercise sahnesinde rakip coinler ve oyuncu kalesi kaldırılır; antrenman modu hazırlanır.
+/// Egzersiz sahnesine özel kurallar <see cref="ExerciseRuntime"/> ve ilgili controller'larda uygulanır.
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-200)]
@@ -11,8 +11,7 @@ public class ExerciseSceneBootstrap : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void EnsureBootstrap()
     {
-        Scene activeScene = SceneManager.GetActiveScene();
-        if (!activeScene.IsValid() || activeScene.name != GameSceneNames.Exercise)
+        if (!ExerciseRuntime.IsActive)
         {
             return;
         }
@@ -24,21 +23,96 @@ public class ExerciseSceneBootstrap : MonoBehaviour
 
         var bootstrapObject = new GameObject("ExerciseBootstrap");
         bootstrapObject.AddComponent<ExerciseSceneBootstrap>();
+        WireExitButton();
     }
 
     void Awake()
     {
-        if (SceneManager.GetActiveScene().name != GameSceneNames.Exercise)
+        if (!ExerciseRuntime.IsActive)
         {
             Destroy(gameObject);
             return;
         }
 
-        DestroyIfExists("Coin_E1");
-        DestroyIfExists("Coin_E2");
-        DestroyIfExists("Coin_E3");
-        DestroyIfExists("Kale_P");
-        DestroyIfExists("OpponentBot");
+        RemoveBoosterBar();
+        WireExitButton();
+    }
+
+    void Start()
+    {
+        WireExitButton();
+    }
+
+    public static void WireExitButton()
+    {
+        if (!ExerciseRuntime.IsActive)
+        {
+            return;
+        }
+
+        GameObject exitObject = FindExitButtonObject();
+        if (exitObject == null)
+        {
+            return;
+        }
+
+        exitObject.transform.SetAsLastSibling();
+
+        ExerciseExitController controller = exitObject.GetComponent<ExerciseExitController>();
+        if (controller == null)
+        {
+            controller = exitObject.AddComponent<ExerciseExitController>();
+        }
+
+        Button button = exitObject.GetComponent<Button>();
+        if (button == null)
+        {
+            return;
+        }
+
+        button.onClick.RemoveListener(controller.ExitToMainMenu);
+        button.onClick.AddListener(controller.ExitToMainMenu);
+    }
+
+    static GameObject FindExitButtonObject()
+    {
+        GameObject direct = GameObject.Find("exit");
+        if (direct != null)
+        {
+            return direct;
+        }
+
+        GameObject canvas = GameObject.Find("Canvas");
+        if (canvas == null)
+        {
+            return null;
+        }
+
+        Transform[] children = canvas.GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < children.Length; i++)
+        {
+            if (children[i].name == "exit")
+            {
+                return children[i].gameObject;
+            }
+        }
+
+        return null;
+    }
+
+    static void RemoveBoosterBar()
+    {
+        BoostersMenuController menu = Object.FindFirstObjectByType<BoostersMenuController>();
+        if (menu != null)
+        {
+            Object.Destroy(menu.gameObject);
+        }
+        else
+        {
+            DestroyIfExists("Boosters");
+        }
+
+        DestroyIfExists("BoostersUsed");
     }
 
     static void DestroyIfExists(string objectName)
@@ -46,7 +120,7 @@ public class ExerciseSceneBootstrap : MonoBehaviour
         GameObject target = GameObject.Find(objectName);
         if (target != null)
         {
-            Destroy(target);
+            Object.Destroy(target);
         }
     }
 }

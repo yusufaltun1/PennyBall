@@ -39,6 +39,7 @@ public class LeaderboardView : MonoBehaviour
     {
         if (LeagueService.Instance != null)
         {
+            LeagueService.Instance.RefreshStandingsSimulation(LeagueSimulationTrigger.Leaderboard);
             LeagueService.Instance.StandingsUpdated += Rebuild;
             LeagueService.Instance.PlayerPromoted += OnLeagueChanged;
         }

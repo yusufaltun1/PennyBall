@@ -16,8 +16,7 @@ public class TimeBoosterController : MonoBehaviour
     [SerializeField] Sprite _usedIconSprite;
     [SerializeField] Sprite _lockedIconSprite;
 
-    [Header("Coins")]
-    [SerializeField] bool _hasCoins = true;
+    bool _hasCoins = true;
 
     [Header("Booster")]
     [SerializeField] float _bonusSeconds = 15f;
@@ -41,6 +40,7 @@ public class TimeBoosterController : MonoBehaviour
 
     void OnEnable()
     {
+        WalletService.Changed += RefreshWalletState;
         SubscribeMatchEvents();
 
         if (_timeButton != null)
@@ -54,6 +54,8 @@ public class TimeBoosterController : MonoBehaviour
 
     void OnDisable()
     {
+        WalletService.Changed -= RefreshWalletState;
+
         if (_subscribeRoutine != null)
         {
             StopCoroutine(_subscribeRoutine);
@@ -65,6 +67,34 @@ public class TimeBoosterController : MonoBehaviour
         if (_timeButton != null)
         {
             _timeButton.onClick.RemoveListener(OnTimeButtonClicked);
+        }
+    }
+
+    public void RefreshWalletState()
+    {
+        _hasCoins = WalletService.HasEnoughCoins(BoosterConfig.UseCostCoins);
+
+        if (_usedThisMatch)
+        {
+            return;
+        }
+
+        if (!_hasCoins)
+        {
+            ApplyLockedVisuals();
+            return;
+        }
+
+        if (_costText != null)
+        {
+            _costText.SetActive(true);
+        }
+
+        ApplyActiveVisuals();
+
+        if (_timeButton != null)
+        {
+            _timeButton.interactable = true;
         }
     }
 
@@ -108,6 +138,8 @@ public class TimeBoosterController : MonoBehaviour
 
     void OnTimeButtonClicked()
     {
+        RefreshWalletState();
+
         if (!_hasCoins || _usedThisMatch)
         {
             return;
@@ -118,8 +150,16 @@ public class TimeBoosterController : MonoBehaviour
             return;
         }
 
+        if (!WalletService.TrySpendCoins(BoosterConfig.UseCostCoins))
+        {
+            RefreshWalletState();
+            return;
+        }
+
         if (!LeagueMatchController.Instance.AddMatchTime(_bonusSeconds))
         {
+            WalletService.AddReward(BoosterConfig.UseCostCoins, 0);
+            RefreshWalletState();
             return;
         }
 
@@ -131,24 +171,7 @@ public class TimeBoosterController : MonoBehaviour
     void ResetForNewMatch()
     {
         _usedThisMatch = false;
-
-        if (!_hasCoins)
-        {
-            ApplyLockedVisuals();
-            return;
-        }
-
-        if (_costText != null)
-        {
-            _costText.SetActive(true);
-        }
-
-        ApplyActiveVisuals();
-
-        if (_timeButton != null)
-        {
-            _timeButton.interactable = true;
-        }
+        RefreshWalletState();
     }
 
     void SetUsedVisuals()

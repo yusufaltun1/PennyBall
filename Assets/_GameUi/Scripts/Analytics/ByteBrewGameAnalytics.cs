@@ -29,6 +29,7 @@ public class ByteBrewGameAnalytics : MonoBehaviour
     {
         GameAnalytics.EventRequested += OnGameAnalyticsEvent;
         WalletService.LevelChanged += OnLevelChanged;
+        WalletService.Changed += OnWalletChanged;
         StartCoroutine(InitializeWhenReady());
     }
 
@@ -36,18 +37,20 @@ public class ByteBrewGameAnalytics : MonoBehaviour
     {
         GameAnalytics.EventRequested -= OnGameAnalyticsEvent;
         WalletService.LevelChanged -= OnLevelChanged;
+        WalletService.Changed -= OnWalletChanged;
         UnsubscribeLeague();
     }
 
-    void OnApplicationPause(bool paused)
+    void OnApplicationFocus(bool hasFocus)
     {
-        if (!paused)
+        if (hasFocus)
         {
-            return;
+            SyncUserAttributes();
         }
-
-        TryAbandonActiveMatch("app_pause");
     }
+
+    // Arka plan: 10 sn altı maç devam; 10+ sn geri dönüşte LeagueMatchController hükmen 3-0 bitirir.
+    // Process kill: MatchSessionTracker + RecoverAbandonedMatchIfNeeded (sonraki açılışta loss).
 
     void OnApplicationQuit()
     {
@@ -149,6 +152,8 @@ public class ByteBrewGameAnalytics : MonoBehaviour
         parameters["rank_before"] = MatchSessionContext.RankBefore.ToString();
         parameters["rank_after"] = MatchSessionContext.RankAfter.ToString();
         parameters["duration_sec"] = durationSeconds.ToString();
+        parameters["total_matches_played"] = GetTotalMatchesPlayed().ToString();
+        parameters["league_matches_played"] = GetLeagueMatchesPlayed().ToString();
 
         if (LeagueMatchController.Instance != null)
         {
@@ -185,8 +190,14 @@ public class ByteBrewGameAnalytics : MonoBehaviour
         {
             { "old_level", oldLevel.ToString() },
             { "new_level", newLevel.ToString() },
-            { "total_xp", WalletService.TotalXp.ToString() }
+            { "total_xp", WalletService.TotalXp.ToString() },
+            { "total_matches_played", GetTotalMatchesPlayed().ToString() }
         });
+        SyncUserAttributes();
+    }
+
+    void OnWalletChanged()
+    {
         SyncUserAttributes();
     }
 
@@ -200,7 +211,9 @@ public class ByteBrewGameAnalytics : MonoBehaviour
         var parameters = new Dictionary<string, string>
         {
             { "league", LeagueService.Instance != null ? LeagueService.Instance.PlayerLeague.ToString() : "1" },
-            { "player_level", WalletService.Level.ToString() }
+            { "player_level", WalletService.Level.ToString() },
+            { "total_matches_played", GetTotalMatchesPlayed().ToString() },
+            { "league_matches_played", GetLeagueMatchesPlayed().ToString() }
         };
 
         if (MatchSessionContext.HasOpponent)
@@ -213,28 +226,51 @@ public class ByteBrewGameAnalytics : MonoBehaviour
         return parameters;
     }
 
+    static int GetTotalMatchesPlayed()
+    {
+        return LeagueService.Instance != null
+            ? LeagueService.Instance.PlayerTotalMatches
+            : 0;
+    }
+
+    static int GetLeagueMatchesPlayed()
+    {
+        if (LeagueService.Instance?.Save?.standings == null)
+        {
+            return 0;
+        }
+
+        LeagueStandingEntry player = Array.Find(
+            LeagueService.Instance.Save.standings,
+            standing => standing.isPlayer);
+        return player?.played ?? 0;
+    }
+
     static void SyncUserAttributes()
     {
-        ByteBrew.SetCustomUserDataAttribute("player_level", WalletService.Level.ToString());
-        ByteBrew.SetCustomUserDataAttribute("total_xp", WalletService.TotalXp.ToString());
-        ByteBrew.SetCustomUserDataAttribute("total_coins", WalletService.TotalCoins.ToString());
+        ByteBrew.SetCustomUserDataAttribute("player_level", WalletService.Level);
+        ByteBrew.SetCustomUserDataAttribute("total_xp", WalletService.TotalXp);
+        ByteBrew.SetCustomUserDataAttribute("total_coins", WalletService.TotalCoins);
+        ByteBrew.SetCustomUserDataAttribute("total_matches_played", GetTotalMatchesPlayed());
+        int leagueMatchesPlayed = GetLeagueMatchesPlayed();
+        ByteBrew.SetCustomUserDataAttribute("league_matches_played", leagueMatchesPlayed);
+        ByteBrew.SetCustomUserDataAttribute("matches_played", leagueMatchesPlayed);
 
         if (LeagueService.Instance != null)
         {
-            ByteBrew.SetCustomUserDataAttribute("league", LeagueService.Instance.PlayerLeague.ToString());
+            ByteBrew.SetCustomUserDataAttribute("league", LeagueService.Instance.PlayerLeague);
 
             LeagueStandingEntry player = LeagueService.Instance.Save?.standings != null
-                ? System.Array.Find(LeagueService.Instance.Save.standings, s => s.isPlayer)
+                ? Array.Find(LeagueService.Instance.Save.standings, s => s.isPlayer)
                 : null;
 
             if (player != null)
             {
-                ByteBrew.SetCustomUserDataAttribute("league_points", player.points.ToString());
-                ByteBrew.SetCustomUserDataAttribute("matches_played", player.played.ToString());
+                ByteBrew.SetCustomUserDataAttribute("league_points", player.points);
             }
         }
 
-        ByteBrew.SetCustomUserDataAttribute("onboarding_completed", OnboardingProgress.IsCompleted ? "true" : "false");
+        ByteBrew.SetCustomUserDataAttribute("onboarding_completed", OnboardingProgress.IsCompleted);
     }
 
     static void TrackEvent(string eventName)

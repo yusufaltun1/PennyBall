@@ -79,6 +79,7 @@ public class OnboardingCompleteController : MonoBehaviour
     public void ClaimToExercise()
     {
         MainMenuClickSound.Play();
+        ExerciseRuntime.MarkLaunchedFromOnboarding();
         SceneManager.LoadScene(GameSceneNames.Exercise);
     }
 

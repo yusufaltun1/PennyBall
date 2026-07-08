@@ -11,16 +11,14 @@ public class OpponentBotController : MonoBehaviour
     public static OpponentBotController Instance { get; private set; }
 
     [Header("AI Gücü")]
-    [Tooltip("1 = zayıf, 10 = güçlü. Test için buradan ayarla.")]
-    [SerializeField] [Range(1, 10)] int _aiStrength = 7;
-    [Tooltip("Açıksa lig rakibinin zorluğu yerine yukarıdaki güç kullanılır.")]
-    [SerializeField] bool _useInspectorAiStrength = true;
+    [Tooltip("Kapalıyken varsayılan strength (7) veya level-up boost kullanılır.")]
+    [SerializeField] [Range(1, OpponentBotDifficulty.MaxStrengthLevel)] int _aiStrength = 7;
+    [SerializeField] bool _useInspectorAiStrength;
 
     [Header("Hamle Tempo")]
-    [Tooltip("Her atıştan önce beklenecek süre (saniye). AI gücünden bağımsız.")]
-    [SerializeField] [Min(0f)] float _turnThinkDelaySeconds = 2f;
-    [Tooltip("Açıksa yukarıdaki süre kullanılır; kapalıysa zorluk seviyesine göre otomatik.")]
-    [SerializeField] bool _useInspectorTurnDelay = true;
+    [Tooltip("Test için manuel süre. Kapalıyken maç sayısı veya level-up boost algoritması kullanılır.")]
+    [SerializeField] [Min(0f)] float _turnThinkDelaySeconds = 2.4f;
+    [SerializeField] bool _useInspectorTurnDelay;
 
     [Header("Oyun Kuralları")]
     [SerializeField] OpponentBotDifficulty _difficulty = new() { Level = 7 };
@@ -40,6 +38,8 @@ public class OpponentBotController : MonoBehaviour
     int  _roundShotNumber = 1;   // bu turdaki atış sırası (1, 2, 3, 4+)
     Coroutine _playLoopRoutine;
     bool _resumePlayPending;
+    BotLevelUpBoostPolicy.AiConfig _aiConfig;
+    bool _sessionBoostLogged;
 
     public event Action OpponentGoalScored;
 
@@ -73,7 +73,7 @@ public class OpponentBotController : MonoBehaviour
 
     void Start()
     {
-        SyncAiStrength();
+        ApplySessionOpponentDifficulty();
     }
 
 #if UNITY_EDITOR
@@ -85,17 +85,54 @@ public class OpponentBotController : MonoBehaviour
 
     public void ApplySessionOpponentDifficulty()
     {
-        if (!_useInspectorAiStrength && MatchSessionContext.HasOpponent)
+        if (ExerciseRuntime.IsActive && ExerciseRuntime.ConsumeOnboardingBotProfile())
         {
-            _aiStrength = Mathf.Clamp(MatchSessionContext.CurrentOpponent.difficultyLevel, 1, 10);
+            ApplyFixedBotProfile(ExerciseRuntime.OnboardingBotStrength, ExerciseRuntime.OnboardingBotThinkDelaySeconds);
+            return;
         }
 
+        _sessionBoostLogged = false;
+        SyncAiStrength(logSessionEvaluation: true);
+    }
+
+    void ApplyFixedBotProfile(int aiStrength, float thinkDelaySeconds)
+    {
+        _aiStrength = Mathf.Clamp(aiStrength, 1, OpponentBotDifficulty.MaxStrengthLevel);
+        _turnThinkDelaySeconds = Mathf.Max(0f, thinkDelaySeconds);
+        _useInspectorAiStrength = true;
+        _useInspectorTurnDelay = true;
+        _aiConfig = default;
         SyncAiStrength();
     }
 
-    void SyncAiStrength()
+    void SyncAiStrength(bool logSessionEvaluation = false)
     {
-        _aiStrength = Mathf.Clamp(_aiStrength, 1, 10);
+        if (_useInspectorAiStrength)
+        {
+            _aiStrength = Mathf.Clamp(_aiStrength, 1, OpponentBotDifficulty.MaxStrengthLevel);
+            _difficulty.Level = _aiStrength;
+            _aiConfig = default;
+
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
+            if (logSessionEvaluation)
+            {
+                BotLevelUpBoostPolicy.LogAiConfigInspector(_aiStrength, GetTurnThinkDelay());
+            }
+
+            Debug.Log(
+                $"[Bot] AI gücü={_aiStrength} (Inspector) | Think={GetTurnThinkDelay():F2}s | " +
+                $"AimNoise={_difficulty.AimNoiseDegrees:F1}° | PullNoise={_difficulty.PullNoise:F3} | " +
+                $"MaxPull={_difficulty.MaxPullScale:P0} | GoalPull={_difficulty.GoalFinishPullScale:P0} | " +
+                $"GoalFocus={_difficulty.GoalFocus:F2}");
+            return;
+        }
+
+        _aiConfig = BotLevelUpBoostPolicy.Evaluate(_useInspectorTurnDelay, _turnThinkDelaySeconds);
+        _aiStrength = _aiConfig.AppliedStrength;
         _difficulty.Level = _aiStrength;
 
         if (!Application.isPlaying)
@@ -103,18 +140,33 @@ public class OpponentBotController : MonoBehaviour
             return;
         }
 
+        if (logSessionEvaluation || !_sessionBoostLogged)
+        {
+            BotLevelUpBoostPolicy.LogAiConfig(_aiStrength, GetTurnThinkDelay(), _aiConfig);
+            _sessionBoostLogged = true;
+        }
+
         Debug.Log(
-            $"[Bot] AI gücü={_aiStrength} | Think={GetTurnThinkDelay():F2}s | " +
+            $"[Bot] AI gücü={_aiStrength} | Mod={_aiConfig.Mode} | Think={GetTurnThinkDelay():F2}s | " +
             $"AimNoise={_difficulty.AimNoiseDegrees:F1}° | PullNoise={_difficulty.PullNoise:F3} | " +
             $"MaxPull={_difficulty.MaxPullScale:P0} | GoalPull={_difficulty.GoalFinishPullScale:P0} | " +
-            $"GoalFocus={_difficulty.GoalFocus:F2} | " +
-            $"Kaynak={(_useInspectorAiStrength ? "Inspector" : "Lig")} | " +
-            $"Tempo={(_useInspectorTurnDelay ? "Inspector" : "Zorluk")}");
+            $"GoalFocus={_difficulty.GoalFocus:F2}");
     }
 
     float GetTurnThinkDelay()
     {
-        return _useInspectorTurnDelay ? _turnThinkDelaySeconds : _difficulty.ThinkDelaySeconds;
+        if (_useInspectorTurnDelay)
+        {
+            return _turnThinkDelaySeconds;
+        }
+
+        if (!_useInspectorAiStrength
+            && _aiConfig.Mode == BotLevelUpBoostPolicy.AiConfigMode.LevelUpBoost)
+        {
+            return BotLevelUpBoostPolicy.BoostThinkDelaySeconds;
+        }
+
+        return BotTurnThinkDelay.GetDelayForCurrentPlayer();
     }
 
     void OnDestroy()
@@ -232,9 +284,13 @@ public class OpponentBotController : MonoBehaviour
                 yield return null;
             }
 
-            yield return new WaitForSeconds(GetTurnThinkDelay());
-
             SyncAiStrength();
+            if (!_useInspectorAiStrength)
+            {
+                BotLevelUpBoostPolicy.LogAiConfig(_aiStrength, GetTurnThinkDelay(), _aiConfig, _roundShotNumber);
+            }
+
+            yield return new WaitForSeconds(GetTurnThinkDelay());
 
             if (!OpponentBotBrain.TryChooseShot(
                     _state, _difficulty, _isResolving, _gateMargin,

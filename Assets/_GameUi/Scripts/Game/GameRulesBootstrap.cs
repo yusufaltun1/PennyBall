@@ -3,12 +3,15 @@ using UnityEngine.SceneManagement;
 
 public static class GameRulesBootstrap
 {
+    static bool IsGameplayScene(string sceneName) =>
+        sceneName == GameSceneNames.Game || sceneName == GameSceneNames.Exercise;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void EnsureGameRulesManager()
     {
         Scene activeScene = SceneManager.GetActiveScene();
 
-        if (activeScene.name == GameSceneNames.Game && GameRulesManager.Instance != null)
+        if (IsGameplayScene(activeScene.name) && GameRulesManager.Instance != null)
         {
             GameRulesManager.Instance.PrepareForNewMatch();
             return;

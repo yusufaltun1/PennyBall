@@ -11,6 +11,7 @@ public class LeagueStandingEntry
     public int played;
     public int wins;
     public int draws;
+    public long lastPlayedUtcTicks;
 
     public static LeagueStandingEntry FromBot(BotPlayerEntry bot, int points = 0)
     {

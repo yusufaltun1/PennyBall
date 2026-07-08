@@ -29,6 +29,12 @@ public class IceUsedBoosterFeedback : MonoBehaviour
 
     void Awake()
     {
+        if (ExerciseRuntime.IsActive)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         ResolveReferences();
         HideImmediate(_iceUsed, _iceUsedImage, _defaultTiming);
         HideImmediate(_timeUsed, _timeUsedImage, _defaultTiming);

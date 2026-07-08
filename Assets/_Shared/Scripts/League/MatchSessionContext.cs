@@ -15,6 +15,25 @@ public static class MatchSessionContext
 
     public static int PlayerGoalsAtEnd   { get; private set; }
     public static int OpponentGoalsAtEnd { get; private set; }
+    public static BoosterType? PendingBoosterUnlock { get; private set; }
+
+    public static void SetPendingBoosterUnlock(BoosterType? boosterType)
+    {
+        PendingBoosterUnlock = boosterType;
+    }
+
+    public static bool TryConsumePendingBoosterUnlock(out BoosterType boosterType)
+    {
+        if (!PendingBoosterUnlock.HasValue)
+        {
+            boosterType = default;
+            return false;
+        }
+
+        boosterType = PendingBoosterUnlock.Value;
+        PendingBoosterUnlock = null;
+        return true;
+    }
 
     public static void SetFinalScore(int playerGoals, int opponentGoals)
     {
@@ -48,5 +67,6 @@ public static class MatchSessionContext
         LevelAfter  = 1;
         PlayerGoalsAtEnd   = 0;
         OpponentGoalsAtEnd = 0;
+        PendingBoosterUnlock = null;
     }
 }

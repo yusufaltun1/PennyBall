@@ -1078,7 +1078,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 9999
+  m_text: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c51ff6bd2c3eb4ec98760ffde05187fb, type: 2}
   m_sharedMaterial: {fileID: 6658917276857010525, guid: c51ff6bd2c3eb4ec98760ffde05187fb, type: 2}
@@ -1332,6 +1332,7 @@ MonoBehaviour:
   _avatarLibrary: {fileID: 11400000, guid: 2fe4099fc7466474aaea067f524ac73f, type: 2}
   _nameLabelTMP: {fileID: 411412350}
   _nameLabel: {fileID: 0}
+  _leaguePointsLabel: {fileID: 1268926634}
 --- !u!1 &174333605
 GameObject:
   m_ObjectHideFlags: 0
@@ -4793,11 +4794,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 677196326}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6241df8579954fd0ac5e74e32e07fe7c, type: 3}
+  m_Script: {fileID: 11500000, guid: e8b9c0d1e2f30415263748596a7b8c9d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerLevelPresenter
-  levelLabel: {fileID: 0}
-  progressFillImage: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::LeaguePointsBarPresenter
+  _pointsLabel: {fileID: 1268926634}
 --- !u!1 &688980591
 GameObject:
   m_ObjectHideFlags: 0
@@ -4808,6 +4808,7 @@ GameObject:
   m_Component:
   - component: {fileID: 688980592}
   - component: {fileID: 688980593}
+  - component: {fileID: 688980594}
   m_Layer: 5
   m_Name: Wrap
   m_TagString: Untagged
@@ -4862,6 +4863,22 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &688980594
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 688980591}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f4e2a9c1b8d4e6f9a0c3d5e7f1a2b4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChangeAvatarNameEditor
+  _nameBar: {fileID: 1846455338}
+  _nameText: {fileID: 1619675161}
+  _editButton: {fileID: 174407898}
+  _maxLength: 20
 --- !u!1001 &694394629
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6396,7 +6413,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1635498778}
+  - {fileID: 1999001002}
   - {fileID: 954068626}
   - {fileID: 1619606553}
   m_Father: {fileID: 589842517}
@@ -6672,6 +6689,7 @@ MonoBehaviour:
   _avatarLibrary: {fileID: 11400000, guid: 2fe4099fc7466474aaea067f524ac73f, type: 2}
   _nameLabelTMP: {fileID: 787296819}
   _nameLabel: {fileID: 0}
+  _leaguePointsLabel: {fileID: 145161647}
 --- !u!1 &909481088
 GameObject:
   m_ObjectHideFlags: 0
@@ -7040,7 +7058,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 9999
+  m_text: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c51ff6bd2c3eb4ec98760ffde05187fb, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 1d5fb93e553994599a7c222ea73809bd, type: 2}
@@ -7256,7 +7274,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 9999
+  m_text: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c51ff6bd2c3eb4ec98760ffde05187fb, type: 2}
   m_sharedMaterial: {fileID: 6658917276857010525, guid: c51ff6bd2c3eb4ec98760ffde05187fb, type: 2}
@@ -8475,7 +8493,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 9999
+  m_text: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c51ff6bd2c3eb4ec98760ffde05187fb, type: 2}
   m_sharedMaterial: {fileID: 6658917276857010525, guid: c51ff6bd2c3eb4ec98760ffde05187fb, type: 2}
@@ -9024,7 +9042,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 9999
+  m_text: 0
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c51ff6bd2c3eb4ec98760ffde05187fb, type: 2}
   m_sharedMaterial: {fileID: 6658917276857010525, guid: c51ff6bd2c3eb4ec98760ffde05187fb, type: 2}
@@ -9165,7 +9183,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WalletPresenter
   coinsLabel: {fileID: 976235380}
   levelLabel: {fileID: 954068627}
-  progressFillImage: {fileID: 0}
+  levelXpBarFill: {fileID: 1635498781}
 --- !u!1 &1330257045
 GameObject:
   m_ObjectHideFlags: 0
@@ -9217,7 +9235,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -10584,6 +10602,7 @@ GameObject:
   - component: {fileID: 1635498778}
   - component: {fileID: 1635498780}
   - component: {fileID: 1635498779}
+  - component: {fileID: 1635498781}
   m_Layer: 5
   m_Name: LevelStatus
   m_TagString: Untagged
@@ -10603,12 +10622,12 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 874929949}
+  m_Father: {fileID: 1999001002}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0.5}
-  m_AnchorMax: {x: 0, y: 0.5}
-  m_AnchoredPosition: {x: 149.9, y: 7.7}
-  m_SizeDelta: {x: 25, y: 43}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0.8571429, y: 1}
+  m_AnchoredPosition: {x: 18.4, y: 7.5}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!114 &1635498779
 MonoBehaviour:
@@ -10648,6 +10667,76 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1635498777}
   m_CullTransparentMesh: 1
+--- !u!114 &1635498781
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1635498777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4e8f1a23b5d6e7091a2b3c4d5e6f708, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LevelXpBarFill
+  _trackRect: {fileID: 1999001002}
+  _fillRect: {fileID: 1635498778}
+  _minVisibleProgress: 0.02
+  _fullAnchorMin: {x: 0, y: 0}
+  _fullAnchorMax: {x: 0.8571429, y: 1}
+  _fillAnchoredPosition: {x: 18.4, y: 7.5}
+  _fillPivot: {x: 0, y: 0.5}
+--- !u!1 &1999001001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1999001002}
+  - component: {fileID: 1999001003}
+  m_Layer: 5
+  m_Name: FillTrack
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1999001002
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1999001001}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1635498778}
+  m_Father: {fileID: 874929949}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.38, y: 0.30}
+  m_AnchorMax: {x: 0.94, y: 0.70}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1999001003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1999001001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31a19414c41e5ae4aae2af33fee712f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RectMask2D
+  m_Padding: {x: 0, y: 0, z: 0, w: 0}
+  m_Softness: {x: 0, y: 0}
 --- !u!1 &1645579302
 GameObject:
   m_ObjectHideFlags: 0

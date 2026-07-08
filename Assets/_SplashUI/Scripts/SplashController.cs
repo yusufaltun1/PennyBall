@@ -32,14 +32,22 @@ public class SplashController : MonoBehaviour
 
     void Start()
     {
-        StartCoroutine(LoadNextSceneRoutine());
+        string nextScene = ResolveNextSceneName();
+        StartCoroutine(LoadNextSceneRoutine(nextScene));
     }
 
-    IEnumerator LoadNextSceneRoutine()
+    static string ResolveNextSceneName()
+    {
+        return OnboardingProgress.IsCompleted
+            ? GameSceneNames.MainMenu
+            : OnboardingSceneNames.Onboarding;
+    }
+
+    IEnumerator LoadNextSceneRoutine(string sceneName)
     {
         SetProgress(0f);
 
-        AsyncOperation loadOperation = SceneManager.LoadSceneAsync(_nextSceneName);
+        AsyncOperation loadOperation = SceneManager.LoadSceneAsync(sceneName);
         loadOperation.allowSceneActivation = false;
 
         float elapsed = 0f;

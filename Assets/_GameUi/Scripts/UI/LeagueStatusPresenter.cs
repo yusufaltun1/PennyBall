@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
@@ -50,7 +49,8 @@ public class LeagueStatusPresenter : MonoBehaviour
 
     void OnContinueClicked()
     {
-        SceneManager.LoadScene(GameSceneNames.MainMenu);
+        gameObject.SetActive(false);
+        AdsService.GoToMainMenuMaybeWithInterstitial();
     }
 
     void Update()

@@ -5,7 +5,7 @@ public static class WalletService
     // Maç başına sabit ödüller
     public const int CoinsWin  = 40;
     public const int CoinsDraw = 20;
-    public const int CoinsLoss = 0;
+    public const int CoinsLoss = 10;
     public const int XpPerMatch = 10;
 
     static WalletData _data;
@@ -53,5 +53,44 @@ public static class WalletService
         int levelAfter = Level;
         if (levelAfter > levelBefore)
             LevelChanged?.Invoke(levelBefore, levelAfter);
+    }
+
+    public static bool TrySpendCoins(int amount)
+    {
+        if (amount <= 0)
+        {
+            return true;
+        }
+
+        if (Data.totalCoins < amount)
+        {
+            return false;
+        }
+
+        Data.totalCoins -= amount;
+        WalletRepository.Save(Data);
+        Changed?.Invoke();
+        return true;
+    }
+
+    public static bool HasEnoughCoins(int amount)
+    {
+        return Data.totalCoins >= amount;
+    }
+
+    public static void SetTotals(int totalCoins, int totalXp)
+    {
+        int levelBefore = Level;
+
+        Data.totalCoins = UnityEngine.Mathf.Max(0, totalCoins);
+        Data.totalXp = UnityEngine.Mathf.Max(0, totalXp);
+        WalletRepository.Save(Data);
+        Changed?.Invoke();
+
+        int levelAfter = Level;
+        if (levelAfter != levelBefore)
+        {
+            LevelChanged?.Invoke(levelBefore, levelAfter);
+        }
     }
 }

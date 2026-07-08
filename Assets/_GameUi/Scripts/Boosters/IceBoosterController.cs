@@ -15,11 +15,12 @@ public class IceBoosterController : MonoBehaviour
     [SerializeField] Image _iconImage;
 
     [Header("Coins")]
-    [SerializeField] bool _hasCoins = true;
     [SerializeField] Sprite _activeBackgroundSprite;
     [SerializeField] Sprite _lockedBackgroundSprite;
     [SerializeField] Sprite _activeIconSprite;
     [SerializeField] Sprite _lockedIconSprite;
+
+    bool _hasCoins = true;
 
     [Header("Booster Süreleri")]
     [SerializeField] IceBoosterTimingSettings _boosterTiming = new();
@@ -45,6 +46,8 @@ public class IceBoosterController : MonoBehaviour
 
     void OnEnable()
     {
+        WalletService.Changed += RefreshWalletState;
+
         if (_iceButton != null)
         {
             _iceButton.onClick.AddListener(OnIceButtonClicked);
@@ -52,16 +55,24 @@ public class IceBoosterController : MonoBehaviour
 
         if (_activationRoutine == null)
         {
-            ApplyCoinsAvailability();
+            RefreshWalletState();
         }
     }
 
     void OnDisable()
     {
+        WalletService.Changed -= RefreshWalletState;
+
         if (_iceButton != null)
         {
             _iceButton.onClick.RemoveListener(OnIceButtonClicked);
         }
+    }
+
+    public void RefreshWalletState()
+    {
+        _hasCoins = WalletService.HasEnoughCoins(BoosterConfig.UseCostCoins);
+        ApplyCoinsAvailability();
     }
 
     void OnDestroy()
@@ -149,8 +160,16 @@ public class IceBoosterController : MonoBehaviour
 
     void OnIceButtonClicked()
     {
+        RefreshWalletState();
+
         if (!_hasCoins || _activationRoutine != null)
         {
+            return;
+        }
+
+        if (!WalletService.TrySpendCoins(BoosterConfig.UseCostCoins))
+        {
+            RefreshWalletState();
             return;
         }
 

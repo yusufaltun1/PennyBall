@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -17,6 +18,11 @@ public class UnlockedFeaturesController : MonoBehaviour
     [SerializeField] bool _time;
     [SerializeField] bool _goalKeeper;
     [SerializeField] bool _lastCoinEnable;
+
+    BoosterType _activeFeature = BoosterType.Freeze;
+    Action _onContinue;
+    bool _playOnEnable;
+    Button _continueButtonComponent;
 
     [Header("Freeze Content")]
     [SerializeField] Sprite _freezePosterSprite;
@@ -73,10 +79,57 @@ public class UnlockedFeaturesController : MonoBehaviour
     void Awake()
     {
         ResolveReferences();
+        WireContinueButton();
+    }
+
+    public void Configure(BoosterType feature, Action onContinue)
+    {
+        _activeFeature = feature;
+        _onContinue = onContinue;
+        _playOnEnable = true;
+
+        _freeze = feature == BoosterType.Freeze;
+        _time = feature == BoosterType.Time;
+        _goalKeeper = feature == BoosterType.GoalKeeper;
+        _lastCoinEnable = feature == BoosterType.LastCoin;
+    }
+
+    void WireContinueButton()
+    {
+        if (_continueButton == null)
+        {
+            return;
+        }
+
+        _continueButtonComponent = _continueButton.GetComponent<Button>();
+        if (_continueButtonComponent != null)
+        {
+            _continueButtonComponent.onClick.RemoveListener(OnContinueClicked);
+            _continueButtonComponent.onClick.AddListener(OnContinueClicked);
+        }
+    }
+
+    void OnContinueClicked()
+    {
+        Action callback = _onContinue;
+        _onContinue = null;
+        _playOnEnable = false;
+
+        gameObject.SetActive(false);
+
+        BoostersMenuController menu = FindAnyObjectByType<BoostersMenuController>(FindObjectsInactive.Include);
+        menu?.Refresh();
+
+        callback?.Invoke();
     }
 
     void OnEnable()
     {
+        if (!_playOnEnable)
+        {
+            return;
+        }
+
         if (_sequenceRoutine != null)
         {
             StopCoroutine(_sequenceRoutine);
@@ -136,31 +189,24 @@ public class UnlockedFeaturesController : MonoBehaviour
 
     void ApplyFeatureContent()
     {
-        if (_time)
+        switch (_activeFeature)
         {
-            ApplyPoster(_timePosterSprite);
-            ApplyDescription(_timeDescription);
-            return;
-        }
-
-        if (_goalKeeper)
-        {
-            ApplyPoster(_goalKeeperPosterSprite);
-            ApplyDescription(_goalKeeperDescription);
-            return;
-        }
-
-        if (_lastCoinEnable)
-        {
-            ApplyPoster(_lastCoinPosterSprite);
-            ApplyDescription(_lastCoinDescription);
-            return;
-        }
-
-        if (_freeze)
-        {
-            ApplyPoster(_freezePosterSprite);
-            ApplyDescription(_freezeDescription);
+            case BoosterType.Time:
+                ApplyPoster(_timePosterSprite);
+                ApplyDescription(_timeDescription);
+                return;
+            case BoosterType.GoalKeeper:
+                ApplyPoster(_goalKeeperPosterSprite);
+                ApplyDescription(_goalKeeperDescription);
+                return;
+            case BoosterType.LastCoin:
+                ApplyPoster(_lastCoinPosterSprite);
+                ApplyDescription(_lastCoinDescription);
+                return;
+            default:
+                ApplyPoster(_freezePosterSprite);
+                ApplyDescription(_freezeDescription);
+                return;
         }
     }
 

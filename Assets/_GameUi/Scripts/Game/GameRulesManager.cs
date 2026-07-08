@@ -205,6 +205,8 @@ public class GameRulesManager : MonoBehaviour
 
     void DiscoverPlayerCoins()
     {
+        OnboardingSceneBootstrap.EnsureSceneSetup();
+
         _playerCoins.Clear();
 
         CoinIdentity[] coins = FindObjectsByType<CoinIdentity>(FindObjectsSortMode.None);

@@ -7,8 +7,11 @@ public class LeagueSaveData
     public string playerDisplayName = "Player";
     public int playerAvatarIndex;
     public int playerTotalGoals;
+    public int playerTotalMatches;
     public long seasonStartUtcTicks;
     public int currentOpponentBotId = -1;
     public LeagueStandingEntry[] standings = Array.Empty<LeagueStandingEntry>();
     public string lastSimulationDateUtc = string.Empty;
+    public long lastSessionSimulationUtcTicks;
+    public int sessionSimulationCount;
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -6,6 +7,8 @@ public class UIManager : MonoBehaviour
 {
     [SerializeField] MatchingPanelController matchingPanel;
     [SerializeField] Button exerciseButton;
+
+    readonly List<Button> _wiredExerciseButtons = new();
 
     void Awake()
     {
@@ -25,30 +28,49 @@ public class UIManager : MonoBehaviour
             matchingPanel.gameObject.SetActive(false);
         }
 
+        Transform searchRoot = transform.parent != null ? transform.parent : transform;
+
         if (exerciseButton == null)
         {
-            Transform root = transform.parent;
-            Transform exerciseTransform = root != null
-                ? FindDeepChild(root, "Btn_Exercise")
-                : null;
+            Transform exerciseTransform = FindDeepChild(searchRoot, "Btn_Exercise");
             if (exerciseTransform != null)
             {
                 exerciseButton = exerciseTransform.GetComponent<Button>();
             }
         }
 
-        if (exerciseButton != null)
+        WireExerciseButton(exerciseButton);
+
+        Transform offlineCarouselItem = FindDeepChild(searchRoot, "Item1");
+        if (offlineCarouselItem != null)
         {
-            exerciseButton.onClick.AddListener(OnAntremanButtonPressed);
+            WireExerciseButton(offlineCarouselItem.GetComponentInChildren<Button>(true));
         }
     }
 
     void OnDestroy()
     {
-        if (exerciseButton != null)
+        for (int i = 0; i < _wiredExerciseButtons.Count; i++)
         {
-            exerciseButton.onClick.RemoveListener(OnAntremanButtonPressed);
+            Button button = _wiredExerciseButtons[i];
+            if (button != null)
+            {
+                button.onClick.RemoveListener(OnPlayOfflineButtonPressed);
+            }
         }
+
+        _wiredExerciseButtons.Clear();
+    }
+
+    void WireExerciseButton(Button button)
+    {
+        if (button == null || _wiredExerciseButtons.Contains(button))
+        {
+            return;
+        }
+
+        button.onClick.AddListener(OnPlayOfflineButtonPressed);
+        _wiredExerciseButtons.Add(button);
     }
 
     void Start()
@@ -63,6 +85,12 @@ public class UIManager : MonoBehaviour
     {
         MainMenuClickSound.Play();
 
+        if (!OnboardingProgress.IsCompleted)
+        {
+            SceneManager.LoadScene(OnboardingSceneNames.Onboarding);
+            return;
+        }
+
         if (matchingPanel == null)
         {
             Debug.LogError("[UIManager] Matching_Panel bulunamadı.");
@@ -72,11 +100,13 @@ public class UIManager : MonoBehaviour
         matchingPanel.BeginMatchFlow();
     }
 
-    public void OnAntremanButtonPressed()
+    public void OnPlayOfflineButtonPressed()
     {
         MainMenuClickSound.Play();
         SceneManager.LoadScene(GameSceneNames.Exercise);
     }
+
+    public void OnAntremanButtonPressed() => OnPlayOfflineButtonPressed();
 
     static Transform FindDeepChild(Transform parent, string childName)
     {

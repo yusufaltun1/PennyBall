@@ -1,7 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Onboarding artık uygulama açılışında değil; ana menüdeki Oyna butonu ile başlar.
+/// Onboarding tamamlanmadıysa Splash sonrası Onboarding sahnesine yönlendirilir.
+/// Tamamlandıysa ana menüdeki Oyna butonu maç eşleştirmesini başlatır.
 /// </summary>
 [DisallowMultipleComponent]
 public class OnboardingFlowRouter : MonoBehaviour

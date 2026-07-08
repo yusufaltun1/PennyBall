@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(-500)]
 public class OnboardingGuideController : MonoBehaviour
 {
     enum GuidePhase
@@ -292,6 +293,7 @@ public class OnboardingGuideController : MonoBehaviour
         }
 
         _canvasRect = GetComponentInParent<Canvas>()?.GetComponent<RectTransform>();
+        OnboardingSceneBootstrap.EnsureSceneSetup();
         ResolveReferences();
         EnsureTutorialOverlay();
         EnsureOverlay();
@@ -2539,28 +2541,40 @@ public class OnboardingGuideController : MonoBehaviour
 
         if (_openingCoin == null)
         {
-            GameObject openingCoinObject = GameObject.Find("Coin_P2");
-            if (openingCoinObject != null)
+            _openingCoin = OnboardingSceneBootstrap.CenterCoinTransform;
+            if (_openingCoin == null)
             {
-                _openingCoin = openingCoinObject.transform;
+                GameObject openingCoinObject = GameObject.Find("Coin_P2");
+                if (openingCoinObject != null)
+                {
+                    _openingCoin = openingCoinObject.transform;
+                }
             }
         }
 
         if (_sideCoinLeft == null)
         {
-            GameObject leftCoin = GameObject.Find("Coin_P1");
-            if (leftCoin != null)
+            _sideCoinLeft = OnboardingSceneBootstrap.SideCoinLeftTransform;
+            if (_sideCoinLeft == null)
             {
-                _sideCoinLeft = leftCoin.transform;
+                GameObject leftCoin = GameObject.Find("Coin_P1");
+                if (leftCoin != null)
+                {
+                    _sideCoinLeft = leftCoin.transform;
+                }
             }
         }
 
         if (_sideCoinRight == null)
         {
-            GameObject rightCoin = GameObject.Find("Coin_P3");
-            if (rightCoin != null)
+            _sideCoinRight = OnboardingSceneBootstrap.SideCoinRightTransform;
+            if (_sideCoinRight == null)
             {
-                _sideCoinRight = rightCoin.transform;
+                GameObject rightCoin = GameObject.Find("Coin_P3");
+                if (rightCoin != null)
+                {
+                    _sideCoinRight = rightCoin.transform;
+                }
             }
         }
 

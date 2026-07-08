@@ -1,12 +1,14 @@
 using UnityEngine;
 
 /// <summary>
-/// Bot zorluk profili (1 = zayıf, 10 = güçlü).
+/// Bot zorluk profili (1 = zayıf, 15 = kilometre boost max).
 /// </summary>
 [System.Serializable]
 public struct OpponentBotDifficulty
 {
-    [Range(1, 10)]
+    public const int MaxStrengthLevel = 15;
+
+    [Range(1, MaxStrengthLevel)]
     public int Level;
 
     public float ThinkDelaySeconds => Mathf.Lerp(2.8f, 0.25f, Normalized);
@@ -33,5 +35,5 @@ public struct OpponentBotDifficulty
     /// <summary>Gol fırsatında ek nişan/güç hatası çarpanı (zayıf bot daha hatalı).</summary>
     public float GoalFinishNoiseScale => Mathf.Lerp(1.85f, 0.12f, Normalized);
 
-    float Normalized => Mathf.Clamp01((Level - 1) / 9f);
+    float Normalized => Mathf.Clamp01((Mathf.Clamp(Level, 1, MaxStrengthLevel) - 1) / (MaxStrengthLevel - 1f));
 }

@@ -1,11 +1,14 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class SettingsPopupController : MonoBehaviour
 {
     [SerializeField] private Button openButton;
     [SerializeField] private Button closeButton;
+    [SerializeField] private Button overlayCloseButton;
     [SerializeField] private RectTransform slidePanel;
     [SerializeField] private float animationDuration = 0.4f;
     [SerializeField] private float openBottomMargin;
@@ -17,10 +20,22 @@ public class SettingsPopupController : MonoBehaviour
     private Coroutine animationCoroutine;
     private bool isOpen;
     private bool _settingsBound;
-    private bool _initialized;
+    private bool _buttonsWired;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void WireInactivePopups()
+    static void RegisterSceneHook()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        WirePopupsInLoadedScenes();
+    }
+
+    static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        WirePopupsInScene(scene);
+    }
+
+    static void WirePopupsInLoadedScenes()
     {
         SettingsPopupController[] controllers = Object.FindObjectsByType<SettingsPopupController>(
             FindObjectsInactive.Include,
@@ -28,7 +43,24 @@ public class SettingsPopupController : MonoBehaviour
 
         for (int i = 0; i < controllers.Length; i++)
         {
-            if (controllers[i].gameObject.scene.isLoaded)
+            controllers[i].EnsureInitialized();
+        }
+    }
+
+    static void WirePopupsInScene(Scene scene)
+    {
+        if (!scene.IsValid() || !scene.isLoaded)
+        {
+            return;
+        }
+
+        SettingsPopupController[] controllers = Object.FindObjectsByType<SettingsPopupController>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+
+        for (int i = 0; i < controllers.Length; i++)
+        {
+            if (controllers[i].gameObject.scene == scene)
             {
                 controllers[i].EnsureInitialized();
             }
@@ -48,16 +80,80 @@ public class SettingsPopupController : MonoBehaviour
 
     void EnsureInitialized()
     {
-        if (_initialized)
+        rectTransform ??= GetComponent<RectTransform>();
+        ResolveSlidePanel();
+        ResolveButtons();
+        WireOpenCloseButtons();
+        BindFeedbackSettings();
+    }
+
+    void ResolveButtons()
+    {
+        if (openButton == null)
         {
-            return;
+            openButton = FindButtonInScene(gameObject.scene, "Settings");
         }
 
-        _initialized = true;
-        rectTransform = GetComponent<RectTransform>();
-        ResolveSlidePanel();
-        BindFeedbackSettings();
+        if (closeButton == null)
+        {
+            Transform closeTransform = transform.Find("Btn_Close");
+            if (closeTransform != null)
+            {
+                closeButton = closeTransform.GetComponent<Button>();
+            }
+        }
 
+        if (overlayCloseButton == null)
+        {
+            Transform overlayTransform = transform.Find("Overlay");
+            if (overlayTransform != null)
+            {
+                overlayCloseButton = overlayTransform.GetComponent<Button>();
+                if (overlayCloseButton == null)
+                {
+                    Image overlayImage = overlayTransform.GetComponent<Image>();
+                    if (overlayImage != null)
+                    {
+                        overlayCloseButton = overlayTransform.gameObject.AddComponent<Button>();
+                        overlayCloseButton.transition = Selectable.Transition.None;
+                        overlayCloseButton.targetGraphic = overlayImage;
+                    }
+                }
+            }
+        }
+    }
+
+    static Button FindButtonInScene(Scene scene, string objectName)
+    {
+        if (!scene.IsValid() || !scene.isLoaded)
+        {
+            return null;
+        }
+
+        GameObject[] roots = scene.GetRootGameObjects();
+        for (int i = 0; i < roots.Length; i++)
+        {
+            Transform[] transforms = roots[i].GetComponentsInChildren<Transform>(true);
+            for (int j = 0; j < transforms.Length; j++)
+            {
+                if (transforms[j].name != objectName)
+                {
+                    continue;
+                }
+
+                Button button = transforms[j].GetComponent<Button>();
+                if (button != null)
+                {
+                    return button;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    void WireOpenCloseButtons()
+    {
         if (openButton != null)
         {
             openButton.onClick.RemoveListener(Open);
@@ -69,6 +165,14 @@ public class SettingsPopupController : MonoBehaviour
             closeButton.onClick.RemoveListener(Close);
             closeButton.onClick.AddListener(Close);
         }
+
+        if (overlayCloseButton != null)
+        {
+            overlayCloseButton.onClick.RemoveListener(Close);
+            overlayCloseButton.onClick.AddListener(Close);
+        }
+
+        _buttonsWired = openButton != null;
     }
 
     void ResolveSlidePanel()
@@ -102,6 +206,7 @@ public class SettingsPopupController : MonoBehaviour
         BindToggle("PanelRoot/Container/Wrapper/Control-Music/Button", SettingsToggleControl.SettingKind.Music);
         BindToggle("PanelRoot/Container/Wrapper/Control-SoundEffects/Button", SettingsToggleControl.SettingKind.SoundEffects);
         BindToggle("PanelRoot/Container/Wrapper/Control-Vibrations/Button", SettingsToggleControl.SettingKind.Vibration);
+        ConfigureVersionLabel();
         _settingsBound = true;
     }
 
@@ -136,6 +241,30 @@ public class SettingsPopupController : MonoBehaviour
         toggle.Initialize(kind);
     }
 
+    void ConfigureVersionLabel()
+    {
+        Transform versionTransform = transform.Find("PanelRoot/Container/Wrapper/VersionText");
+        if (versionTransform == null)
+        {
+            return;
+        }
+
+        Button[] buttons = versionTransform.GetComponents<Button>();
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            Destroy(buttons[i]);
+        }
+
+        TextMeshProUGUI versionText = versionTransform.GetComponent<TextMeshProUGUI>();
+        if (versionText == null)
+        {
+            return;
+        }
+
+        versionText.text = $"Version {Application.version}";
+        versionText.raycastTarget = false;
+    }
+
     private void OnDestroy()
     {
         if (openButton != null)
@@ -147,12 +276,24 @@ public class SettingsPopupController : MonoBehaviour
         {
             closeButton.onClick.RemoveListener(Close);
         }
+
+        if (overlayCloseButton != null)
+        {
+            overlayCloseButton.onClick.RemoveListener(Close);
+        }
     }
 
     public void Open()
     {
         if (isOpen)
         {
+            return;
+        }
+
+        EnsureInitialized();
+        if (!_buttonsWired)
+        {
+            Debug.LogWarning("[Settings] Settings butonu bağlanamadı.", this);
             return;
         }
 

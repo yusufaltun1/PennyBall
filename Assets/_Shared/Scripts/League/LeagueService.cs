@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class LeagueService : MonoBehaviour
 {
@@ -10,12 +11,14 @@ public class LeagueService : MonoBehaviour
     public event Action StandingsUpdated;
     public event Action<int> PlayerPromoted;
     public event Action AvatarChanged;
+    public event Action DisplayNameChanged;
     public event Action<MatchResultType, string, string, int> MatchResultRegistered;
 
     LeagueSaveData _save;
 
     public LeagueSaveData Save => _save;
     public int PlayerLeague => _save?.playerLeague ?? 1;
+    public int PlayerTotalMatches => _save?.playerTotalMatches ?? 0;
     public int PlayerAvatarIndex => _save?.playerAvatarIndex ?? 0;
     public TimeSpan SeasonRemaining => GetSeasonRemaining();
 
@@ -42,14 +45,50 @@ public class LeagueService : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        SceneManager.sceneLoaded += OnSceneLoaded;
         Initialize();
     }
 
     void OnDestroy()
     {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+
         if (Instance == this)
         {
             Instance = null;
+        }
+    }
+
+    void OnApplicationPause(bool paused)
+    {
+        if (!paused)
+        {
+            TryRefreshOnAppResume();
+        }
+    }
+
+    void OnApplicationFocus(bool hasFocus)
+    {
+        if (hasFocus)
+        {
+            TryRefreshOnAppResume();
+        }
+    }
+
+    void TryRefreshOnAppResume()
+    {
+        string sceneName = SceneManager.GetActiveScene().name;
+        if (sceneName == GameSceneNames.MainMenu)
+        {
+            RefreshStandingsSimulation(LeagueSimulationTrigger.AppResume);
+        }
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == GameSceneNames.MainMenu)
+        {
+            RefreshStandingsSimulation(LeagueSimulationTrigger.MainMenu);
         }
     }
 
@@ -65,15 +104,31 @@ public class LeagueService : MonoBehaviour
             LeagueRepository.Save(_save);
         }
 
+        BackfillTotalMatchesIfNeeded();
+
         if (IsSeasonExpired())
         {
             ResolveSeasonEnd();
         }
 
-        LeagueSimulation.SimulateUntilNow(_save);
+        LeagueSimulation.RefreshStandings(_save, LeagueSimulationTrigger.Initialize);
         SortStandings();
         LeagueRepository.Save(_save);
         LeagueStandingsLogger.LogLeagueStandings(_save, isFirstLaunch);
+        StandingsUpdated?.Invoke();
+    }
+
+    public void RefreshStandingsSimulation(LeagueSimulationTrigger trigger)
+    {
+        if (_save == null)
+        {
+            return;
+        }
+
+        EnsureSeasonActive();
+        LeagueSimulation.RefreshStandings(_save, trigger);
+        SortStandings();
+        LeagueRepository.Save(_save);
         StandingsUpdated?.Invoke();
     }
 
@@ -146,6 +201,8 @@ public class LeagueService : MonoBehaviour
         if (playerEntry != null)
         {
             playerEntry.played++;
+            _save.playerTotalMatches++;
+            playerEntry.lastPlayedUtcTicks = DateTime.UtcNow.Ticks;
             switch (result)
             {
                 case MatchResultType.Win:
@@ -170,15 +227,31 @@ public class LeagueService : MonoBehaviour
         SortStandings();
         MatchSessionContext.SetRankAfter(FindPlayerRankInArray());
 
-        // Ödülleri hesapla ve kaydet
-        var (coins, xp) = WalletService.GetReward(result);
+        LeagueSimulation.RefreshStandings(_save, LeagueSimulationTrigger.AfterMatch);
+        SortStandings();
+
+        // Hükmen mağlubiyet / abandon: coin ve XP yok. Normal kayıpta ödül devam eder.
+        int coins = 0;
+        int xp = 0;
+        if (string.IsNullOrEmpty(abandonReason))
+        {
+            (coins, xp) = WalletService.GetReward(result);
+        }
+
         int levelBefore = WalletService.Level;
-        WalletService.AddReward(coins, xp);
+        if (coins > 0 || xp > 0)
+        {
+            WalletService.AddReward(coins, xp);
+        }
+
         MatchSessionContext.SetEarnedRewards(coins, xp, levelBefore, WalletService.Level);
+        MatchSessionContext.SetPendingBoosterUnlock(
+            BoosterConfig.GetUnlockReachedOnLevelUp(levelBefore, WalletService.Level));
 
         LeagueRepository.Save(_save);
         StandingsUpdated?.Invoke();
         MatchResultRegistered?.Invoke(result, abandonReason, matchId, durationSeconds);
+        MatchAdTracker.RegisterMatchCompleted();
         return true;
     }
 
@@ -218,6 +291,38 @@ public class LeagueService : MonoBehaviour
 
         LeagueRepository.Save(_save);
         AvatarChanged?.Invoke();
+    }
+
+    public void SetPlayerDisplayName(string displayName)
+    {
+        if (_save == null || string.IsNullOrWhiteSpace(displayName))
+        {
+            return;
+        }
+
+        string trimmed = displayName.Trim();
+        const int maxLength = 20;
+        if (trimmed.Length > maxLength)
+        {
+            trimmed = trimmed.Substring(0, maxLength);
+        }
+
+        if (_save.playerDisplayName == trimmed)
+        {
+            return;
+        }
+
+        _save.playerDisplayName = trimmed;
+
+        LeagueStandingEntry player = FindPlayerStanding();
+        if (player != null)
+        {
+            player.displayName = trimmed;
+        }
+
+        LeagueRepository.Save(_save);
+        StandingsUpdated?.Invoke();
+        DisplayNameChanged?.Invoke();
     }
 
     LeagueSaveData CreateNewSave()
@@ -297,10 +402,8 @@ public class LeagueService : MonoBehaviour
         if (IsSeasonExpired())
         {
             ResolveSeasonEnd();
-            LeagueSimulation.SimulateUntilNow(_save);
-            LeagueRepository.Save(_save);
+            RefreshStandingsSimulation(LeagueSimulationTrigger.Initialize);
             SeasonChanged?.Invoke();
-            StandingsUpdated?.Invoke();
         }
     }
 
@@ -344,6 +447,8 @@ public class LeagueService : MonoBehaviour
     {
         _save.seasonStartUtcTicks = DateTime.UtcNow.Ticks;
         _save.lastSimulationDateUtc = DateTime.UtcNow.Date.ToString("yyyy-MM-dd");
+        _save.lastSessionSimulationUtcTicks = 0;
+        _save.sessionSimulationCount = 0;
         _save.standings = BuildStandingsForLeague(
             _save.playerLeague,
             _save.playerDisplayName,
@@ -378,6 +483,23 @@ public class LeagueService : MonoBehaviour
 
             return string.Compare(a.displayName, b.displayName, StringComparison.Ordinal);
         });
+    }
+
+    void BackfillTotalMatchesIfNeeded()
+    {
+        if (_save == null || _save.playerTotalMatches > 0)
+        {
+            return;
+        }
+
+        LeagueStandingEntry player = FindPlayerStanding();
+        if (player == null || player.played <= 0)
+        {
+            return;
+        }
+
+        _save.playerTotalMatches = player.played;
+        LeagueRepository.Save(_save);
     }
 
     LeagueStandingEntry FindPlayerStanding()
@@ -421,6 +543,7 @@ public class LeagueService : MonoBehaviour
     static void ApplyOpponentMirrorResult(LeagueStandingEntry botEntry, MatchResultType playerResult)
     {
         botEntry.played++;
+        botEntry.lastPlayedUtcTicks = DateTime.UtcNow.Ticks;
         switch (playerResult)
         {
             case MatchResultType.Win:

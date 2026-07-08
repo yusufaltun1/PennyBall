@@ -14,11 +14,6 @@ public class MatchScoreboardPresenter : MonoBehaviour
         _handleMatchEnd = GetComponentInParent<ResultPanelController>(true) == null;
     }
 
-    void OnEnable()
-    {
-        RefreshDisplay();
-    }
-
     void Start()
     {
         StartCoroutine(BindWhenReady());
@@ -60,15 +55,7 @@ public class MatchScoreboardPresenter : MonoBehaviour
             _opponentScoreText.SetText(opponentScore.ToString());
     }
 
-    public static void RefreshAll()
-    {
-        MatchScoreboardPresenter[] presenters =
-            FindObjectsByType<MatchScoreboardPresenter>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        for (int i = 0; i < presenters.Length; i++)
-            presenters[i].RefreshDisplay();
-    }
-
-    static void GetScores(out int playerScore, out int opponentScore)
+    void GetScores(out int playerScore, out int opponentScore)
     {
         if (LeagueMatchController.Instance != null && LeagueMatchController.Instance.IsMatchActive)
         {
@@ -77,8 +64,23 @@ public class MatchScoreboardPresenter : MonoBehaviour
             return;
         }
 
-        playerScore = MatchSessionContext.PlayerGoalsAtEnd;
-        opponentScore = MatchSessionContext.OpponentGoalsAtEnd;
+        if (!_handleMatchEnd)
+        {
+            playerScore = MatchSessionContext.PlayerGoalsAtEnd;
+            opponentScore = MatchSessionContext.OpponentGoalsAtEnd;
+            return;
+        }
+
+        playerScore = 0;
+        opponentScore = 0;
+    }
+
+    public static void RefreshAll()
+    {
+        MatchScoreboardPresenter[] presenters =
+            FindObjectsByType<MatchScoreboardPresenter>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < presenters.Length; i++)
+            presenters[i].RefreshDisplay();
     }
 
     void OnMatchTimerExpired()

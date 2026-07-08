@@ -45,6 +45,7 @@ public class ResultPanelController : MonoBehaviour
     [SerializeField] private RectTransform buttons;
     [SerializeField] private ConfettiController confetti;
     [SerializeField] private Button continueButton;
+    [SerializeField] private Button adButton;
 
     [Header("Navigation")]
     [SerializeField] private GameObject leagueStatusPanel;
@@ -89,22 +90,30 @@ public class ResultPanelController : MonoBehaviour
     private bool previousWon;
     private bool previousLost;
     private bool previousDraw;
+    private bool _rewardDoubled;
+    private bool _buttonsBound;
     private Coroutine playCoroutine;
+
+    private bool IsExerciseMode => ExerciseRuntime.IsActive;
 
     public void ShowResult(MatchResultType result)
     {
         won  = result == MatchResultType.Win;
         lost = result == MatchResultType.Loss;
         draw = result == MatchResultType.Draw;
+        _rewardDoubled = false;
 
-        if (earnedCoinsLabel != null)
-            earnedCoinsLabel.text = $"+{MatchSessionContext.EarnedCoins}";
-        if (earnedXpLabel != null)
+        if (!IsExerciseMode)
         {
-            earnedXpLabel.text = MatchSessionContext.LeveledUp
-                ? $"+{MatchSessionContext.EarnedXp} XP  Seviye {MatchSessionContext.LevelAfter}!"
-                : $"+{MatchSessionContext.EarnedXp} XP";
+            if (earnedCoinsLabel != null)
+                earnedCoinsLabel.text = $"+{MatchSessionContext.EarnedCoins}";
+            if (earnedXpLabel != null)
+                earnedXpLabel.text = $"+{MatchSessionContext.EarnedXp} XP";
         }
+
+        BindButtons();
+        RefreshAdButtonVisibility();
+        SetButtonsInteractable(true);
 
         if (!gameObject.activeSelf)
             gameObject.SetActive(true);  // OnEnable fires → HandleOutcomeChange çalışır
@@ -146,11 +155,7 @@ public class ResultPanelController : MonoBehaviour
             }
         }
 
-        if (continueButton == null && buttons != null)
-            continueButton = buttons.GetComponentInChildren<Button>(true);
-
-        if (continueButton != null)
-            continueButton.onClick.AddListener(OnContinueClicked);
+        BindButtons();
 
         // Inspector'da atanmamışsa sahnedeki LeagueStatusPresenter'ı bul
         if (leagueStatusPanel == null)
@@ -169,11 +174,199 @@ public class ResultPanelController : MonoBehaviour
 
     private void OnDestroy()
     {
+        UnbindButtons();
+    }
+
+    void BindButtons()
+    {
+        if (_buttonsBound)
+        {
+            return;
+        }
+
+        if (buttons == null)
+        {
+            Transform buttonsTransform = transform.Find("Buttons");
+            if (buttonsTransform != null)
+            {
+                buttons = buttonsTransform as RectTransform;
+            }
+        }
+
+        if (continueButton == null)
+        {
+            continueButton = FindButtonByName("Btn_Continue");
+        }
+
+        if (adButton == null)
+        {
+            adButton = FindButtonByName("Btn_Ad");
+        }
+
         if (continueButton != null)
+        {
+            continueButton.onClick.AddListener(OnContinueClicked);
+        }
+
+        if (adButton != null)
+        {
+            adButton.onClick.AddListener(OnClaimX2Clicked);
+        }
+
+        _buttonsBound = continueButton != null || adButton != null;
+    }
+
+    void UnbindButtons()
+    {
+        if (continueButton != null)
+        {
             continueButton.onClick.RemoveListener(OnContinueClicked);
+        }
+
+        if (adButton != null)
+        {
+            adButton.onClick.RemoveListener(OnClaimX2Clicked);
+        }
+
+        _buttonsBound = false;
+    }
+
+    Button FindButtonByName(string buttonName)
+    {
+        if (buttons == null)
+        {
+            return null;
+        }
+
+        Transform found = FindDeepChild(buttons, buttonName);
+        return found != null ? found.GetComponent<Button>() : null;
+    }
+
+    static Transform FindDeepChild(Transform parent, string childName)
+    {
+        if (parent.name == childName)
+        {
+            return parent;
+        }
+
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform found = FindDeepChild(parent.GetChild(i), childName);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     public void OnContinueClicked()
+    {
+        SetButtonsInteractable(false);
+        ReturnToMainMenu();
+    }
+
+    void OnClaimX2Clicked()
+    {
+        if (_rewardDoubled || IsExerciseMode || MatchSessionContext.EarnedCoins <= 0)
+        {
+            return;
+        }
+
+        SetButtonsInteractable(false);
+
+        if (AdsService.Instance == null)
+        {
+            Debug.LogWarning("[ResultPanel] AdsService yok, x2 reklam gösterilemedi.");
+            SetButtonsInteractable(true);
+            return;
+        }
+
+        AdsService.Instance.ShowRewarded(
+            onRewarded: ApplyDoubledRewardState,
+            onFailed: () =>
+            {
+                Debug.LogWarning("[ResultPanel] Rewarded reklam başarısız / izlenmedi.");
+                SetButtonsInteractable(true);
+            });
+    }
+
+    void ApplyDoubledRewardState()
+    {
+        if (_rewardDoubled)
+        {
+            return;
+        }
+
+        _rewardDoubled = true;
+        WalletService.AddReward(MatchSessionContext.EarnedCoins, 0);
+
+        if (earnedCoinsLabel != null)
+        {
+            earnedCoinsLabel.text = $"+{MatchSessionContext.EarnedCoins * 2} x2";
+        }
+
+        if (!gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+        }
+
+        StopPresentation();
+        ApplyFinalState(includeResultElements: false);
+        RefreshAdButtonVisibility();
+        SetButtonsInteractable(true);
+    }
+
+    void SetButtonsInteractable(bool interactable)
+    {
+        if (continueButton != null)
+        {
+            continueButton.interactable = interactable;
+        }
+
+        if (adButton != null)
+        {
+            adButton.interactable = interactable;
+        }
+    }
+
+    void RefreshAdButtonVisibility()
+    {
+        if (adButton == null)
+        {
+            return;
+        }
+
+        adButton.gameObject.SetActive(
+            !IsExerciseMode
+            && MatchSessionContext.EarnedCoins > 0
+            && !_rewardDoubled);
+    }
+
+    void ReturnToMainMenu()
+    {
+        if (IsExerciseMode)
+        {
+            MainMenuClickSound.Play();
+            SceneManager.LoadScene(GameSceneNames.MainMenu);
+            return;
+        }
+
+        BoosterUnlockFlow.TryShowPendingUnlock(ContinueAfterUnlockFlow);
+    }
+
+    void ContinueAfterUnlockFlow()
+    {
+        if (MatchSessionContext.LeveledUp && TryShowLevelUpPanel())
+        {
+            return;
+        }
+
+        ShowLeagueStatusOrMainMenu();
+    }
+
+    void ShowLeagueStatusOrMainMenu()
     {
         if (leagueStatusPanel != null)
         {
@@ -182,8 +375,21 @@ public class ResultPanelController : MonoBehaviour
         }
         else
         {
-            SceneManager.LoadScene(GameSceneNames.MainMenu);
+            AdsService.GoToMainMenuMaybeWithInterstitial();
         }
+    }
+
+    bool TryShowLevelUpPanel()
+    {
+        LevelUpController panel = LevelUpController.FindPanel();
+        if (panel == null)
+        {
+            return false;
+        }
+
+        gameObject.SetActive(false);
+        panel.Show(MatchSessionContext.LevelAfter, ShowLeagueStatusOrMainMenu);
+        return true;
     }
 
     private void OnEnable()
@@ -375,10 +581,13 @@ public class ResultPanelController : MonoBehaviour
         icon.localScale = iconFinal.LocalScale;
 
         buttons.gameObject.SetActive(false);
-        buttons.anchoredPosition = new Vector2(
-            continueFinal.AnchoredPosition.x,
-            continueFinal.AnchoredPosition.y - canvasHalfHeight - buttons.rect.height - offscreenPadding);
-        buttons.localScale = continueFinal.LocalScale;
+        if (!IsExerciseMode)
+        {
+            buttons.anchoredPosition = new Vector2(
+                continueFinal.AnchoredPosition.x,
+                continueFinal.AnchoredPosition.y - canvasHalfHeight - buttons.rect.height - offscreenPadding);
+            buttons.localScale = continueFinal.LocalScale;
+        }
 
         if (rewards != null)
         {
@@ -407,7 +616,7 @@ public class ResultPanelController : MonoBehaviour
             icon.gameObject.SetActive(false);
         }
 
-        if (rewards != null)
+        if (rewards != null && !IsExerciseMode)
         {
             rewards.SetActive(true);
             Apply(rewardCoins, coinsFinal);
@@ -415,9 +624,20 @@ public class ResultPanelController : MonoBehaviour
             SetCanvasGroupAlpha(coinsCanvasGroup, 1f);
             SetCanvasGroupAlpha(xpCanvasGroup, 1f);
         }
+        else if (rewards != null)
+        {
+            rewards.SetActive(false);
+        }
 
-        buttons.gameObject.SetActive(true);
-        Apply(buttons, continueFinal);
+        if (!IsExerciseMode && buttons != null)
+        {
+            buttons.gameObject.SetActive(true);
+            Apply(buttons, continueFinal);
+        }
+        else if (buttons != null)
+        {
+            buttons.gameObject.SetActive(false);
+        }
     }
 
     private IEnumerator PlayResultSequence()
@@ -458,7 +678,15 @@ public class ResultPanelController : MonoBehaviour
 
         yield return new WaitForSeconds(resultHoldDuration);
 
-        if (GetActiveOutcome() == ResultOutcome.Won)
+        if (IsExerciseMode)
+        {
+            yield return new WaitForSeconds(continueDelay);
+            ReturnToMainMenu();
+            playCoroutine = null;
+            yield break;
+        }
+
+        if (GetActiveOutcome() == ResultOutcome.Won && !IsExerciseMode)
         {
             yield return new WaitForSeconds(wonRewardsExtraDelay);
         }
@@ -467,7 +695,7 @@ public class ResultPanelController : MonoBehaviour
         people.gameObject.SetActive(false);
         resultLabel.gameObject.SetActive(false);
 
-        if (rewards != null)
+        if (rewards != null && !IsExerciseMode)
         {
             rewards.SetActive(true);
             yield return AnimateRewardsEntry();

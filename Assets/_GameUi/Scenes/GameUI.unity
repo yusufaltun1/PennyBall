@@ -138,7 +138,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &27961050
 RectTransform:
   m_ObjectHideFlags: 0
@@ -261,7 +261,6 @@ MonoBehaviour:
   _remainingText: {fileID: 147381693}
   _backgroundImage: {fileID: 27961052}
   _iconImage: {fileID: 1247797251}
-  _hasCoins: 1
   _activeBackgroundSprite: {fileID: 21300000, guid: 7b34ca44acd77484495fdaa34b0cf330, type: 3}
   _lockedBackgroundSprite: {fileID: 21300000, guid: 901901a2ca46040248acb559043631f0, type: 3}
   _activeIconSprite: {fileID: 21300000, guid: 1970d5b4be8d64747a3b6d711275a403, type: 3}
@@ -1649,7 +1648,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &206843400
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1666,9 +1665,9 @@ RectTransform:
   - {fileID: 1294757131}
   m_Father: {fileID: 313573713}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 240, y: -130}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 224, y: 233}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &206843401
@@ -2305,7 +2304,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &284608234
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2431,7 +2430,6 @@ MonoBehaviour:
   _activeIconSprite: {fileID: 21300000, guid: f602ad7f1a20c4fe09327fefc5e87755, type: 3}
   _usedIconSprite: {fileID: 21300000, guid: 035b7b3f429e642cfa84ea68cba02712, type: 3}
   _lockedIconSprite: {fileID: 21300000, guid: 035b7b3f429e642cfa84ea68cba02712, type: 3}
-  _hasCoins: 1
   _bonusSeconds: 15
   _usedFeedbackTiming:
     BounceInDuration: 0.25
@@ -2730,6 +2728,7 @@ GameObject:
   - component: {fileID: 313573713}
   - component: {fileID: 313573715}
   - component: {fileID: 313573716}
+  - component: {fileID: 313573717}
   m_Layer: 5
   m_Name: Boosters
   m_TagString: Untagged
@@ -2759,7 +2758,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: 0, y: 130}
+  m_AnchoredPosition: {x: -24, y: 130}
   m_SizeDelta: {x: 0, y: 260}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &313573715
@@ -2796,6 +2795,24 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &313573717
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 313573712}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af4a5b6c7d8e9f012a3b4c5d6e7f8a1c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoostersMenuController
+  _iceLockedOverlay: {fileID: 206843399}
+  _iceBooster: {fileID: 27961049}
+  _timeLockedOverlay: {fileID: 451930188}
+  _timeBooster: {fileID: 284608233}
+  _booster3Slot: {fileID: 1908722206}
+  _booster4Slot: {fileID: 644940047}
 --- !u!1001 &331617108
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3218,7 +3235,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &451930189
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3235,9 +3252,9 @@ RectTransform:
   - {fileID: 1595141243}
   m_Father: {fileID: 313573713}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 464, y: -130}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 224, y: 233}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &451930190
@@ -4768,6 +4785,7 @@ GameObject:
   - component: {fileID: 644940046}
   - component: {fileID: 644940045}
   - component: {fileID: 644940044}
+  - component: {fileID: 644940047}
   m_Layer: 5
   m_Name: Booster4
   m_TagString: Untagged
@@ -4878,6 +4896,25 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 644940042}
   m_CullTransparentMesh: 1
+--- !u!114 &644940047
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 644940042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf5a6b7c8d9e0f123a4b5c6d7e8f9a2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LevelGatedBoosterSlot
+  _levelLabelRoot: {fileID: 1394481074}
+  _levelLabel: {fileID: 1394481076}
+  _unlockedContent: {fileID: 1499905505}
+  _iconImage: {fileID: 1499905507}
+  _lockedIconSprite: {fileID: 21300000, guid: f0ba4e0a6b57548ed9dadc0c9b503f9a, type: 3}
+  _unlockedIconSprite: {fileID: 21300000, guid: 1b0bf0e7a8e9448658bed5bae4632041, type: 3}
+  _button: {fileID: 644940044}
 --- !u!1 &659976156
 GameObject:
   m_ObjectHideFlags: 0
@@ -5899,7 +5936,7 @@ GameObject:
   - component: {fileID: 890745526}
   - component: {fileID: 890745528}
   m_Layer: 5
-  m_Name: LeagueUpdate
+  m_Name: LevelUp
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5975,14 +6012,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 890745524}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7a3e9b2c4d5f6a8b9c0d1e2f3a4b5c6d, type: 3}
+  m_Script: {fileID: 11500000, guid: 9d2c4e6f1a8b4c5d6e7f8091a2b3c4d5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LeagueUpdateController
+  m_EditorClassIdentifier: Assembly-CSharp::LevelUpController
   _particleBurst: {fileID: 129493594}
   _update: {fileID: 1513514050}
   _flare: {fileID: 1210982190}
   _coins: {fileID: 1561823736}
   _claimButton: {fileID: 1406636833}
+  _levelText: {fileID: 0}
   _burstSettings:
     particleCount: 24
     burstCoverage: 1
@@ -8135,6 +8173,7 @@ MonoBehaviour:
   _avatarLibrary: {fileID: 11400000, guid: 2fe4099fc7466474aaea067f524ac73f, type: 2}
   _nameLabelTMP: {fileID: 0}
   _nameLabel: {fileID: 0}
+  _leaguePointsLabel: {fileID: 0}
 --- !u!1 &1079825309
 GameObject:
   m_ObjectHideFlags: 0
@@ -8252,19 +8291,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1087767450}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 890745528}
-        m_TargetAssemblyTypeName: LeagueUpdateController, Assembly-CSharp
-        m_MethodName: ClaimToMainMenu
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1087767450
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10904,19 +10931,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1406636835}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 890745528}
-        m_TargetAssemblyTypeName: LeagueUpdateController, Assembly-CSharp
-        m_MethodName: ClaimToMainMenu
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &1406636835
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11614,12 +11629,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c88d4269ddbf64580a0aa87880798a77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OpponentBotController
-  _aiStrength: 7
-  _useInspectorAiStrength: 1
+  _aiStrength: 8
+  _useInspectorAiStrength: 0
   _turnThinkDelaySeconds: 2.4
-  _useInspectorTurnDelay: 1
+  _useInspectorTurnDelay: 0
   _difficulty:
-    Level: 7
+    Level: 8
   _gateMargin: 0.09
   _rollbackDuration: 0.45
   _coinStopTimeout: 8
@@ -12588,6 +12603,7 @@ MonoBehaviour:
   buttons: {fileID: 63828639}
   confetti: {fileID: 1674004262}
   continueButton: {fileID: 35054506}
+  adButton: {fileID: 0}
   leagueStatusPanel: {fileID: 585451193}
   rewards: {fileID: 1027802090}
   rewardCoins: {fileID: 2073762809}
@@ -13415,6 +13431,7 @@ GameObject:
   - component: {fileID: 1908722205}
   - component: {fileID: 1908722204}
   - component: {fileID: 1908722203}
+  - component: {fileID: 1908722206}
   m_Layer: 5
   m_Name: Booster3
   m_TagString: Untagged
@@ -13525,6 +13542,25 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1908722201}
   m_CullTransparentMesh: 1
+--- !u!114 &1908722206
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1908722201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf5a6b7c8d9e0f123a4b5c6d7e8f9a2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LevelGatedBoosterSlot
+  _levelLabelRoot: {fileID: 1388639348}
+  _levelLabel: {fileID: 1388639350}
+  _unlockedContent: {fileID: 1042407396}
+  _iconImage: {fileID: 1042407398}
+  _lockedIconSprite: {fileID: 21300000, guid: 0aaf9c591af79414a91d44fb73665ad4, type: 3}
+  _unlockedIconSprite: {fileID: 21300000, guid: 9160024d83dd24e608e618c9e53f6e27, type: 3}
+  _button: {fileID: 1908722203}
 --- !u!1 &1909188687
 GameObject:
   m_ObjectHideFlags: 0

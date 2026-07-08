@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class LeagueMatchController : MonoBehaviour
 {
@@ -17,7 +18,18 @@ public class LeagueMatchController : MonoBehaviour
     bool _matchActive;
     bool _matchReported;
     bool _matchTimerPaused;
+    bool _applicationPaused;
+    bool _matchTimerLoopActive;
     Coroutine _matchTimerRoutine;
+    Coroutine _prepareMatchRoutine;
+
+    const float MaxTimerDeltaSeconds = 0.1f;
+    const float BackgroundForfeitThresholdSeconds = 10f;
+    const int BackgroundForfeitPlayerGoals = 0;
+    const int BackgroundForfeitOpponentGoals = 3;
+
+    long _backgroundEnteredUtcTicks;
+    bool _backgroundTimeTracked;
 
     public int PlayerGoals => _playerGoals;
     public int OpponentGoals => _opponentGoals;
@@ -62,13 +74,21 @@ public class LeagueMatchController : MonoBehaviour
 
     void OnEnable()
     {
-        StartCoroutine(InitializeWhenReady());
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        QueuePrepareAndBeginMatch();
     }
 
     void OnDisable()
     {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
         Unsubscribe();
         StopMatchTimer();
+
+        if (_prepareMatchRoutine != null)
+        {
+            StopCoroutine(_prepareMatchRoutine);
+            _prepareMatchRoutine = null;
+        }
     }
 
     void OnDestroy()
@@ -79,8 +99,170 @@ public class LeagueMatchController : MonoBehaviour
         }
     }
 
-    IEnumerator InitializeWhenReady()
+    void OnApplicationPause(bool paused)
     {
+        SetApplicationPaused(paused);
+    }
+
+    void OnApplicationFocus(bool hasFocus)
+    {
+        // Mobilde bazen sadece focus gelir; pause(false) atlanabiliyor.
+        SetApplicationPaused(!hasFocus);
+    }
+
+    void SetApplicationPaused(bool paused)
+    {
+        if (_applicationPaused == paused)
+        {
+            return;
+        }
+
+        if (paused)
+        {
+            _applicationPaused = true;
+
+            if (CanForfeitFromBackground())
+            {
+                _backgroundEnteredUtcTicks = DateTime.UtcNow.Ticks;
+                _backgroundTimeTracked = true;
+            }
+
+            return;
+        }
+
+        _applicationPaused = false;
+
+        if (CanForfeitFromBackground() && _backgroundTimeTracked)
+        {
+            _backgroundTimeTracked = false;
+            double elapsedSeconds = TimeSpan.FromTicks(DateTime.UtcNow.Ticks - _backgroundEnteredUtcTicks).TotalSeconds;
+
+            if (elapsedSeconds >= BackgroundForfeitThresholdSeconds)
+            {
+                Debug.Log(
+                    $"[Match] Arka plan {elapsedSeconds:F1}s (≥{BackgroundForfeitThresholdSeconds:F0}s) — " +
+                    $"hükmen {BackgroundForfeitOpponentGoals}-{BackgroundForfeitPlayerGoals} mağlubiyet.");
+                ForfeitMatchFromBackground();
+                return;
+            }
+
+            Debug.Log($"[Match] Arka plan {elapsedSeconds:F1}s — maç devam ediyor.");
+        }
+        else
+        {
+            _backgroundTimeTracked = false;
+        }
+
+        if (!_matchActive || _matchReported)
+        {
+            return;
+        }
+
+        if (!IsGoalFlowBlockingTimer() && !MatchBeginningCountdownController.IsActive)
+        {
+            _matchTimerPaused = false;
+        }
+
+        EnsureTimerRunning();
+        ScoresChanged?.Invoke();
+    }
+
+    static bool IsInLeagueGameScene()
+    {
+        return SceneManager.GetActiveScene().name == GameSceneNames.Game;
+    }
+
+    bool CanForfeitFromBackground()
+    {
+        return IsInLeagueGameScene() && _matchActive && !_matchReported && !ExerciseRuntime.IsActive;
+    }
+
+    void ForfeitMatchFromBackground()
+    {
+        if (!CanForfeitFromBackground())
+        {
+            return;
+        }
+
+        _playerGoals = BackgroundForfeitPlayerGoals;
+        _opponentGoals = BackgroundForfeitOpponentGoals;
+        _matchTimeRemaining = 0f;
+        _matchTimerPaused = false;
+
+        StopMatchTimer();
+        MatchSessionTracker.MarkAbandon("background_forfeit");
+        ScoresChanged?.Invoke();
+        MatchTimerExpired?.Invoke();
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (IsGameplayScene(scene.name))
+        {
+            ResetMatchStateForNewScene();
+            QueuePrepareAndBeginMatch();
+            return;
+        }
+
+        if (scene.name == GameSceneNames.MainMenu)
+        {
+            ResetForMenu();
+        }
+    }
+
+    void ResetMatchStateForNewScene()
+    {
+        StopMatchTimer();
+        _playerGoals = 0;
+        _opponentGoals = 0;
+        _matchTimeRemaining = GetConfiguredMatchDuration();
+        _matchActive = false;
+        _matchReported = false;
+        _matchTimerPaused = false;
+        _applicationPaused = false;
+        _backgroundTimeTracked = false;
+        MatchSessionContext.Clear();
+        ScoresChanged?.Invoke();
+    }
+
+    static float GetConfiguredMatchDuration() =>
+        ExerciseRuntime.IsActive
+            ? LeagueConfig.ExerciseMatchDurationSeconds
+            : LeagueConfig.MatchDurationSeconds;
+
+    static bool IsGameplayScene(string sceneName) =>
+        sceneName == GameSceneNames.Game || sceneName == GameSceneNames.Exercise;
+
+    void QueuePrepareAndBeginMatch()
+    {
+        if (!IsGameplayScene(SceneManager.GetActiveScene().name))
+        {
+            return;
+        }
+
+        if (_prepareMatchRoutine != null)
+        {
+            StopCoroutine(_prepareMatchRoutine);
+        }
+
+        _prepareMatchRoutine = StartCoroutine(PrepareAndBeginMatchRoutine());
+    }
+
+    void ResetForMenu()
+    {
+        StopMatchTimer();
+        _matchActive = false;
+        _matchReported = true;
+        _playerGoals = 0;
+        _opponentGoals = 0;
+        _matchTimeRemaining = 0f;
+        MatchSessionContext.Clear();
+    }
+
+    IEnumerator PrepareAndBeginMatchRoutine()
+    {
+        ResetMatchStateForNewScene();
+
         while (GameRulesManager.Instance == null)
         {
             yield return null;
@@ -94,6 +276,7 @@ public class LeagueMatchController : MonoBehaviour
         Unsubscribe();
         Subscribe();
         BeginMatch();
+        _prepareMatchRoutine = null;
     }
 
     void Subscribe()
@@ -137,10 +320,12 @@ public class LeagueMatchController : MonoBehaviour
 
         _playerGoals = 0;
         _opponentGoals = 0;
-        _matchTimeRemaining = LeagueConfig.MatchDurationSeconds;
+        _matchTimeRemaining = GetConfiguredMatchDuration();
         _matchActive = true;
         _matchReported = false;
         _matchTimerPaused = false;
+        _applicationPaused = false;
+        _backgroundTimeTracked = false;
 
         if (LeagueService.Instance == null)
         {
@@ -177,32 +362,53 @@ public class LeagueMatchController : MonoBehaviour
 
     IEnumerator MatchTimerRoutine()
     {
-        while (MatchBeginningCountdownController.IsActive)
-        {
-            yield return null;
-        }
+        _matchTimerLoopActive = true;
 
-        while (_matchActive && !_matchReported && _matchTimeRemaining > 0f)
+        try
         {
-            if (IsGoalFlowBlockingTimer())
+            while (MatchBeginningCountdownController.IsActive)
             {
                 yield return null;
-                continue;
             }
 
-            if (!_matchTimerPaused)
+            while (_matchActive && !_matchReported && _matchTimeRemaining > 0f)
             {
-                _matchTimeRemaining -= Time.deltaTime;
+                if (IsGoalFlowBlockingTimer())
+                {
+                    yield return null;
+                    continue;
+                }
+
+                if (!_matchTimerPaused && !_applicationPaused)
+                {
+                    float delta = Mathf.Min(Time.unscaledDeltaTime, MaxTimerDeltaSeconds);
+                    _matchTimeRemaining -= delta;
+                }
+
+                yield return null;
             }
 
-            yield return null;
+            if (_matchActive && !_matchReported)
+            {
+                _matchTimeRemaining = 0f;
+                MatchTimerExpired?.Invoke();
+            }
+        }
+        finally
+        {
+            _matchTimerLoopActive = false;
+            _matchTimerRoutine = null;
+        }
+    }
+
+    void EnsureTimerRunning()
+    {
+        if (!_matchActive || _matchReported || _matchTimerLoopActive)
+        {
+            return;
         }
 
-        if (_matchActive && !_matchReported)
-        {
-            _matchTimeRemaining = 0f;
-            MatchTimerExpired?.Invoke();
-        }
+        _matchTimerRoutine = StartCoroutine(MatchTimerRoutine());
     }
 
     static bool IsGoalFlowBlockingTimer()
@@ -287,6 +493,14 @@ public class LeagueMatchController : MonoBehaviour
         MatchSessionContext.SetFinalScore(_playerGoals, _opponentGoals);
         ScoresChanged?.Invoke();
 
+        if (ExerciseRuntime.IsActive)
+        {
+            MatchSessionTracker.TryConsumeResult(out _, out _, out _);
+            OpponentBotController.Instance?.ApplySessionOpponentDifficulty();
+            MatchCompleted?.Invoke(result);
+            return;
+        }
+
         if (LeagueService.Instance != null)
         {
             bool registered = LeagueService.Instance.RegisterMatchResult(result);
@@ -311,6 +525,8 @@ public class LeagueMatchController : MonoBehaviour
 
     void StopMatchTimer()
     {
+        _matchTimerLoopActive = false;
+
         if (_matchTimerRoutine != null)
         {
             StopCoroutine(_matchTimerRoutine);
