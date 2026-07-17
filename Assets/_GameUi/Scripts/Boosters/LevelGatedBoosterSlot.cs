@@ -22,14 +22,14 @@ public class LevelGatedBoosterSlot : MonoBehaviour
     Selectable.Transition _defaultButtonTransition = Selectable.Transition.ColorTint;
     bool _cachedDefaultTransition;
 
-    public void Refresh(int playerLevel, BoosterType boosterType)
+    public void Refresh(int playerLevel, BoosterType boosterType, bool requiresCoins = true)
     {
         ResolveReferences();
         EnsureNoCoinsSprite();
 
         int unlockLevel = BoosterConfig.GetUnlockLevel(boosterType);
         bool unlocked = playerLevel >= unlockLevel;
-        bool hasCoins = WalletService.HasEnoughCoins(BoosterConfig.UseCostCoins);
+        bool hasCoins = !requiresCoins || WalletService.HasEnoughCoins(BoosterConfig.UseCostCoins);
 
         if (_levelLabelRoot != null)
         {
@@ -52,6 +52,7 @@ public class LevelGatedBoosterSlot : MonoBehaviour
             return;
         }
 
+        // Coming soon: coin şartı yok ama Cost görseli unlock iken açık kalır.
         ApplyCostVisible(true);
 
         if (!hasCoins)
@@ -61,6 +62,15 @@ public class LevelGatedBoosterSlot : MonoBehaviour
         }
 
         ApplyActiveVisuals();
+    }
+
+    public Button Button
+    {
+        get
+        {
+            ResolveReferences();
+            return _button;
+        }
     }
 
     void EnsureNoCoinsSprite()
