@@ -94,24 +94,8 @@ public class OpponentBotController : MonoBehaviour
 
     public void ApplySessionOpponentDifficulty()
     {
-        if (ExerciseRuntime.IsActive && ExerciseRuntime.ConsumeOnboardingBotProfile())
-        {
-            ApplyFixedBotProfile(ExerciseRuntime.OnboardingBotStrength, ExerciseRuntime.OnboardingBotThinkDelaySeconds);
-            return;
-        }
-
         _sessionBoostLogged = false;
         SyncAiStrength(logSessionEvaluation: true);
-    }
-
-    void ApplyFixedBotProfile(int aiStrength, float thinkDelaySeconds)
-    {
-        _aiStrength = Mathf.Clamp(aiStrength, 1, OpponentBotDifficulty.MaxStrengthLevel);
-        _turnThinkDelaySeconds = Mathf.Max(0f, thinkDelaySeconds);
-        _useInspectorAiStrength = true;
-        _useInspectorTurnDelay = true;
-        _aiConfig = default;
-        SyncAiStrength();
     }
 
     void SyncAiStrength(bool logSessionEvaluation = false)

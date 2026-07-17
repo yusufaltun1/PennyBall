@@ -71,7 +71,6 @@ public class OnboardingSceneBootstrap : MonoBehaviour
     public static void SkipToExercise()
     {
         OnboardingProgress.MarkCompleted();
-        ExerciseRuntime.MarkLaunchedFromOnboarding();
         MainMenuClickSound.Play();
         SceneManager.LoadScene(GameSceneNames.Exercise);
     }

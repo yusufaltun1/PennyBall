@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 [DisallowMultipleComponent]
@@ -216,6 +217,74 @@ public class OnboardingGuideController : MonoBehaviour
     [SerializeField] float _arrowGapAboveCoin = 48f;
     [Tooltip("Aşama 2/4/6: Ok ucunun hedef noktanın ne kadar üstünde duracağı (piksel).")]
     [SerializeField] float _pullGuideScreenOffset = 8f;
+
+    [Header("Hand Drag — Stage 1 / 3 / 5 / 8 / 10 / 12 / 13 / 15 / 17 / 18")]
+    [SerializeField] Sprite _handDefaultSprite;
+    [SerializeField] Sprite _handPressedSprite;
+    [SerializeField] float _stageOneHandScreenSize = 180f;
+
+    [Tooltip("Stage 1: El offset (piksel). Pozitif X sağa.")]
+    [FormerlySerializedAs("_stageOneHandScreenOffset")]
+    [SerializeField] Vector2 _stage1HandScreenOffset = new(45f, 0f);
+    [Tooltip("Stage 1: Explanation offset (piksel).")]
+    [FormerlySerializedAs("_stageOneExplanationScreenOffset")]
+    [SerializeField] Vector2 _stage1ExplanationScreenOffset = new(0f, 55f);
+
+    [Tooltip("Stage 3: El offset (piksel). Pozitif X sağa.")]
+    [FormerlySerializedAs("_stageThreeHandScreenOffset")]
+    [SerializeField] Vector2 _stage3HandScreenOffset = new(45f, 0f);
+    [Tooltip("Stage 3: Explanation offset (piksel).")]
+    [FormerlySerializedAs("_stageThreeExplanationScreenOffset")]
+    [SerializeField] Vector2 _stage3ExplanationScreenOffset = new(0f, 55f);
+
+    [Tooltip("Stage 5: El offset (piksel). Pozitif X sağa.")]
+    [FormerlySerializedAs("_stageFiveHandScreenOffset")]
+    [SerializeField] Vector2 _stage5HandScreenOffset = new(45f, 0f);
+    [Tooltip("Stage 5: Explanation offset (piksel).")]
+    [FormerlySerializedAs("_stageFiveExplanationScreenOffset")]
+    [SerializeField] Vector2 _stage5ExplanationScreenOffset = new(0f, 55f);
+
+    [Tooltip("Stage 8: El offset (piksel). Pozitif X sağa.")]
+    [SerializeField] Vector2 _stage8HandScreenOffset = new(45f, 0f);
+    [Tooltip("Stage 8: Explanation offset (piksel).")]
+    [SerializeField] Vector2 _stage8ExplanationScreenOffset = new(0f, 55f);
+
+    [Tooltip("Stage 10: El offset (piksel). Pozitif X sağa.")]
+    [SerializeField] Vector2 _stage10HandScreenOffset = new(45f, 0f);
+    [Tooltip("Stage 10: Explanation offset (piksel).")]
+    [SerializeField] Vector2 _stage10ExplanationScreenOffset = new(0f, 55f);
+
+    [Tooltip("Stage 12 (Pull): El offset (piksel). Pozitif X sağa.")]
+    [SerializeField] Vector2 _stage12HandScreenOffset = new(45f, 0f);
+    [Tooltip("Stage 12 (Pull): Explanation offset (piksel).")]
+    [SerializeField] Vector2 _stage12ExplanationScreenOffset = new(0f, 55f);
+
+    [Tooltip("Stage 13 (Try again): El offset (piksel). Pozitif X sağa.")]
+    [SerializeField] Vector2 _stage13HandScreenOffset = new(45f, 0f);
+    [Tooltip("Stage 13 (Try again): Explanation offset (piksel).")]
+    [SerializeField] Vector2 _stage13ExplanationScreenOffset = new(0f, 55f);
+
+    [Tooltip("Stage 15: El offset (piksel). Pozitif X sağa.")]
+    [SerializeField] Vector2 _stage15HandScreenOffset = new(45f, 0f);
+    [Tooltip("Stage 15: Explanation offset (piksel).")]
+    [SerializeField] Vector2 _stage15ExplanationScreenOffset = new(0f, 55f);
+
+    [Tooltip("Stage 17 (Pull): El offset (piksel). Pozitif X sağa.")]
+    [SerializeField] Vector2 _stage17HandScreenOffset = new(45f, 0f);
+    [Tooltip("Stage 17 (Pull): Explanation offset (piksel).")]
+    [SerializeField] Vector2 _stage17ExplanationScreenOffset = new(0f, 55f);
+
+    [Tooltip("Stage 18 (Pull): El offset (piksel). Pozitif X sağa.")]
+    [SerializeField] Vector2 _stage18HandScreenOffset = new(45f, 0f);
+    [Tooltip("Stage 18 (Pull): Explanation offset (piksel).")]
+    [SerializeField] Vector2 _stage18ExplanationScreenOffset = new(0f, 55f);
+
+    [Tooltip("Paradan çekme mesafesi (world). Stage 3: yukarıdan aşağı; diğerleri atış yönünün tersi.")]
+    [SerializeField] float _stageOneHandDragWorldDistance = 0.18f;
+    [SerializeField] float _stageOneHandMoveDuration = 0.7f;
+    [SerializeField] float _stageOneHandPressHold = 0.2f;
+    [SerializeField] float _stageOneHandPause = 0.15f;
+
     [Tooltip("Coin Pull modunda mesaj kutusu ile ok arasındaki boşluk (piksel).")]
     [SerializeField] float _coinGuideExplanationGap = 10f;
     [Tooltip("Coin Pull modunda ok ölçeği (parayı kapatmaması için küçültülür).")]
@@ -245,6 +314,7 @@ public class OnboardingGuideController : MonoBehaviour
     }
 
     RectTransform _canvasRect;
+    Canvas _onboardingCanvas;
     RectTransform _overlayRect;
     Image _overlayImage;
     Material _overlayMaterial;
@@ -260,6 +330,11 @@ public class OnboardingGuideController : MonoBehaviour
     GuideAnchorMode _guideAnchorMode;
     Coroutine _arrowRoutine;
     Coroutine _flowRoutine;
+    Sprite _cachedDefaultArrowSprite;
+    Vector2 _cachedDefaultArrowSize;
+    Vector2 _cachedDefaultArrowPivot;
+    Vector2 _cachedDefaultGuidePivot;
+    bool _hasCachedDefaultArrowLayout;
 
     GuidePhase _phase = GuidePhase.Inactive;
     bool _guideStarted;
@@ -292,7 +367,9 @@ public class OnboardingGuideController : MonoBehaviour
             _guideRoot = transform as RectTransform;
         }
 
-        _canvasRect = GetComponentInParent<Canvas>()?.GetComponent<RectTransform>();
+        _onboardingCanvas = GetComponentInParent<Canvas>();
+        _canvasRect = _onboardingCanvas?.GetComponent<RectTransform>();
+        SetOnboardingCanvasVisible(false);
         OnboardingSceneBootstrap.EnsureSceneSetup();
         ResolveReferences();
         EnsureTutorialOverlay();
@@ -317,6 +394,10 @@ public class OnboardingGuideController : MonoBehaviour
 
     IEnumerator WaitForIntroCompletion()
     {
+        // Awake sırası garanti değil: Flythrough kendi Awake'inde IsActive=true yapar.
+        // Bir frame beklemeden kontrol edilirse guide kamera hareketinden önce açılabilir.
+        yield return null;
+
         while (MatchIntroCameraFlythrough.IsActive)
         {
             yield return null;
@@ -1791,10 +1872,12 @@ public class OnboardingGuideController : MonoBehaviour
     void EnterStage5()
     {
         SetPhase(GuidePhase.Stage5_Drag);
+        // Aşama 4 esnek açılı atışından sonra coin'in gerçek duruşuna bağla.
         SetCoinGuideAnchors();
         ShowCoinGuideVisuals();
         SetActiveGuideText(_dragMessage);
         SetExplanationBackground(_positiveExplanationColor);
+        UpdateActiveGuideElementPosition();
     }
 
     void EnterStage6()
@@ -2153,6 +2236,14 @@ public class OnboardingGuideController : MonoBehaviour
         BeginGuide();
     }
 
+    void SetOnboardingCanvasVisible(bool visible)
+    {
+        if (_onboardingCanvas != null)
+        {
+            _onboardingCanvas.enabled = visible;
+        }
+    }
+
     void CacheCoinSpawnPoses()
     {
         _centerCoinSpawnPosition = OnboardingSceneBootstrap.CenterCoinSpawnPosition;
@@ -2212,6 +2303,7 @@ public class OnboardingGuideController : MonoBehaviour
         MatchIntroCameraFlythrough.Finished -= OnIntroFlythroughFinished;
         CacheCoinSpawnPoses();
 
+        SetOnboardingCanvasVisible(true);
         _guideStarted = true;
         SetPhase(GuidePhase.Stage1_Drag);
         SetCoinGuideAnchors();
@@ -2341,27 +2433,22 @@ public class OnboardingGuideController : MonoBehaviour
 
     void SetCoinGuideAnchors()
     {
-        Vector3 coinPosition;
-        if (UsesSideCoinLeftGuidedCoin())
-        {
-            coinPosition = GetSideCoinLeftPosition();
-        }
-        else if (UsesSideCoinRightGuidedCoin())
-        {
-            coinPosition = GetSideCoinRightPosition();
-        }
-        else if (UsesCenterCoinGuidedCoin())
-        {
-            coinPosition = GetCenterCoinPosition();
-        }
-        else
-        {
-            coinPosition = GetCenterCoinPosition();
-        }
-
+        Vector3 coinPosition = GetGuidedCoinWorldPosition();
         _spotlightWorldAnchor = coinPosition;
         _guidePointerWorldAnchor = coinPosition;
         _guideAnchorMode = GuideAnchorMode.Coin;
+    }
+
+    Vector3 GetGuidedCoinWorldPosition()
+    {
+        CoinDragController dragController = GetGuidedCoinDragController();
+        if (dragController != null)
+        {
+            return dragController.transform.position;
+        }
+
+        Transform guidedCoin = GetGuidedCoinTransform();
+        return guidedCoin != null ? guidedCoin.position : Vector3.zero;
     }
 
     void SetPullGuideAnchors(Vector3 worldTarget)
@@ -2405,6 +2492,12 @@ public class OnboardingGuideController : MonoBehaviour
 
     float ResolveGuideVerticalOffset()
     {
+        // Aşama 1 / 3: el para üzerinde; yukarı boşluk yok.
+        if (UsesHandDragAnimation())
+        {
+            return 0f;
+        }
+
         if (_guideAnchorMode == GuideAnchorMode.Coin)
         {
             return _arrowGapAboveCoin;
@@ -2448,8 +2541,78 @@ public class OnboardingGuideController : MonoBehaviour
         }
 
         _arrowBaseLocalPosition = _activeArrow != null ? _activeArrow.anchoredPosition : Vector2.zero;
+        if (UsesHandDragAnimation())
+        {
+            _arrowRoutine = StartCoroutine(AnimateStageOneHandDragLoop());
+            return;
+        }
+
         _arrowRoutine = StartCoroutine(
             UsesGateLineArrowAnimation() ? AnimateArrowAlongGateLoop() : AnimateArrowLoop());
+    }
+
+    bool UsesHandDragAnimation()
+    {
+        if (_phase == GuidePhase.Stage18_PowerShot)
+        {
+            return _stage18AwaitingP3Drag;
+        }
+
+        return _phase is GuidePhase.Stage1_Drag
+            or GuidePhase.Stage3_DragAgain
+            or GuidePhase.Stage5_Drag
+            or GuidePhase.Stage8_Drag
+            or GuidePhase.Stage10_Drag
+            or GuidePhase.Stage12_Drag
+            or GuidePhase.Stage13_PreAlignDrag
+            or GuidePhase.Stage15_Drag
+            or GuidePhase.Stage17_Drag;
+    }
+
+    Vector2 GetActiveHandScreenOffset()
+    {
+        return _phase switch
+        {
+            GuidePhase.Stage3_DragAgain => _stage3HandScreenOffset,
+            GuidePhase.Stage5_Drag => _stage5HandScreenOffset,
+            GuidePhase.Stage8_Drag => _stage8HandScreenOffset,
+            GuidePhase.Stage10_Drag => _stage10HandScreenOffset,
+            GuidePhase.Stage12_Drag => _stage12HandScreenOffset,
+            GuidePhase.Stage13_PreAlignDrag => _stage13HandScreenOffset,
+            GuidePhase.Stage15_Drag => _stage15HandScreenOffset,
+            GuidePhase.Stage17_Drag => _stage17HandScreenOffset,
+            GuidePhase.Stage18_PowerShot => _stage18HandScreenOffset,
+            _ => _stage1HandScreenOffset
+        };
+    }
+
+    Vector2 GetActiveHandExplanationScreenOffset()
+    {
+        return _phase switch
+        {
+            GuidePhase.Stage3_DragAgain => _stage3ExplanationScreenOffset,
+            GuidePhase.Stage5_Drag => _stage5ExplanationScreenOffset,
+            GuidePhase.Stage8_Drag => _stage8ExplanationScreenOffset,
+            GuidePhase.Stage10_Drag => _stage10ExplanationScreenOffset,
+            GuidePhase.Stage12_Drag => _stage12ExplanationScreenOffset,
+            GuidePhase.Stage13_PreAlignDrag => _stage13ExplanationScreenOffset,
+            GuidePhase.Stage15_Drag => _stage15ExplanationScreenOffset,
+            GuidePhase.Stage17_Drag => _stage17ExplanationScreenOffset,
+            GuidePhase.Stage18_PowerShot => _stage18ExplanationScreenOffset,
+            _ => _stage1ExplanationScreenOffset
+        };
+    }
+
+    Vector2 GetHandRestLocalPosition()
+    {
+        Vector2 offset = GetActiveHandScreenOffset();
+        // Guide clamp / perspektif sapmalarında bile eli coin'in gerçek ekran konumuna bağla.
+        if (TryWorldToArrowAnchoredPosition(GetGuidedCoinWorldPosition(), out Vector2 coinLocal))
+        {
+            return coinLocal + offset;
+        }
+
+        return offset;
     }
 
     void EnsureArrowAnimationRunning()
@@ -2864,8 +3027,17 @@ public class OnboardingGuideController : MonoBehaviour
         }
 
         bool compactCoinLayout = UsesCompactCoinGuideLayout(guideElement);
-        arrow.localScale = Vector3.one * (compactCoinLayout ? _coinGuideArrowScale : _pullGuideArrowScale);
-        ConfigureArrowLayout(arrow, resetAnchoredPosition: compactCoinLayout);
+        bool stageOneHand = UsesHandDragAnimation() && arrow == _arrow;
+
+        if (stageOneHand)
+        {
+            PrepareStageOneHandVisual();
+        }
+        else
+        {
+            arrow.localScale = Vector3.one * (compactCoinLayout ? _coinGuideArrowScale : _pullGuideArrowScale);
+            ConfigureArrowLayout(arrow, resetAnchoredPosition: compactCoinLayout);
+        }
 
         GuideExplanationAutoWidth autoWidth = explanation.GetComponent<GuideExplanationAutoWidth>();
         autoWidth?.Refresh();
@@ -2880,18 +3052,28 @@ public class OnboardingGuideController : MonoBehaviour
         float explanationWidth = MeasureGuideChildWidth(explanation);
 
         float explanationGap = compactCoinLayout ? _coinGuideExplanationGap : _explanationArrowGap;
-        if (compactCoinLayout)
+        if (stageOneHand)
+        {
+            // Hand drag aşamalarında explanation Inspector offset'i ile konumlanır.
+            explanation.anchorMin = new Vector2(0.5f, 0.5f);
+            explanation.anchorMax = new Vector2(0.5f, 0.5f);
+            explanation.pivot = new Vector2(0.5f, 0.5f);
+            explanation.anchoredPosition = GetActiveHandExplanationScreenOffset();
+        }
+        else if (compactCoinLayout)
         {
             ApplyCompactCoinArrowLayout(arrow, arrowHeight);
             ApplyCompactCoinExplanationLayout(explanation, arrowHeight);
         }
 
         float width = Mathf.Max(arrowWidth, explanationWidth, _guideElementMinWidth);
-        float height = arrowHeight + explanationGap + explanationHeight;
+        float height = stageOneHand
+            ? arrowHeight * 0.5f + explanationGap + explanationHeight + arrowHeight * 0.5f
+            : arrowHeight + explanationGap + explanationHeight;
         guideElement.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
         guideElement.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
 
-        if (compactCoinLayout)
+        if (!stageOneHand && compactCoinLayout)
         {
             ApplyCompactCoinArrowLayout(arrow, arrowHeight);
             ApplyCompactCoinExplanationLayout(explanation, arrowHeight);
@@ -2986,6 +3168,8 @@ public class OnboardingGuideController : MonoBehaviour
             StopArrowAnimation();
         }
 
+        RestoreDefaultArrowVisual();
+
         if (_guideElement != null)
         {
             _guideElement.gameObject.SetActive(false);
@@ -3066,6 +3250,13 @@ public class OnboardingGuideController : MonoBehaviour
             return;
         }
 
+        if (UsesHandDragAnimation())
+        {
+            PrepareStageOneHandVisual();
+            return;
+        }
+
+        RestoreDefaultArrowVisual();
         ConfigureArrowLayout(_arrow, resetAnchoredPosition: true);
         if (_guideElement != null)
         {
@@ -3073,6 +3264,133 @@ public class OnboardingGuideController : MonoBehaviour
         }
 
         _arrowBaseLocalPosition = _arrow.anchoredPosition;
+    }
+
+    void CacheDefaultArrowVisualIfNeeded()
+    {
+        if (_hasCachedDefaultArrowLayout || _arrow == null)
+        {
+            return;
+        }
+
+        Image arrowImage = _arrow.GetComponent<Image>();
+        if (arrowImage != null)
+        {
+            _cachedDefaultArrowSprite = arrowImage.sprite;
+        }
+
+        _cachedDefaultArrowSize = _arrow.sizeDelta;
+        _cachedDefaultArrowPivot = _arrow.pivot;
+        if (_guideElement != null)
+        {
+            _cachedDefaultGuidePivot = _guideElement.pivot;
+        }
+
+        _hasCachedDefaultArrowLayout = true;
+    }
+
+    void EnsureStageOneHandSprites()
+    {
+        if (_handDefaultSprite != null && _handPressedSprite != null)
+        {
+            return;
+        }
+
+        HandCursorConfig config = Resources.Load<HandCursorConfig>("HandCursorConfig");
+        if (config != null)
+        {
+            if (_handDefaultSprite == null)
+            {
+                _handDefaultSprite = config.DefaultHand;
+            }
+
+            if (_handPressedSprite == null)
+            {
+                _handPressedSprite = config.PressedHand;
+            }
+        }
+
+        if (_handDefaultSprite == null)
+        {
+            _handDefaultSprite = Resources.Load<Sprite>("Hand_Default");
+        }
+
+        if (_handPressedSprite == null)
+        {
+            _handPressedSprite = Resources.Load<Sprite>("Hand_Pressed");
+        }
+    }
+
+    void PrepareStageOneHandVisual()
+    {
+        if (_arrow == null)
+        {
+            return;
+        }
+
+        CacheDefaultArrowVisualIfNeeded();
+        EnsureStageOneHandSprites();
+
+        if (_guideElement != null)
+        {
+            _guideElement.pivot = new Vector2(0.5f, 0.5f);
+        }
+
+        _arrow.anchorMin = new Vector2(0.5f, 0.5f);
+        _arrow.anchorMax = new Vector2(0.5f, 0.5f);
+        _arrow.pivot = new Vector2(0.5f, 0.5f);
+        _arrow.anchoredPosition = GetHandRestLocalPosition();
+        _arrow.localScale = Vector3.one;
+        _arrow.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, _stageOneHandScreenSize);
+        _arrow.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, _stageOneHandScreenSize);
+
+        ApplyStageOneHandSprite(pressed: false);
+        _arrowBaseLocalPosition = _arrow.anchoredPosition;
+    }
+
+    void ApplyStageOneHandSprite(bool pressed)
+    {
+        if (_arrow == null)
+        {
+            return;
+        }
+
+        Image handImage = _arrow.GetComponent<Image>();
+        if (handImage == null)
+        {
+            return;
+        }
+
+        Sprite sprite = pressed ? _handPressedSprite : _handDefaultSprite;
+        if (sprite != null)
+        {
+            handImage.sprite = sprite;
+            handImage.preserveAspect = true;
+            handImage.raycastTarget = false;
+        }
+    }
+
+    void RestoreDefaultArrowVisual()
+    {
+        if (_arrow == null || !_hasCachedDefaultArrowLayout)
+        {
+            return;
+        }
+
+        if (_guideElement != null)
+        {
+            _guideElement.pivot = _cachedDefaultGuidePivot;
+        }
+
+        Image arrowImage = _arrow.GetComponent<Image>();
+        if (arrowImage != null && _cachedDefaultArrowSprite != null)
+        {
+            arrowImage.sprite = _cachedDefaultArrowSprite;
+        }
+
+        _arrow.pivot = _cachedDefaultArrowPivot;
+        _arrow.sizeDelta = _cachedDefaultArrowSize;
+        ConfigureArrowLayout(_arrow, resetAnchoredPosition: true);
     }
 
     void ShowPullGuideVisuals()
@@ -3340,10 +3658,14 @@ public class OnboardingGuideController : MonoBehaviour
         }
 
         Vector2 desiredAnchoredPosition = anchoredPosition;
-        anchoredPosition = ClampGuideAnchoredPosition(anchoredPosition);
-        if (_guideAnchorMode == GuideAnchorMode.Coin)
+        // El rehberi coin'in gerçek duruşuna yapışmalı; kenar clamp'i ofseti bozar.
+        if (!UsesHandDragAnimation())
         {
-            anchoredPosition.y = Mathf.Max(anchoredPosition.y, desiredAnchoredPosition.y);
+            anchoredPosition = ClampGuideAnchoredPosition(anchoredPosition);
+            if (_guideAnchorMode == GuideAnchorMode.Coin)
+            {
+                anchoredPosition.y = Mathf.Max(anchoredPosition.y, desiredAnchoredPosition.y);
+            }
         }
 
         _activeGuideElement.anchoredPosition = anchoredPosition;
@@ -3506,6 +3828,136 @@ public class OnboardingGuideController : MonoBehaviour
             screenPoint,
             GetUiCamera(),
             out arrowAnchored);
+    }
+
+    IEnumerator AnimateStageOneHandDragLoop()
+    {
+        EnsureStageOneHandSprites();
+        PrepareStageOneHandVisual();
+
+        GuidePhase loopPhase = _phase;
+        float moveDuration = Mathf.Max(0.05f, _stageOneHandMoveDuration);
+        float pressHold = Mathf.Max(0.01f, _stageOneHandPressHold);
+        float pause = Mathf.Max(0.01f, _stageOneHandPause);
+
+        while (_phase == loopPhase && UsesHandDragAnimation() && _activeArrow != null)
+        {
+            UpdateActiveGuideElementPosition();
+            PrepareStageOneHandVisual();
+
+            Vector2 coinLocal = GetHandRestLocalPosition();
+            Vector2 pullLocal = coinLocal + GetHandDragLocalDelta();
+
+            // Para üstünde — Default
+            ApplyStageOneHandSprite(pressed: false);
+            _activeArrow.anchoredPosition = coinLocal;
+            yield return new WaitForSecondsRealtime(pause);
+
+            // Tut — Pressed
+            ApplyStageOneHandSprite(pressed: true);
+            yield return new WaitForSecondsRealtime(pressHold);
+
+            // Aşama 1: atışın tersine / Aşama 3: yukarıdan aşağı
+            yield return AnimateStageOneHandMove(coinLocal, pullLocal, moveDuration, loopPhase);
+
+            // Bırak — Default
+            ApplyStageOneHandSprite(pressed: false);
+            yield return new WaitForSecondsRealtime(pause);
+
+            // Tekrar paraya dön
+            yield return AnimateStageOneHandMove(pullLocal, coinLocal, moveDuration, loopPhase);
+        }
+
+        _arrowRoutine = null;
+    }
+
+    Vector2 GetHandDragLocalDelta()
+    {
+        float fallback = _stageOneHandScreenSize * 0.85f;
+
+        // Stage 3: açılı sürükleme — sadece yukarıdan aşağı.
+        if (_phase == GuidePhase.Stage3_DragAgain)
+        {
+            return Vector2.down * fallback;
+        }
+
+        if (_activeArrow == null)
+        {
+            return Vector2.down * (_stageOneHandScreenSize * 0.75f);
+        }
+
+        Vector3 coinWorld = GetGuidedCoinWorldPosition();
+        Vector3 launchDir = GetHandDragLaunchDirection(coinWorld);
+        Vector3 pullWorld = -launchDir * Mathf.Max(0.05f, _stageOneHandDragWorldDistance);
+        Vector3 pullEndWorld = coinWorld + pullWorld;
+
+        if (TryWorldToArrowAnchoredPosition(coinWorld, out Vector2 coinLocal)
+            && TryWorldToArrowAnchoredPosition(pullEndWorld, out Vector2 pullLocal))
+        {
+            Vector2 delta = pullLocal - coinLocal;
+            if (delta.sqrMagnitude > 1f)
+            {
+                return delta;
+            }
+        }
+
+        // Fallback: ekranda aşağı çek (tipik atış yukarı/kaleye).
+        return Vector2.down * fallback;
+    }
+
+    Vector3 GetHandDragLaunchDirection(Vector3 coinPosition)
+    {
+        return _phase switch
+        {
+            GuidePhase.Stage5_Drag => GetStageFiveLaunchDirection(coinPosition),
+            GuidePhase.Stage8_Drag => GetStageNineLaunchDirection(coinPosition),
+            GuidePhase.Stage10_Drag => GetStageElevenLaunchDirection(coinPosition),
+            GuidePhase.Stage12_Drag => OnboardingAimTutorialOverlay.GetMidAngleDirection(
+                coinPosition, GetStageTwelveShotTarget()),
+            GuidePhase.Stage13_PreAlignDrag => OnboardingAimTutorialOverlay.GetMidAngleDirection(
+                coinPosition, GetStageFourteenShotTarget()),
+            GuidePhase.Stage15_Drag => OnboardingAimTutorialOverlay.GetMidAngleDirection(
+                coinPosition, GetStageSixteenShotTarget()),
+            GuidePhase.Stage17_Drag => GetStageSeventeenLaunchDirection(coinPosition),
+            GuidePhase.Stage18_PowerShot => OnboardingAimTutorialOverlay.GetMidAngleDirection(
+                coinPosition, GetStageSixGoalTarget()),
+            _ => GetStageTwoLaunchDirection(coinPosition)
+        };
+    }
+
+    Vector3 GetStageFiveLaunchDirection(Vector3 coinPosition)
+    {
+        // Stage 6 ile aynı: coin'in gerçek konumundan kale orta açısı.
+        Vector3 goalTarget = GetStageSixGoalTarget();
+        return OnboardingAimTutorialOverlay.GetMidAngleDirection(coinPosition, goalTarget);
+    }
+
+    IEnumerator AnimateStageOneHandMove(Vector2 from, Vector2 to, float duration, GuidePhase loopPhase)
+    {
+        if (_activeArrow == null)
+        {
+            yield break;
+        }
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            if (_phase != loopPhase || _activeArrow == null)
+            {
+                yield break;
+            }
+
+            UpdateActiveGuideElementPosition();
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+            _activeArrow.anchoredPosition = Vector2.LerpUnclamped(from, to, t);
+            yield return null;
+        }
+
+        if (_activeArrow != null)
+        {
+            _activeArrow.anchoredPosition = to;
+        }
     }
 
     IEnumerator AnimateArrowAlongGateLoop()

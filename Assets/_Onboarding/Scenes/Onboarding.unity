@@ -942,23 +942,74 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 286802103}
   m_CullTransparentMesh: 1
---- !u!1 &295754489 stripped
+--- !u!1 &321381027
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 7711223344556677881, guid: b0d0f4aeb111d4399a042efd861b732b, type: 3}
-  m_PrefabInstance: {fileID: 1651437119870123661}
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &295754493
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 321381030}
+  - component: {fileID: 321381029}
+  - component: {fileID: 321381028}
+  m_Layer: 0
+  m_Name: EnemyGoalArea
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &321381028
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 295754489}
+  m_GameObject: {fileID: 321381027}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab2ac2e94c08a47dfa82eea94967e2fe, type: 3}
+  m_Script: {fileID: 11500000, guid: e7f3a2b19c4d4e8fa1b2c3d45e6f7089, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::OpponentPlayerGoalListener
+  m_EditorClassIdentifier: Assembly-CSharp::GoalZone
+  _goalOwner: 1
+  _autoDetectOwnerFromName: 1
+--- !u!65 &321381029
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 321381027}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.5, y: 0.3, z: 0.28}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &321381030
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 321381027}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.515285, y: 0.15, z: 2.9223}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &347781078
 GameObject:
   m_ObjectHideFlags: 0
@@ -3235,7 +3286,7 @@ MonoBehaviour:
   _nowReleaseMessage: Now release
   _releaseNowMessage: Release now
   _increasePowerMessage: Increase power
-  _appendStageNumberToGuideMessages: 1
+  _appendStageNumberToGuideMessages: 0
   _minPullPower01: 0.02
   _stageOneShotPower01: 0.25
   _stageFourShotPower01: 0.25
@@ -3261,6 +3312,33 @@ MonoBehaviour:
   _arrowMoveDuration: 0.85
   _arrowGapAboveCoin: 48
   _pullGuideScreenOffset: 100
+  _handDefaultSprite: {fileID: 0}
+  _handPressedSprite: {fileID: 0}
+  _stageOneHandScreenSize: 180
+  _stage1HandScreenOffset: {x: 70, y: -30}
+  _stage1ExplanationScreenOffset: {x: 0, y: 150}
+  _stage3HandScreenOffset: {x: 80, y: -40}
+  _stage3ExplanationScreenOffset: {x: 0, y: 150}
+  _stage5HandScreenOffset: {x: 70, y: -40}
+  _stage5ExplanationScreenOffset: {x: 0, y: 150}
+  _stage8HandScreenOffset: {x: 70, y: -40}
+  _stage8ExplanationScreenOffset: {x: 0, y: 150}
+  _stage10HandScreenOffset: {x: 70, y: -40}
+  _stage10ExplanationScreenOffset: {x: 0, y: 150}
+  _stage12HandScreenOffset: {x: 70, y: -40}
+  _stage12ExplanationScreenOffset: {x: 0, y: 150}
+  _stage13HandScreenOffset: {x: 70, y: -40}
+  _stage13ExplanationScreenOffset: {x: 0, y: 150}
+  _stage15HandScreenOffset: {x: 70, y: -40}
+  _stage15ExplanationScreenOffset: {x: 0, y: 150}
+  _stage17HandScreenOffset: {x: 70, y: -40}
+  _stage17ExplanationScreenOffset: {x: 0, y: 150}
+  _stage18HandScreenOffset: {x: 70, y: -40}
+  _stage18ExplanationScreenOffset: {x: 0, y: 150}
+  _stageOneHandDragWorldDistance: 0.18
+  _stageOneHandMoveDuration: 0.7
+  _stageOneHandPressHold: 0.2
+  _stageOneHandPause: 0.15
   _coinGuideExplanationGap: 10
   _coinGuideArrowScale: 0.42
   _pullGuideArrowScale: 0.68
@@ -6493,10 +6571,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 7711223344556677881, guid: b0d0f4aeb111d4399a042efd861b732b, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 295754493}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b0d0f4aeb111d4399a042efd861b732b, type: 3}
 --- !u!108 &1668776105255289602
 Light:
@@ -7246,3 +7321,4 @@ SceneRoots:
   - {fileID: 928469340}
   - {fileID: 928469343}
   - {fileID: 928469346}
+  - {fileID: 321381030}
