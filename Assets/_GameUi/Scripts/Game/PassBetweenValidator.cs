@@ -1,6 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Kapı kuralı: atılan para, diğer iki parayı birleştiren çizgi segmentinin
+/// bir yüzünden diğer yüzüne geçmek zorundadır.
+/// </summary>
 public static class PassBetweenValidator
 {
     public static bool DidPassBetweenAlongPath(
@@ -44,22 +48,27 @@ public static class PassBetweenValidator
             return false;
         }
 
+        Vector2 path = end - start;
+        if (path.sqrMagnitude < 1e-8f)
+        {
+            return false;
+        }
+
         Vector2 abDirection = ab / abLength;
         Vector2 perpendicular = new Vector2(-abDirection.y, abDirection.x);
 
         float startDistance = Vector2.Dot(start - a, perpendicular);
         float endDistance = Vector2.Dot(end - a, perpendicular);
 
-        if (startDistance * endDistance > 0.0001f
-            && Mathf.Abs(startDistance) > gateMargin
-            && Mathf.Abs(endDistance) > gateMargin)
+        // Zorunlu: çizginin bir tarafından diğer tarafına geçiş (işaret değişimi).
+        // Aynı tarafta kalıp margin içine girmek geçiş sayılmaz.
+        if (startDistance * endDistance >= 0f)
         {
             return false;
         }
 
-        Vector2 path = end - start;
         float denominator = Vector2.Dot(path, perpendicular);
-        if (Mathf.Abs(denominator) < 0.0001f)
+        if (Mathf.Abs(denominator) < 1e-6f)
         {
             return false;
         }
@@ -71,19 +80,9 @@ public static class PassBetweenValidator
         }
 
         Vector2 intersection = start + path * t;
-        return IsPointBetweenGate(intersection, a, b, abDirection, abLength, gateMargin);
-    }
-
-    static bool IsPointBetweenGate(
-        Vector2 point,
-        Vector2 gateA,
-        Vector2 gateB,
-        Vector2 abDirection,
-        float abLength,
-        float gateMargin)
-    {
-        float projection = Vector2.Dot(point - gateA, abDirection);
-        return projection >= -gateMargin && projection <= abLength + gateMargin;
+        float pad = Mathf.Max(0f, gateMargin);
+        float projection = Vector2.Dot(intersection - a, abDirection);
+        return projection >= -pad && projection <= abLength + pad;
     }
 
     static Vector2 ToXZ(Vector3 position)

@@ -22,8 +22,6 @@ public class ExerciseExitController : MonoBehaviour
             _button.onClick.RemoveListener(ExitToMainMenu);
             _button.onClick.AddListener(ExitToMainMenu);
         }
-
-        transform.SetAsLastSibling();
     }
 
     void OnDestroy()

@@ -15,7 +15,7 @@ public static class MatchAdTracker
         int count = CompletedMatchCount + 1;
         PlayerPrefs.SetInt(MatchCountKey, count);
         PlayerPrefs.Save();
-        Debug.Log($"[Ads] Match completed count={count}");
+        // Debug.Log($"[Ads] Match completed count={count}");
     }
 
     public static bool ShouldShowInterstitial()

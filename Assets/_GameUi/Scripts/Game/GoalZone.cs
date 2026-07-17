@@ -1,10 +1,17 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// EnemyGoalArea / PlayerGoalArea — kale içi trigger hacmi.
+/// Overlap yalnızca fizik collider kesişimine bakar (ComputePenetration).
+/// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(BoxCollider))]
 public class GoalZone : MonoBehaviour
 {
+    public const string EnemyGoalAreaName = "EnemyGoalArea";
+    public const string PlayerGoalAreaName = "PlayerGoalArea";
+
     [SerializeField] CoinTeam _goalOwner;
     [SerializeField] bool _autoDetectOwnerFromName = true;
 
@@ -14,12 +21,25 @@ public class GoalZone : MonoBehaviour
     {
         if (_autoDetectOwnerFromName)
         {
-            DetectGoalOwnerFromHierarchy();
+            DetectGoalOwnerFromName();
         }
     }
 
-    void DetectGoalOwnerFromHierarchy()
+    void DetectGoalOwnerFromName()
     {
+        string objectName = gameObject.name;
+        if (objectName == EnemyGoalAreaName || objectName.Contains("EnemyGoal"))
+        {
+            _goalOwner = CoinTeam.Opponent;
+            return;
+        }
+
+        if (objectName == PlayerGoalAreaName || objectName.Contains("PlayerGoal"))
+        {
+            _goalOwner = CoinTeam.Player;
+            return;
+        }
+
         Transform current = transform;
         while (current != null)
         {
@@ -48,14 +68,52 @@ public class GoalZone : MonoBehaviour
             return;
         }
 
-        int coinId = coin.GetInstanceID();
-        if (_coinsInside.Contains(coinId))
+        if (!_coinsInside.Add(coin.GetInstanceID()))
         {
             return;
         }
 
-        _coinsInside.Add(coinId);
+        // Spekülatif / yanlış trigger'ı ele: gerçekten penetre etmiyorsa sayma.
+        if (!OverlapsCoin(coin))
+        {
+            _coinsInside.Remove(coin.GetInstanceID());
+            return;
+        }
 
+        NotifyEntered(coin);
+    }
+
+    void OnTriggerStay(Collider other)
+    {
+        CoinIdentity coin = other.GetComponentInParent<CoinIdentity>();
+        if (coin == null)
+        {
+            return;
+        }
+
+        if (!OverlapsCoin(coin))
+        {
+            _coinsInside.Remove(coin.GetInstanceID());
+            return;
+        }
+
+        _coinsInside.Add(coin.GetInstanceID());
+        NotifyEntered(coin);
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        CoinIdentity coin = other.GetComponentInParent<CoinIdentity>();
+        if (coin == null)
+        {
+            return;
+        }
+
+        _coinsInside.Remove(coin.GetInstanceID());
+    }
+
+    void NotifyEntered(CoinIdentity coin)
+    {
         if (_goalOwner == CoinTeam.Opponent && coin.Team == CoinTeam.Player)
         {
             GameRulesManager.Instance?.NotifyCoinEnteredGoal(coin);
@@ -68,30 +126,76 @@ public class GoalZone : MonoBehaviour
 
     public bool IsOpponentGoal => _goalOwner == CoinTeam.Opponent;
 
-    public bool IsCoinInside(CoinIdentity coin)
+    public void ClearTrackingForCoin(CoinIdentity coin)
     {
-        return coin != null && _coinsInside.Contains(coin.GetInstanceID());
+        if (coin != null)
+        {
+            _coinsInside.Remove(coin.GetInstanceID());
+        }
     }
 
-    public bool ContainsWorldPosition(Vector3 worldPosition)
+    /// <summary>
+    /// Coin fizik collider'ı ile GoalArea gerçekten kesişiyor mu?
+    /// (useVisualMesh parametresi geriye dönük uyumluluk için durur; skorlama fiziğe bakar.)
+    /// </summary>
+    public bool OverlapsCoin(CoinIdentity coin, bool useVisualMesh = true)
     {
-        BoxCollider boxCollider = GetComponent<BoxCollider>();
-        if (boxCollider == null)
+        if (coin == null)
         {
             return false;
         }
 
-        return boxCollider.bounds.Contains(worldPosition);
-    }
+        Physics.SyncTransforms();
 
-    void OnTriggerExit(Collider other)
-    {
-        CoinIdentity coin = other.GetComponentInParent<CoinIdentity>();
-        if (coin == null)
+        BoxCollider goalCollider = GetComponent<BoxCollider>();
+        Collider coinCollider = coin.GetComponentInChildren<Collider>();
+        if (goalCollider == null || coinCollider == null)
         {
-            return;
+            return false;
         }
 
-        _coinsInside.Remove(coin.GetInstanceID());
+        // Trigger + non-trigger arasında en güvenilir kesişim testi.
+        if (Physics.ComputePenetration(
+                coinCollider,
+                coinCollider.transform.position,
+                coinCollider.transform.rotation,
+                goalCollider,
+                goalCollider.transform.position,
+                goalCollider.transform.rotation,
+                out _,
+                out float separationDistance))
+        {
+            return separationDistance > 0.0001f;
+        }
+
+        return false;
+    }
+
+    public static GoalZone FindOpponentGoalArea()
+    {
+        GoalZone[] zones = FindObjectsByType<GoalZone>(FindObjectsSortMode.None);
+        for (int i = 0; i < zones.Length; i++)
+        {
+            if (zones[i].IsOpponentGoal)
+            {
+                return zones[i];
+            }
+        }
+
+        return null;
+    }
+
+    public static GoalZone FindPlayerGoalArea()
+    {
+        GoalZone[] zones = FindObjectsByType<GoalZone>(FindObjectsSortMode.None);
+        for (int i = 0; i < zones.Length; i++)
+        {
+            if (!zones[i].IsOpponentGoal)
+            {
+                return zones[i];
+            }
+        }
+
+        return null;
     }
 }

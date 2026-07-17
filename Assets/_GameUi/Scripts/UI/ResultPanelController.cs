@@ -105,10 +105,7 @@ public class ResultPanelController : MonoBehaviour
 
         if (!IsExerciseMode)
         {
-            if (earnedCoinsLabel != null)
-                earnedCoinsLabel.text = $"+{MatchSessionContext.EarnedCoins}";
-            if (earnedXpLabel != null)
-                earnedXpLabel.text = $"+{MatchSessionContext.EarnedXp} XP";
+            RefreshRewardLabels();
         }
 
         BindButtons();
@@ -300,22 +297,31 @@ public class ResultPanelController : MonoBehaviour
         }
 
         _rewardDoubled = true;
-        WalletService.AddReward(MatchSessionContext.EarnedCoins, 0);
 
-        if (earnedCoinsLabel != null)
-        {
-            earnedCoinsLabel.text = $"+{MatchSessionContext.EarnedCoins * 2} x2";
-        }
-
-        if (!gameObject.activeSelf)
-        {
-            gameObject.SetActive(true);
-        }
+        int baseCoins = MatchSessionContext.EarnedCoins;
+        WalletService.AddReward(baseCoins, 0);
+        MatchSessionContext.SetDisplayedEarnedCoins(baseCoins * 2);
 
         StopPresentation();
         ApplyFinalState(includeResultElements: false);
+        RefreshRewardLabels();
         RefreshAdButtonVisibility();
         SetButtonsInteractable(true);
+    }
+
+    void RefreshRewardLabels()
+    {
+        if (earnedCoinsLabel != null)
+        {
+            earnedCoinsLabel.text = $"+{MatchSessionContext.EarnedCoins}";
+            earnedCoinsLabel.ForceMeshUpdate();
+        }
+
+        if (earnedXpLabel != null)
+        {
+            earnedXpLabel.text = $"+{MatchSessionContext.EarnedXp} XP";
+            earnedXpLabel.ForceMeshUpdate();
+        }
     }
 
     void SetButtonsInteractable(bool interactable)
@@ -353,17 +359,17 @@ public class ResultPanelController : MonoBehaviour
             return;
         }
 
-        BoosterUnlockFlow.TryShowPendingUnlock(ContinueAfterUnlockFlow);
-    }
-
-    void ContinueAfterUnlockFlow()
-    {
         if (MatchSessionContext.LeveledUp && TryShowLevelUpPanel())
         {
             return;
         }
 
-        ShowLeagueStatusOrMainMenu();
+        BoosterUnlockFlow.TryShowPendingUnlock(ShowLeagueStatusOrMainMenu);
+    }
+
+    void ContinueAfterLevelUp()
+    {
+        BoosterUnlockFlow.TryShowPendingUnlock(ShowLeagueStatusOrMainMenu);
     }
 
     void ShowLeagueStatusOrMainMenu()
@@ -388,7 +394,7 @@ public class ResultPanelController : MonoBehaviour
         }
 
         gameObject.SetActive(false);
-        panel.Show(MatchSessionContext.LevelAfter, ShowLeagueStatusOrMainMenu);
+        panel.Show(MatchSessionContext.LevelAfter, ContinueAfterLevelUp);
         return true;
     }
 
@@ -397,6 +403,16 @@ public class ResultPanelController : MonoBehaviour
         previousWon = won;
         previousLost = lost;
         previousDraw = draw;
+
+        // x2 sonrası sunum yeniden başlamasın; güncel coin label kalsın.
+        if (_rewardDoubled)
+        {
+            ApplyFinalState(includeResultElements: false);
+            RefreshRewardLabels();
+            RefreshAdButtonVisibility();
+            return;
+        }
+
         HandleOutcomeChange();
     }
 

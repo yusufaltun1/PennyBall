@@ -237,5 +237,9 @@ public class WalletDebugEditorWindow : EditorWindow
             totalCoins = Mathf.Max(0, coins),
             totalXp = Mathf.Max(0, totalXp),
         });
+
+        // Edit modunda kaydettikten sonra bellek cache'ini temizle;
+        // aksi halde Play'de eski level (ör. 36) geri gelebilir.
+        WalletService.InvalidateCache();
     }
 }

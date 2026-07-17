@@ -281,7 +281,7 @@ public class ByteBrewGameAnalytics : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Debug.LogWarning($"[ByteBrew] Event '{eventName}' gönderilemedi: {ex.Message}");
+            // Debug.LogWarning($"[ByteBrew] Event '{eventName}' gönderilemedi: {ex.Message}");
         }
     }
 
@@ -293,7 +293,7 @@ public class ByteBrewGameAnalytics : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Debug.LogWarning($"[ByteBrew] Event '{eventName}' gönderilemedi: {ex.Message}");
+            // Debug.LogWarning($"[ByteBrew] Event '{eventName}' gönderilemedi: {ex.Message}");
         }
     }
 }

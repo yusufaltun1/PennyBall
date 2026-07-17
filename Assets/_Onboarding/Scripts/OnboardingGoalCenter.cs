@@ -4,15 +4,11 @@ public static class OnboardingGoalCenter
 {
     public static bool TryGetEnemyGoalCenter(out Vector3 center)
     {
-        GoalZone[] zones = Object.FindObjectsByType<GoalZone>(FindObjectsSortMode.None);
-        for (int i = 0; i < zones.Length; i++)
+        GoalZone zone = GoalZone.FindOpponentGoalArea();
+        if (zone != null)
         {
-            Transform parent = zones[i].transform.parent;
-            if (parent != null && parent.name.Contains("_E"))
-            {
-                center = zones[i].transform.position;
-                return true;
-            }
+            center = zone.transform.position;
+            return true;
         }
 
         center = default;
@@ -20,7 +16,7 @@ public static class OnboardingGoalCenter
     }
 
     /// <summary>
-    /// Kale ağzının içindeki gol bölgesi merkezi (GoalTrigger collider ortası).
+    /// Kale ağzının içindeki gol bölgesi merkezi (EnemyGoalArea collider ortası).
     /// </summary>
     public static bool TryGetEnemyGoalInteriorPoint(
         Transform kaleFallback,
@@ -29,34 +25,36 @@ public static class OnboardingGoalCenter
         out Vector3 interiorPoint)
     {
         interiorPoint = default;
+
+        GoalZone zone = GoalZone.FindOpponentGoalArea();
+        if (zone != null)
+        {
+            BoxCollider goalBox = zone.GetComponent<BoxCollider>();
+            if (goalBox != null)
+            {
+                interiorPoint = goalBox.bounds.center;
+            }
+            else
+            {
+                interiorPoint = zone.transform.position;
+            }
+
+            if (extraInset > 0f)
+            {
+                Vector3 shotDirection = GetPlanarDirection(fromPosition, interiorPoint);
+                interiorPoint += shotDirection * extraInset;
+            }
+
+            interiorPoint.y = fromPosition.y;
+            return true;
+        }
+
         if (kaleFallback == null)
         {
             return false;
         }
 
-        Transform goalTrigger = kaleFallback.Find("GoalTrigger");
-        if (goalTrigger == null)
-        {
-            return false;
-        }
-
-        BoxCollider goalBox = goalTrigger.GetComponent<BoxCollider>();
-        if (goalBox == null)
-        {
-            interiorPoint = goalTrigger.position;
-            interiorPoint.y = fromPosition.y;
-            return true;
-        }
-
-        Bounds bounds = goalBox.bounds;
-        interiorPoint = bounds.center;
-
-        if (extraInset > 0f)
-        {
-            Vector3 shotDirection = GetPlanarDirection(fromPosition, interiorPoint);
-            interiorPoint += shotDirection * extraInset;
-        }
-
+        interiorPoint = kaleFallback.position;
         interiorPoint.y = fromPosition.y;
         return true;
     }
@@ -71,18 +69,6 @@ public static class OnboardingGoalCenter
         if (kaleFallback == null)
         {
             return Vector3.zero;
-        }
-
-        Transform goalTrigger = kaleFallback.Find("GoalTrigger");
-        if (goalTrigger != null)
-        {
-            BoxCollider goalBox = goalTrigger.GetComponent<BoxCollider>();
-            if (goalBox != null)
-            {
-                return goalBox.bounds.center;
-            }
-
-            return goalTrigger.position;
         }
 
         Renderer[] renderers = kaleFallback.GetComponentsInChildren<Renderer>();

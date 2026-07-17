@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -40,6 +41,8 @@ public class CoinDragController : MonoBehaviour
     bool _isAimPullLocked;
     bool _isAimDirectionLocked;
     Vector3 _lockedLaunchDirection;
+    readonly List<Vector3> _slidePath = new(128);
+    bool _recordSlidePath;
 
     public bool IsAiming => _isAiming;
     public bool IsAimPullLocked => _isAimPullLocked;
@@ -47,6 +50,9 @@ public class CoinDragController : MonoBehaviour
         !_isAiming
         && !_rigidbody.isKinematic
         && _rigidbody.linearVelocity.sqrMagnitude > _stopSpeedThreshold * _stopSpeedThreshold;
+
+    /// <summary>Son atışın FixedUpdate path’i — kapı doğrulaması için.</summary>
+    public IReadOnlyList<Vector3> SlidePath => _slidePath;
 
     public float LaunchForceMultiplier => _launchForceMultiplier;
     public float MaxLaunchSpeed => _maxLaunchSpeed;
@@ -128,6 +134,12 @@ public class CoinDragController : MonoBehaviour
 
         LockToTablePlane();
         UpdateVisualSpin();
+
+        // IsSliding'e bağlama: tek frame düşük hız kaydı kesmesin.
+        if (_recordSlidePath)
+        {
+            _slidePath.Add(_rigidbody != null ? _rigidbody.position : transform.position);
+        }
     }
 
     void UpdateVisualSpin()
@@ -637,6 +649,10 @@ public class CoinDragController : MonoBehaviour
             return false;
         }
 
+        _slidePath.Clear();
+        _slidePath.Add(_rigidbody.position);
+        _recordSlidePath = true;
+
         float power01 = Mathf.Clamp01(_rigidbody.linearVelocity.magnitude / _maxLaunchSpeed);
         GameFeedback.EnsureInstance()?.PlayShot(power01);
         return true;
@@ -649,8 +665,28 @@ public class CoinDragController : MonoBehaviour
             return;
         }
 
+        if (_recordSlidePath)
+        {
+            _slidePath.Add(_rigidbody.position);
+            _recordSlidePath = false;
+        }
+
         _rigidbody.linearVelocity = Vector3.zero;
         _rigidbody.angularVelocity = Vector3.zero;
+    }
+
+    public void CopySlidePathTo(List<Vector3> destination)
+    {
+        if (destination == null)
+        {
+            return;
+        }
+
+        destination.Clear();
+        for (int i = 0; i < _slidePath.Count; i++)
+        {
+            destination.Add(_slidePath[i]);
+        }
     }
 
     public void FreezeForGoal()

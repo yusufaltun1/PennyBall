@@ -27,6 +27,7 @@ public static class OpponentBotBrain
         SetupSeparate,
         SetupClearBlocker,
         SetupReposition,
+        SetupEnablePass,
         Fallback
     }
 
@@ -39,6 +40,10 @@ public static class OpponentBotBrain
     const float kMinAdvancePrefer    = 0.06f;
     const float kGoalFinishBonus     = 8f;
     const float kGoalFinishPriority  = 200f;
+    /// <summary>Aynı geçersiz kapı denemesinden sonra alternatif aramaya geç.</summary>
+    const int   kInvalidGateFailEscape = 1;
+    /// <summary>Planlama mesafesini fizikten biraz daha kötümser tut (iyimser yetişme → sonsuz retry).</summary>
+    const float kReachTravelSafety   = 0.88f;
 
     static readonly float[] kGoalBlends       = { 0f, 0.08f, 0.18f, 0.30f, 0.45f };
     static readonly float[] kPullRatios         = { 0.55f, 0.70f, 0.85f, 0.94f, 1.00f };
@@ -57,7 +62,9 @@ public static class OpponentBotBrain
         int                   shotNumber,
         float                 coinBlockRadius,
         out ShotPlan          plan,
-        out bool              pathBlocked)
+        out bool              pathBlocked,
+        CoinIdentity          demoteShooter = null,
+        int                   consecutiveInvalidGateFails = 0)
     {
         plan        = default;
         pathBlocked = false;
@@ -68,6 +75,7 @@ public static class OpponentBotBrain
             goal = new Vector3(1.52f, 0.14f, 2.235f);
         }
 
+        bool skipMandatory = consecutiveInvalidGateFails >= kInvalidGateFailEscape;
         bool ok;
         if (shotNumber == 1)
         {
@@ -83,13 +91,15 @@ public static class OpponentBotBrain
                     coinBlockRadius,
                     difficulty,
                     out plan)
-                || TryBuildDirectGatePassShot(
+                || (!skipMandatory && TryBuildDirectGatePassShot(
                     state,
                     isResolvingMove,
                     goal,
                     gateMargin,
                     difficulty,
-                    out plan)
+                    demoteShooter,
+                    consecutiveInvalidGateFails,
+                    out plan))
                 || ChooseBestStrategicShot(
                     state,
                     isResolvingMove,
@@ -97,8 +107,32 @@ public static class OpponentBotBrain
                     gateMargin,
                     coinBlockRadius,
                     difficulty,
+                    demoteShooter,
+                    consecutiveInvalidGateFails,
                     out plan,
                     out pathBlocked);
+        }
+
+        // Fail sonrası aynı paraya yapışmayı son güvenlik ağıyla kes.
+        if (ok
+            && demoteShooter != null
+            && consecutiveInvalidGateFails >= kInvalidGateFailEscape
+            && plan.Coin == demoteShooter
+            && plan.Kind != ShotKind.GoalFinish)
+        {
+            Debug.Log($"[Bot] FAIL-ESCAPE hard-block | {demoteShooter.name} tekrar seçildi, alternatif aranıyor");
+            ok = ChooseBestStrategicShot(
+                state,
+                isResolvingMove,
+                goal,
+                gateMargin,
+                coinBlockRadius,
+                difficulty,
+                demoteShooter,
+                consecutiveInvalidGateFails,
+                out plan,
+                out pathBlocked,
+                forceExcludeDemoted: true);
         }
 
         if (ok && shotNumber >= 2 && plan.Kind != ShotKind.GoalFinish)
@@ -115,7 +149,8 @@ public static class OpponentBotBrain
     }
 
     /// <summary>
-    /// Kapıdan geçip kaleye ulaşma ihtimali varsa gol atmayı öncelikle.
+    /// Açık koridor (atış–kale arasında engel yok) ve fiziksel olarak yetişilebiliyorsa
+    /// gol atışına kesin öncelik ver.
     /// </summary>
     static bool TryBuildGoalFinishShot(
         TeamRoundState        state,
@@ -129,6 +164,7 @@ public static class OpponentBotBrain
         plan = default;
         Vector3 goalFlat = Flat(goal);
         float goalFocus = difficulty.GoalFocus;
+        float laneRadius = Mathf.Max(coinBlockRadius, 0.10f);
 
         ShotPlan best = default;
         float    bestScore = float.MinValue;
@@ -160,17 +196,26 @@ public static class OpponentBotBrain
             float distGoal = Vector3.Distance(origin, goalFlat);
             float distGate = Vector3.Distance(origin, gateMid);
             float gateWidth = GateWidth(gateA, gateB);
-            float maxTravel = EffectiveTravelDistance(dc.MaxPullDistance);
+            float maxPull = StrengthMaxPull(dc, difficulty);
+            float maxTravel = EffectiveTravelDistance(maxPull);
 
-            if (distGoal > maxTravel - 0.08f || IsPathBlocked(origin, goalFlat, shooter, coinBlockRadius))
+            // Bariz gol: kaleye yetiş + koridor boş.
+            // Kapıyı oluşturan iki takım arkadaşı engel sayılmaz (koridorun kenar direkleri).
+            if (distGoal > maxTravel + 0.05f)
+            {
+                continue;
+            }
+
+            if (!IsClearShotLane(origin, goalFlat, shooter, laneRadius, gateA, gateB))
             {
                 continue;
             }
 
             float shooterRear = ScoreRearShooter(origin, gateMid, goalFlat);
-            float minPull = PullForGatePass(dc, distGate, gateWidth);
-            float goalPull = Mathf.Clamp(PullForDistance(dc, distGoal + 0.22f), minPull, dc.MaxPullDistance);
+            float minGatePull = PullForGatePass(dc, distGate, gateWidth);
+            float goalPull = Mathf.Clamp(PullForDistance(dc, distGoal + 0.28f), dc.MinPullDistance, maxPull);
 
+            // Kaleye hizalı blend'lerden başla; kapı kuralını da sağlayan ilk güçlü adayı al.
             for (int b = kGoalFinishBlends.Length - 1; b >= 0; b--)
             {
                 float blend = kGoalFinishBlends[b];
@@ -178,47 +223,59 @@ public static class OpponentBotBrain
                     ? gateDir
                     : Vector3.Lerp(gateDir, goalDir, blend).normalized;
 
-                for (int p = 0; p < kGoalFinishPulls.Length; p++)
+                // Açık koridorda yan sapma da dene (dar kapı / hafif açı).
+                float[] yaws = blend >= 0.5f ? new[] { 0f, -3f, 3f, -6f, 6f } : new[] { 0f };
+                for (int yi = 0; yi < yaws.Length; yi++)
                 {
-                    float pull = Mathf.Max(minPull, goalPull * kGoalFinishPulls[p]);
-                    pull = Mathf.Clamp(pull, dc.MinPullDistance, dc.MaxPullDistance);
+                    Vector3 aim = (Quaternion.Euler(0f, yaws[yi], 0f) * dir).normalized;
 
-                    float travel = EffectiveTravelDistance(pull);
-                    if (!WillPassGate(origin, dir, travel, gateA, gateB, gateMargin))
+                    for (int p = 0; p < kGoalFinishPulls.Length; p++)
                     {
-                        continue;
+                        float pull = Mathf.Max(
+                            minGatePull,
+                            Mathf.Max(goalPull * kGoalFinishPulls[p], maxPull * 0.94f));
+                        pull = Mathf.Clamp(pull, dc.MinPullDistance, maxPull);
+
+                        float travel = EffectiveTravelDistance(pull);
+                        if (!WillPassGate(origin, aim, travel, gateA, gateB, gateMargin))
+                        {
+                            continue;
+                        }
+
+                        if (!ShotReachesGoal(origin, aim, travel, goalFlat, distGoal))
+                        {
+                            continue;
+                        }
+
+                        float advance = EstimateGoalAdvance(origin, aim, travel, goalFlat);
+                        Vector3 land = origin + aim * travel;
+                        float score = ScoreAdvancePlan(
+                            origin, aim, goalFlat, gateWidth, advance, goalFocus,
+                            ShotKind.GoalFinish, shooterRear, blend);
+                        score += kGoalFinishPriority;
+                        score += Mathf.Max(0f, Vector3.Dot(aim, goalDir)) * 5f;
+                        score += blend * 4f;
+                        score += (advance - distGoal) * 8f;
+                        score += (1f - Mathf.Clamp01(Vector3.Distance(land, goalFlat) / 0.35f)) * 6f;
+
+                        if (score <= bestScore)
+                        {
+                            continue;
+                        }
+
+                        bestScore = score;
+                        found = true;
+                        best = new ShotPlan
+                        {
+                            Coin = shooter,
+                            Direction = aim,
+                            PullDistance = pull,
+                            RespectsRules = true,
+                            Score = score,
+                            Kind = ShotKind.GoalFinish,
+                            GoalAdvanceMeters = advance
+                        };
                     }
-
-                    float advance = EstimateGoalAdvance(origin, dir, travel, goalFlat);
-                    if (advance < distGoal - 0.18f)
-                    {
-                        continue;
-                    }
-
-                    float score = ScoreAdvancePlan(
-                        origin, dir, goalFlat, gateWidth, advance, goalFocus,
-                        ShotKind.GoalFinish, shooterRear, blend);
-                    score += kGoalFinishPriority;
-                    score += Mathf.Max(0f, Vector3.Dot(dir, goalDir)) * 3f;
-                    score += (advance - distGoal) * 6f;
-
-                    if (score <= bestScore)
-                    {
-                        continue;
-                    }
-
-                    bestScore = score;
-                    found = true;
-                    best = new ShotPlan
-                    {
-                        Coin = shooter,
-                        Direction = dir,
-                        PullDistance = pull,
-                        RespectsRules = true,
-                        Score = score,
-                        Kind = ShotKind.GoalFinish,
-                        GoalAdvanceMeters = advance
-                    };
                 }
             }
         }
@@ -234,6 +291,51 @@ public static class OpponentBotBrain
         return true;
     }
 
+    static bool IsClearShotLane(
+        Vector3 origin,
+        Vector3 target,
+        CoinIdentity shooter,
+        float blockRadius,
+        CoinIdentity ignoreGateA = null,
+        CoinIdentity ignoreGateB = null)
+    {
+        return !IsPathBlocked(origin, target, shooter, blockRadius, ignoreGateA, ignoreGateB);
+    }
+
+    static bool ShotReachesGoal(
+        Vector3 origin,
+        Vector3 direction,
+        float travel,
+        Vector3 goalFlat,
+        float distGoal)
+    {
+        Vector3 land = origin + direction.normalized * travel;
+        float landToGoal = Vector3.Distance(land, goalFlat);
+        if (landToGoal <= 0.28f)
+        {
+            return true;
+        }
+
+        float advance = distGoal - landToGoal;
+        if (advance >= distGoal - 0.22f)
+        {
+            return true;
+        }
+
+        // Kaleyi geçip arkaya taşma: origin→goal doğrultusunda goal'ü geçtiyse gol say.
+        Vector3 toGoal = goalFlat - origin;
+        float goalDist = toGoal.magnitude;
+        if (goalDist < 0.001f)
+        {
+            return true;
+        }
+
+        Vector3 goalAxis = toGoal / goalDist;
+        float landProj = Vector3.Dot(land - origin, goalAxis);
+        float lateral = (land - origin - goalAxis * landProj).magnitude;
+        return landProj >= goalDist - 0.12f && lateral <= 0.30f;
+    }
+
     /// <summary>
     /// En arkadaki coin → diğer ikisinin tam ortası, %100 güç. Kolay gate pozisyonları için.
     /// </summary>
@@ -243,6 +345,8 @@ public static class OpponentBotBrain
         Vector3               goal,
         float                 gateMargin,
         OpponentBotDifficulty difficulty,
+        CoinIdentity          demoteShooter,
+        int                   consecutiveInvalidGateFails,
         out ShotPlan          plan)
     {
         plan = default;
@@ -261,7 +365,21 @@ public static class OpponentBotBrain
                 continue;
             }
 
+            // Aynı başarısız atıcıyı tekrar zorunlu kapıya zorlama.
+            if (demoteShooter != null
+                && shooter == demoteShooter
+                && consecutiveInvalidGateFails >= 1)
+            {
+                continue;
+            }
+
             if (!TeamRulesService.TryGetGateCoins(state, shooter, out CoinIdentity gateA, out CoinIdentity gateB))
+            {
+                continue;
+            }
+
+            CoinDragController dc = shooter.DragController;
+            if (dc == null)
             {
                 continue;
             }
@@ -282,14 +400,14 @@ public static class OpponentBotBrain
                 continue;
             }
 
-            float rear = ScoreRearShooter(origin, gateMid, goalFlat);
-            if (rear <= bestRear)
+            // Max güçte bile kapıya ulaşamıyorsa zorunlu aday değil.
+            if (!CanReachGateAtMaxPull(origin, gateA, gateB, dc, gateMargin, difficulty))
             {
                 continue;
             }
 
-            CoinDragController dc = shooter.DragController;
-            if (dc == null)
+            float rear = ScoreRearShooter(origin, gateMid, goalFlat);
+            if (rear <= bestRear)
             {
                 continue;
             }
@@ -312,7 +430,12 @@ public static class OpponentBotBrain
         float maxPull = StrengthMaxPull(shooterDc, difficulty) * difficulty.GatePassPullScale;
         maxPull = ClampStrengthPull(shooterDc, difficulty, maxPull);
         float travel = EffectiveTravelDistance(maxPull);
-        bool plannerGateOk = WillPassGate(shooterOrigin, dir, travel, bestGateA, bestGateB, gateMargin);
+        if (!WillPassGate(shooterOrigin, dir, travel, bestGateA, bestGateB, gateMargin))
+        {
+            Debug.Log($"[Bot] ZORUNLU-KAPI ATLANDI | {bestShooter.name} max güçte kapıya ulaşamaz");
+            return false;
+        }
+
         float advance = EstimateGoalAdvance(shooterOrigin, dir, travel, goalFlat);
 
         plan = new ShotPlan
@@ -327,7 +450,7 @@ public static class OpponentBotBrain
         };
 
         Debug.Log($"[Bot] ZORUNLU-KAPI | {bestShooter.name} → [{bestGateA.name},{bestGateB.name}] | " +
-                  $"pull={maxPull:F3} (max) | gateW={GateWidth(bestGateA, bestGateB):F2} | planOK={plannerGateOk}");
+                  $"pull={maxPull:F3} (max) | gateW={GateWidth(bestGateA, bestGateB):F2} | planOK=True");
         return true;
     }
 
@@ -349,7 +472,12 @@ public static class OpponentBotBrain
         float gateDot = Vector3.Dot(plan.Direction, gateDir);
         CoinDragController dc = plan.Coin.DragController;
 
-        if (plan.Kind == ShotKind.MandatoryGatePass || gateDot > 0.80f)
+        if (plan.Kind == ShotKind.MandatoryGatePass
+            || (plan.Kind != ShotKind.SetupEnablePass
+                && plan.Kind != ShotKind.SetupSeparate
+                && plan.Kind != ShotKind.SetupClearBlocker
+                && plan.Kind != ShotKind.SetupReposition
+                && gateDot > 0.80f))
         {
             plan.Direction = gateDir;
             plan.PullDistance = ClampStrengthPull(
@@ -429,13 +557,18 @@ public static class OpponentBotBrain
         float                 gateMargin,
         float                 coinBlockRadius,
         OpponentBotDifficulty difficulty,
+        CoinIdentity          demoteShooter,
+        int                   consecutiveInvalidGateFails,
         out ShotPlan          plan,
-        out bool              pathBlocked)
+        out bool              pathBlocked,
+        bool                  forceExcludeDemoted = false)
     {
         plan        = default;
         pathBlocked = false;
 
         Vector3 goalFlat = Flat(goal);
+        bool excludeDemoted = forceExcludeDemoted
+                              || (demoteShooter != null && consecutiveInvalidGateFails >= kInvalidGateFailEscape);
 
         ShotPlan bestAdvance = default;
         float    bestAdvanceScore = float.MinValue;
@@ -453,6 +586,12 @@ public static class OpponentBotBrain
                 continue;
             }
 
+            // Fail streak: başarısız parayı tamamen bırak, başka coin dene.
+            if (excludeDemoted && demoteShooter != null && shooter == demoteShooter)
+            {
+                continue;
+            }
+
             if (!TeamRulesService.TryGetGateCoins(state, shooter, out CoinIdentity gateA, out CoinIdentity gateB))
             {
                 continue;
@@ -466,6 +605,9 @@ public static class OpponentBotBrain
                 gateMargin,
                 coinBlockRadius,
                 difficulty,
+                demoteShooter,
+                consecutiveInvalidGateFails,
+                excludeDemoted,
                 ref bestAdvance,
                 ref bestAdvanceScore,
                 ref hasAdvance,
@@ -474,23 +616,76 @@ public static class OpponentBotBrain
                 ref hasSetup);
         }
 
+        AddEnablePassSetupCandidates(
+            state,
+            isResolvingMove,
+            goalFlat,
+            gateMargin,
+            difficulty,
+            demoteShooter,
+            consecutiveInvalidGateFails,
+            excludeDemoted,
+            ref bestSetup,
+            ref bestSetupScore,
+            ref hasSetup);
+
+        // Fail sonrası: başka coin ile basit kapı geçişi yoksa zorla üret.
+        if (excludeDemoted && demoteShooter != null && !hasAdvance && !hasSetup)
+        {
+            TryBuildForcedAlternateShot(
+                state,
+                isResolvingMove,
+                goalFlat,
+                gateMargin,
+                difficulty,
+                demoteShooter,
+                ref bestAdvance,
+                ref bestAdvanceScore,
+                ref hasAdvance,
+                ref bestSetup,
+                ref bestSetupScore,
+                ref hasSetup);
+        }
+
+        // Stratejik yoldan da çıksa bariz gol bitirici setup/escape'i ezer.
+        if (hasAdvance && bestAdvance.Kind == ShotKind.GoalFinish)
+        {
+            plan = bestAdvance;
+            Debug.Log($"[Bot] GOL-FIRSATI (stratejik) | {plan.Coin.name} | pull={plan.PullDistance:F3} | skor={plan.Score:F1}");
+            return true;
+        }
+
+        // Fail streak'te demote zaten hariç; başka coin advance varsa onu al.
+        // Setup yalnızca advance yoksa veya demote hâlâ sızdıysa.
+        bool demotedStillSelected = hasAdvance
+                                    && demoteShooter != null
+                                    && bestAdvance.Coin == demoteShooter
+                                    && bestAdvance.Kind != ShotKind.GoalFinish;
+        if (hasSetup && (demotedStillSelected || (excludeDemoted && !hasAdvance)))
+        {
+            plan = bestSetup;
+            Debug.Log($"[Bot] SETUP-ESCAPE | {plan.Coin.name} | {plan.Kind} | skor={plan.Score:F2} | " +
+                      $"fails={consecutiveInvalidGateFails}");
+            return true;
+        }
+
         if (hasAdvance && bestAdvanceScore >= kMinAdvancePrefer)
         {
             plan = bestAdvance;
-        if (TeamRulesService.TryGetGateCoins(state, plan.Coin, out CoinIdentity logGA, out CoinIdentity logGB))
-        {
-            Vector3 o = Flat(plan.Coin.transform.position);
-            Vector3 gMid = GateMidpoint(logGA, logGB);
-            float gateDot = Vector3.Dot(plan.Direction, SafeDir(gMid - o));
-            Debug.Log($"[Bot] İLERLEME | {plan.Coin.name} | {plan.Kind} | +{plan.GoalAdvanceMeters:F2}m kaleye | " +
-                      $"skor={plan.Score:F2} | gateHizası={gateDot:F2} | pull={plan.PullDistance:F3} | gate=[{logGA.name},{logGB.name}]");
-        }
-        else
-        {
-            Debug.Log($"[Bot] İLERLEME | {plan.Coin.name} | {plan.Kind} | +{plan.GoalAdvanceMeters:F2}m kaleye | skor={plan.Score:F2}");
-        }
+            if (TeamRulesService.TryGetGateCoins(state, plan.Coin, out CoinIdentity logGA, out CoinIdentity logGB))
+            {
+                Vector3 o = Flat(plan.Coin.transform.position);
+                Vector3 gMid = GateMidpoint(logGA, logGB);
+                float gateDot = Vector3.Dot(plan.Direction, SafeDir(gMid - o));
+                Debug.Log($"[Bot] İLERLEME | {plan.Coin.name} | {plan.Kind} | +{plan.GoalAdvanceMeters:F2}m kaleye | " +
+                          $"skor={plan.Score:F2} | gateHizası={gateDot:F2} | pull={plan.PullDistance:F3} | gate=[{logGA.name},{logGB.name}]");
+            }
+            else
+            {
+                Debug.Log($"[Bot] İLERLEME | {plan.Coin.name} | {plan.Kind} | +{plan.GoalAdvanceMeters:F2}m kaleye | skor={plan.Score:F2}");
+            }
 
-        return true;
+            return true;
         }
 
         if (hasSetup)
@@ -508,7 +703,96 @@ public static class OpponentBotBrain
         }
 
         pathBlocked = true;
-            return false;
+        return false;
+    }
+
+    /// <summary>
+    /// Fail streak sonrası demote edilen para hariç, kapıya yetişebilen herhangi bir başka para ile atış zorla.
+    /// </summary>
+    static void TryBuildForcedAlternateShot(
+        TeamRoundState        state,
+        bool                  isResolvingMove,
+        Vector3               goalFlat,
+        float                 gateMargin,
+        OpponentBotDifficulty difficulty,
+        CoinIdentity          demoteShooter,
+        ref ShotPlan          bestAdvance,
+        ref float             bestAdvanceScore,
+        ref bool              hasAdvance,
+        ref ShotPlan          bestSetup,
+        ref float             bestSetupScore,
+        ref bool              hasSetup)
+    {
+        ShotPlan best = default;
+        float bestScore = float.MinValue;
+        bool found = false;
+
+        for (int i = 0; i < state.Coins.Count; i++)
+        {
+            CoinIdentity shooter = state.Coins[i];
+            if (shooter == null || shooter == demoteShooter)
+            {
+                continue;
+            }
+
+            if (!TeamRulesService.CanSelectCoin(state, shooter, isResolvingMove, shooter.IsPassive))
+            {
+                continue;
+            }
+
+            if (!TeamRulesService.TryGetGateCoins(state, shooter, out CoinIdentity gateA, out CoinIdentity gateB))
+            {
+                continue;
+            }
+
+            CoinDragController dc = shooter.DragController;
+            if (dc == null)
+            {
+                continue;
+            }
+
+            Vector3 origin = Flat(shooter.transform.position);
+            if (!CanReachGateAtMaxPull(origin, gateA, gateB, dc, gateMargin, difficulty))
+            {
+                continue;
+            }
+
+            Vector3 gateMid = GateMidpoint(gateA, gateB);
+            Vector3 dir = SafeDir(gateMid - origin);
+            float pull = ClampStrengthPull(dc, difficulty, StrengthMaxPull(dc, difficulty));
+            float travel = EffectiveTravelDistance(pull);
+            if (!WillPassGate(origin, dir, travel, gateA, gateB, gateMargin))
+            {
+                continue;
+            }
+
+            float advance = EstimateGoalAdvance(origin, dir, travel, goalFlat);
+            float score = 40f + advance * 3f + ScoreRearShooter(origin, gateMid, goalFlat) * 0.25f;
+            if (score <= bestScore)
+            {
+                continue;
+            }
+
+            bestScore = score;
+            found = true;
+            best = BuildPlan(shooter, dir, pull, ShotKind.Advance, score, advance);
+        }
+
+        if (!found)
+        {
+            Debug.Log("[Bot] FAIL-ESCAPE | alternatif coin bulunamadı");
+            return;
+        }
+
+        Debug.Log($"[Bot] FAIL-ESCAPE | zorunlu alternatif → {best.Coin.name} | skor={best.Score:F1}");
+        TryAdoptAdvance(
+            best.Coin, best.Direction, best.PullDistance, best.Kind, best.Score, best.GoalAdvanceMeters,
+            ref bestAdvance, ref bestAdvanceScore, ref hasAdvance);
+
+        // Setup listesine de koy ki escape yolu boş kalmasın.
+        TryAdoptSetup(
+            best.Coin, best.Direction, best.PullDistance, ShotKind.SetupEnablePass, best.Score + 5f, best.GoalAdvanceMeters,
+            ref bestSetup, ref bestSetupScore, ref hasSetup);
     }
 
     static void EvaluateShooterCandidates(
@@ -519,6 +803,9 @@ public static class OpponentBotBrain
         float                 gateMargin,
         float                 coinBlockRadius,
         OpponentBotDifficulty difficulty,
+        CoinIdentity          demoteShooter,
+        int                   consecutiveInvalidGateFails,
+        bool                  excludeDemoted,
         ref ShotPlan          bestAdvance,
         ref float             bestAdvanceScore,
         ref bool              hasAdvance,
@@ -526,6 +813,11 @@ public static class OpponentBotBrain
         ref float             bestSetupScore,
         ref bool              hasSetup)
     {
+        if (excludeDemoted && demoteShooter != null && shooter == demoteShooter)
+        {
+            return;
+        }
+
         CoinDragController dc = shooter.DragController;
         if (dc == null)
         {
@@ -538,11 +830,23 @@ public static class OpponentBotBrain
         float distGoal = Vector3.Distance(origin, goalFlat);
         float goalFocus = difficulty.GoalFocus;
         float maxTravel = dc.MaxPullDistance * kEffectiveStopPerPull;
+        // Soft demote artık yedek: hard exclude asıl koruma.
+        bool demoteThisShooter = !excludeDemoted
+                                 && demoteShooter != null
+                                 && shooter == demoteShooter
+                                 && consecutiveInvalidGateFails >= 1;
+        float demotePenalty = demoteThisShooter ? 25f : 0f;
 
         Vector3 gateDir = SafeDir(gateMid - origin);
         Vector3 goalDir = SafeDir(goalFlat - origin);
         float shooterRearScore = ScoreRearShooter(origin, gateMid, goalFlat);
         float distGate = Vector3.Distance(origin, gateMid);
+
+        // Ulaşılamayan kapı adaylarını üretme — boşuna fail streak şişmesin.
+        if (!CanReachGateAtMaxPull(origin, gateA, gateB, dc, gateMargin, difficulty))
+        {
+            return;
+        }
 
         // ── Aday 0: ZORUNLU — tam kapı ortasından geçiş (PennyBall3d AIController) ──
         AddGatePassCandidates(
@@ -562,6 +866,7 @@ public static class OpponentBotBrain
             dc,
             goalFocus,
             shooterRearScore,
+            demotePenalty,
             ref bestAdvance,
             ref bestAdvanceScore,
             ref hasAdvance);
@@ -584,19 +889,21 @@ public static class OpponentBotBrain
 
                 float advance = EstimateGoalAdvance(origin, dir, travel, goalFlat);
                 bool canFinish = distGoal <= maxTravel - 0.1f
-                                 && advance >= distGoal - 0.15f
-                                 && !IsPathBlocked(origin, goalFlat, shooter, coinBlockRadius);
+                                 && ShotReachesGoal(origin, dir, travel, goalFlat, distGoal)
+                                 && IsClearShotLane(origin, goalFlat, shooter, Mathf.Max(coinBlockRadius, 0.10f), gateA, gateB);
 
                 ShotKind kind = canFinish ? ShotKind.GoalFinish : ShotKind.Advance;
                 float score = ScoreAdvancePlan(
                     origin, dir, goalFlat, gateWidth, advance, goalFocus, kind, shooterRearScore, blend);
+                score -= demotePenalty;
 
                 TryAdoptAdvance(shooter, dir, pull, kind, score, advance, ref bestAdvance, ref bestAdvanceScore, ref hasAdvance);
             }
         }
 
         // ── Aday 2: kale bitirici (yakın mesafe) ──
-        if (distGoal <= maxTravel - 0.08f && !IsPathBlocked(origin, goalFlat, shooter, coinBlockRadius))
+        if (distGoal <= maxTravel - 0.08f
+            && IsClearShotLane(origin, goalFlat, shooter, Mathf.Max(coinBlockRadius, 0.10f), gateA, gateB))
         {
             for (int b = 0; b < 3; b++)
             {
@@ -609,10 +916,16 @@ public static class OpponentBotBrain
                     continue;
                 }
 
+                if (!ShotReachesGoal(origin, dir, travel, goalFlat, distGoal))
+                {
+                    continue;
+                }
+
                 float advance = EstimateGoalAdvance(origin, dir, travel, goalFlat);
                 float score = ScoreAdvancePlan(
                     origin, dir, goalFlat, gateWidth, advance, goalFocus, ShotKind.GoalFinish, shooterRearScore, blend)
-                              + kGoalFinishBonus * goalFocus;
+                              + kGoalFinishBonus * goalFocus
+                              - demotePenalty;
                 TryAdoptAdvance(shooter, dir, pull, ShotKind.GoalFinish, score, advance, ref bestAdvance, ref bestAdvanceScore, ref hasAdvance);
             }
         }
@@ -680,7 +993,204 @@ public static class OpponentBotBrain
         }
     }
 
-    enum SetupReason { NarrowGate, Blocker, PoorAngle, Fallback }
+    enum SetupReason { NarrowGate, Blocker, PoorAngle, Fallback, EnablePass }
+
+    /// <summary>
+    /// Ulaşılabilir bir parayı fırlatıp, şu an kapıya yetişemeyen takım arkadaşının
+    /// sonraki hamlede geçerli atış yapabileceği bir kapı/mesafe kurar.
+    /// </summary>
+    static void AddEnablePassSetupCandidates(
+        TeamRoundState        state,
+        bool                  isResolvingMove,
+        Vector3               goalFlat,
+        float                 gateMargin,
+        OpponentBotDifficulty difficulty,
+        CoinIdentity          demoteShooter,
+        int                   consecutiveInvalidGateFails,
+        bool                  excludeDemoted,
+        ref ShotPlan          bestSetup,
+        ref float             bestSetupScore,
+        ref bool              hasSetup)
+    {
+        for (int m = 0; m < state.Coins.Count; m++)
+        {
+            CoinIdentity mover = state.Coins[m];
+            if (!TeamRulesService.CanSelectCoin(state, mover, isResolvingMove, mover.IsPassive))
+            {
+                continue;
+            }
+
+            if (excludeDemoted && demoteShooter != null && mover == demoteShooter)
+            {
+                continue;
+            }
+
+            if (!TeamRulesService.TryGetGateCoins(state, mover, out CoinIdentity moverGateA, out CoinIdentity moverGateB))
+            {
+                continue;
+            }
+
+            CoinDragController moverDc = mover.DragController;
+            if (moverDc == null)
+            {
+                continue;
+            }
+
+            Vector3 moverOrigin = Flat(mover.transform.position);
+            if (!CanReachGateAtMaxPull(moverOrigin, moverGateA, moverGateB, moverDc, gateMargin, difficulty))
+            {
+                continue;
+            }
+
+            Vector3 moverGateMid = GateMidpoint(moverGateA, moverGateB);
+            Vector3 moverGateDir = SafeDir(moverGateMid - moverOrigin);
+            float moverGateWidth = GateWidth(moverGateA, moverGateB);
+            float distGate = Vector3.Distance(moverOrigin, moverGateMid);
+            float gatePassPull = PullForGatePass(moverDc, distGate, moverGateWidth);
+            float maxPull = moverDc.MaxPullDistance;
+
+            float[] pulls = { maxPull, gatePassPull };
+            float[] yaws = { 0f, -4f, 4f, -8f, 8f };
+
+            for (int yi = 0; yi < yaws.Length; yi++)
+            {
+                Vector3 dir = (Quaternion.Euler(0f, yaws[yi], 0f) * moverGateDir).normalized;
+                for (int pi = 0; pi < pulls.Length; pi++)
+                {
+                    float pull = Mathf.Clamp(pulls[pi], moverDc.MinPullDistance, moverDc.MaxPullDistance);
+                    float travel = EffectiveTravelDistance(pull);
+                    float required = ComputeGatePassTravelTarget(distGate, moverGateWidth);
+                    if (travel < required * 0.92f)
+                    {
+                        continue;
+                    }
+
+                    if (!WillPassGate(moverOrigin, dir, travel, moverGateA, moverGateB, gateMargin))
+                    {
+                        continue;
+                    }
+
+                    Vector3 land = moverOrigin + dir * travel;
+                    float advance = EstimateGoalAdvance(moverOrigin, dir, travel, goalFlat);
+
+                    for (int t = 0; t < state.Coins.Count; t++)
+                    {
+                        CoinIdentity future = state.Coins[t];
+                        if (future == null || future == mover)
+                        {
+                            continue;
+                        }
+
+                        CoinDragController futureDc = future.DragController;
+                        if (futureDc == null)
+                        {
+                            continue;
+                        }
+
+                        if (!TryGetTeammateGatePositions(
+                                state, future, mover, land, out Vector3 virtualA, out Vector3 virtualB))
+                        {
+                            continue;
+                        }
+
+                        Vector3 futureOrigin = Flat(future.transform.position);
+                        if (!TryGetTeammateGatePositions(
+                                state, future, null, default, out Vector3 curA, out Vector3 curB))
+                        {
+                            continue;
+                        }
+
+                        bool canReachNow = CanReachGateAtPull(
+                            futureOrigin, curA, curB, futureDc.MaxPullDistance, gateMargin);
+                        bool canReachAfter = CanReachGateAtPull(
+                            futureOrigin, virtualA, virtualB, futureDc.MaxPullDistance, gateMargin);
+
+                        if (!canReachAfter)
+                        {
+                            continue;
+                        }
+
+                        // Sadece şu an yetişemeyen (veya demote edilen) para için setup değerli.
+                        bool helpsStuck = !canReachNow || future == demoteShooter;
+                        if (!helpsStuck)
+                        {
+                            continue;
+                        }
+
+                        float curDist = Vector3.Distance(futureOrigin, (curA + curB) * 0.5f);
+                        float newDist = Vector3.Distance(futureOrigin, (virtualA + virtualB) * 0.5f);
+                        float distImprove = curDist - newDist;
+                        float widthImprove = Vector3.Distance(virtualA, virtualB) - Vector3.Distance(curA, curB);
+
+                        float score = ScoreSetupPlan(
+                            moverOrigin, dir, travel, moverGateMid, goalFlat, moverGateWidth, advance, SetupReason.EnablePass);
+                        score += 6.5f;
+                        if (!canReachNow && canReachAfter)
+                        {
+                            score += 8f;
+                        }
+
+                        score += Mathf.Max(0f, distImprove) * 3.5f;
+                        score += Mathf.Max(0f, widthImprove) * 2f;
+                        score += FutureAttackAlignment(futureOrigin, (virtualA + virtualB) * 0.5f, goalFlat) * 2f;
+
+                        if (future == demoteShooter)
+                        {
+                            score += 4f + consecutiveInvalidGateFails * 2f;
+                        }
+
+                        if (consecutiveInvalidGateFails >= kInvalidGateFailEscape)
+                        {
+                            score += 5f;
+                        }
+
+                        TryAdoptSetup(
+                            mover, dir, pull, ShotKind.SetupEnablePass, score, advance,
+                            ref bestSetup, ref bestSetupScore, ref hasSetup);
+                    }
+                }
+            }
+        }
+    }
+
+    static bool TryGetTeammateGatePositions(
+        TeamRoundState state,
+        CoinIdentity   shooter,
+        CoinIdentity   movedCoin,
+        Vector3        movedLand,
+        out Vector3    gateAPos,
+        out Vector3    gateBPos)
+    {
+        gateAPos = default;
+        gateBPos = default;
+        int found = 0;
+
+        for (int i = 0; i < state.Coins.Count; i++)
+        {
+            CoinIdentity coin = state.Coins[i];
+            if (coin == null || coin == shooter)
+            {
+                continue;
+            }
+
+            Vector3 pos = (movedCoin != null && coin == movedCoin)
+                ? movedLand
+                : Flat(coin.transform.position);
+
+            if (found == 0)
+            {
+                gateAPos = pos;
+                found = 1;
+            }
+            else
+            {
+                gateBPos = pos;
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     static void AddGatePassCandidates(
         CoinIdentity shooter,
@@ -699,6 +1209,7 @@ public static class OpponentBotBrain
         CoinDragController dc,
         float        goalFocus,
         float        shooterRearScore,
+        float        demotePenalty,
         ref ShotPlan bestAdvance,
         ref float    bestAdvanceScore,
         ref bool     hasAdvance)
@@ -709,14 +1220,14 @@ public static class OpponentBotBrain
         // Kapı geçişi: önce tam güç, sonra hesaplanan minimum
         TryGatePassDirection(
             shooter, gateA, gateB, origin, gateMid, gateDir, goalFlat, gateWidth, distGoal,
-            gateMargin, coinBlockRadius, dc, goalFocus, shooterRearScore, maxPull, gateDir,
+            gateMargin, coinBlockRadius, dc, goalFocus, shooterRearScore, maxPull, gateDir, demotePenalty,
             ref bestAdvance, ref bestAdvanceScore, ref hasAdvance);
 
         if (gatePassPull < maxPull - 0.008f)
         {
             TryGatePassDirection(
                 shooter, gateA, gateB, origin, gateMid, gateDir, goalFlat, gateWidth, distGoal,
-                gateMargin, coinBlockRadius, dc, goalFocus, shooterRearScore, gatePassPull, gateDir,
+                gateMargin, coinBlockRadius, dc, goalFocus, shooterRearScore, gatePassPull, gateDir, demotePenalty,
                 ref bestAdvance, ref bestAdvanceScore, ref hasAdvance);
         }
 
@@ -730,7 +1241,7 @@ public static class OpponentBotBrain
             Vector3 dir = (Quaternion.Euler(0f, yaw, 0f) * gateDir).normalized;
             TryGatePassDirection(
                 shooter, gateA, gateB, origin, gateMid, dir, goalFlat, gateWidth, distGoal,
-                gateMargin, coinBlockRadius, dc, goalFocus, shooterRearScore, maxPull, dir,
+                gateMargin, coinBlockRadius, dc, goalFocus, shooterRearScore, maxPull, dir, demotePenalty,
                 ref bestAdvance, ref bestAdvanceScore, ref hasAdvance);
         }
     }
@@ -752,6 +1263,7 @@ public static class OpponentBotBrain
         float        shooterRearScore,
         float        pull,
         Vector3      gateDirForScore,
+        float        demotePenalty,
         ref ShotPlan bestAdvance,
         ref float    bestAdvanceScore,
         ref bool     hasAdvance)
@@ -759,8 +1271,8 @@ public static class OpponentBotBrain
         float travel = EffectiveTravelDistance(pull);
         float distGate = Vector3.Distance(origin, gateMid);
         float requiredTravel = ComputeGatePassTravelTarget(distGate, gateWidth);
-        bool isMaxPull = pull >= dc.MaxPullDistance - 0.008f;
-        if (!isMaxPull && travel < requiredTravel * 0.92f)
+        // Max güç dahil: güvenli travel ile yetişmiyorsa aday değil.
+        if (travel * kReachTravelSafety < requiredTravel)
         {
             return;
         }
@@ -773,8 +1285,8 @@ public static class OpponentBotBrain
         float advance = EstimateGoalAdvance(origin, dir, travel, goalFlat);
         float maxTravel = EffectiveTravelDistance(dc.MaxPullDistance);
         bool canFinish = distGoal <= maxTravel - 0.1f
-                         && advance >= distGoal - 0.15f
-                         && !IsPathBlocked(origin, goalFlat, shooter, coinBlockRadius);
+                         && ShotReachesGoal(origin, dir, travel, goalFlat, distGoal)
+                         && IsClearShotLane(origin, goalFlat, shooter, Mathf.Max(coinBlockRadius, 0.10f), gateA, gateB);
 
         ShotKind kind = canFinish ? ShotKind.GoalFinish : ShotKind.Advance;
         float gateAlign = Vector3.Dot(dir, gateDirForScore);
@@ -784,6 +1296,7 @@ public static class OpponentBotBrain
         score += Mathf.Max(0f, gateAlign) * 1.5f;
         score += shooterRearScore;
         score += (pull / dc.MaxPullDistance) * 2f;
+        score -= demotePenalty;
 
         TryAdoptAdvance(shooter, dir, pull, kind, score, advance, ref bestAdvance, ref bestAdvanceScore, ref hasAdvance);
     }
@@ -870,6 +1383,9 @@ public static class OpponentBotBrain
                 break;
             case SetupReason.Fallback:
                 score += 0.2f;
+                break;
+            case SetupReason.EnablePass:
+                score += 3.5f;
                 break;
         }
 
@@ -961,6 +1477,28 @@ public static class OpponentBotBrain
         CoinIdentity gateB,
         float        gateMargin)
     {
+        if (gateA == null || gateB == null)
+        {
+            return false;
+        }
+
+        return WillPassGatePositions(
+            origin,
+            direction,
+            travelDistance,
+            Flat(gateA.transform.position),
+            Flat(gateB.transform.position),
+            gateMargin);
+    }
+
+    static bool WillPassGatePositions(
+        Vector3 origin,
+        Vector3 direction,
+        float   travelDistance,
+        Vector3 gateAPos,
+        Vector3 gateBPos,
+        float   gateMargin)
+    {
         if (direction.sqrMagnitude < 0.0001f || travelDistance <= 0.01f)
         {
             return false;
@@ -970,9 +1508,78 @@ public static class OpponentBotBrain
         return PassBetweenValidator.DidPassBetween(
             origin,
             end,
-            gateA.transform.position,
-            gateB.transform.position,
+            gateAPos,
+            gateBPos,
             gateMargin);
+    }
+
+    static bool CanReachGateAtMaxPull(
+        Vector3               origin,
+        CoinIdentity          gateA,
+        CoinIdentity          gateB,
+        CoinDragController    dc,
+        float                 gateMargin,
+        OpponentBotDifficulty difficulty)
+    {
+        if (dc == null || gateA == null || gateB == null)
+        {
+            return false;
+        }
+
+        float maxPull = ClampStrengthPull(dc, difficulty, StrengthMaxPull(dc, difficulty));
+        Vector3 gateAPos = Flat(gateA.transform.position);
+        Vector3 gateBPos = Flat(gateB.transform.position);
+        float travel = EffectiveTravelDistance(maxPull) * kReachTravelSafety;
+        Vector3 gateMid = (gateAPos + gateBPos) * 0.5f;
+        float gateWidth = Vector3.Distance(gateAPos, gateBPos);
+        float required = ComputeGatePassTravelTarget(Vector3.Distance(origin, gateMid), gateWidth);
+        if (travel < required)
+        {
+            return false;
+        }
+
+        Vector3 baseDir = SafeDir(gateMid - origin);
+        float[] yaws = { 0f, -4f, 4f, -8f, 8f };
+        for (int i = 0; i < yaws.Length; i++)
+        {
+            Vector3 dir = (Quaternion.Euler(0f, yaws[i], 0f) * baseDir).normalized;
+            if (WillPassGatePositions(origin, dir, travel, gateAPos, gateBPos, gateMargin))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static bool CanReachGateAtPull(
+        Vector3 origin,
+        Vector3 gateAPos,
+        Vector3 gateBPos,
+        float   pull,
+        float   gateMargin)
+    {
+        float travel = EffectiveTravelDistance(pull) * kReachTravelSafety;
+        Vector3 gateMid = (gateAPos + gateBPos) * 0.5f;
+        float gateWidth = Vector3.Distance(gateAPos, gateBPos);
+        float required = ComputeGatePassTravelTarget(Vector3.Distance(origin, gateMid), gateWidth);
+        if (travel < required)
+        {
+            return false;
+        }
+
+        Vector3 baseDir = SafeDir(gateMid - origin);
+        float[] yaws = { 0f, -4f, 4f, -8f, 8f };
+        for (int i = 0; i < yaws.Length; i++)
+        {
+            Vector3 dir = (Quaternion.Euler(0f, yaws[i], 0f) * baseDir).normalized;
+            if (WillPassGatePositions(origin, dir, travel, gateAPos, gateBPos, gateMargin))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     static bool IsPoorGateAngle(Vector3 shooterPos, CoinIdentity gateA, CoinIdentity gateB, Vector3 shotDir)
@@ -1002,7 +1609,9 @@ public static class OpponentBotBrain
         Vector3 origin,
         Vector3 goalPos,
         CoinIdentity shooter,
-        float blockRadius)
+        float blockRadius,
+        CoinIdentity ignoreA = null,
+        CoinIdentity ignoreB = null)
     {
         CoinIdentity[] all = Object.FindObjectsByType<CoinIdentity>(FindObjectsSortMode.None);
         Vector3 toGoal = goalPos - origin;
@@ -1016,12 +1625,13 @@ public static class OpponentBotBrain
 
         for (int i = 0; i < all.Length; i++)
         {
-            if (all[i] == shooter)
+            CoinIdentity other = all[i];
+            if (other == null || other == shooter || other == ignoreA || other == ignoreB)
             {
                 continue;
             }
 
-            Vector3 toBlocker = Flat(all[i].transform.position) - origin;
+            Vector3 toBlocker = Flat(other.transform.position) - origin;
             float fwd = Vector3.Dot(toBlocker, dir);
             if (fwd < 0.05f || fwd > totalD)
             {
@@ -1203,16 +1813,7 @@ public static class OpponentBotBrain
 
     static Vector3 ResolvePlayerGoalCenter()
     {
-        GoalZone[] zones = Object.FindObjectsByType<GoalZone>(FindObjectsSortMode.None);
-        for (int i = 0; i < zones.Length; i++)
-        {
-            GoalZone z = zones[i];
-            if (z.transform.parent != null && z.transform.parent.name.Contains("_P"))
-            {
-                return z.transform.position;
-            }
-        }
-
-        return Vector3.zero;
+        GoalZone zone = GoalZone.FindPlayerGoalArea();
+        return zone != null ? zone.transform.position : Vector3.zero;
     }
 }

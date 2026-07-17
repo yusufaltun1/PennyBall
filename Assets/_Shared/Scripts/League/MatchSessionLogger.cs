@@ -6,12 +6,12 @@ public static class MatchSessionLogger
     {
         if (opponent == null)
         {
-            Debug.LogWarning("[Match] Eşleşme loglanamadı: rakip yok.");
+            // Debug.LogWarning("[Match] Eşleşme loglanamadı: rakip yok.");
             return;
         }
 
-        Debug.Log(
-            $"[Match] Eşleşme bulundu | Lig={playerLeague} | Rakip={opponent.displayName} | " +
-            $"BotId={opponent.id} | Ülke={opponent.countryCode} | Zorluk={opponent.difficultyLevel} | Avatar={opponent.avatarIndex}");
+        // Debug.Log(
+            // $"[Match] Eşleşme bulundu | Lig={playerLeague} | Rakip={opponent.displayName} | " +
+            // $"BotId={opponent.id} | Ülke={opponent.countryCode} | Zorluk={opponent.difficultyLevel} | Avatar={opponent.avatarIndex}");
     }
 }

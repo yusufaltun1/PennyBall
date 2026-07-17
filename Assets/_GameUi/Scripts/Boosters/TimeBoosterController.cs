@@ -1,4 +1,5 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -16,8 +17,6 @@ public class TimeBoosterController : MonoBehaviour
     [SerializeField] Sprite _usedIconSprite;
     [SerializeField] Sprite _lockedIconSprite;
 
-    bool _hasCoins = true;
-
     [Header("Booster")]
     [SerializeField] float _bonusSeconds = 15f;
 
@@ -27,6 +26,7 @@ public class TimeBoosterController : MonoBehaviour
     [Header("Used Feedback")]
     [SerializeField] IceUsedBoosterFeedback _timeUsedFeedback;
 
+    bool _hasCoins = true;
     bool _usedThisMatch;
     bool _subscribedToMatchEvents;
     Coroutine _subscribeRoutine;
@@ -74,8 +74,10 @@ public class TimeBoosterController : MonoBehaviour
     {
         _hasCoins = WalletService.HasEnoughCoins(BoosterConfig.UseCostCoins);
 
+        // Maçta 1 kez kullanıldıysa coin yeterli olsa bile tekrar açılmaz.
         if (_usedThisMatch)
         {
+            SetUsedVisuals();
             return;
         }
 
@@ -85,17 +87,9 @@ public class TimeBoosterController : MonoBehaviour
             return;
         }
 
-        if (_costText != null)
-        {
-            _costText.SetActive(true);
-        }
-
+        ShowCostLabel();
         ApplyActiveVisuals();
-
-        if (_timeButton != null)
-        {
-            _timeButton.interactable = true;
-        }
+        SetButtonInteractable(true);
     }
 
     IEnumerator SubscribeWhenReady()
@@ -138,10 +132,15 @@ public class TimeBoosterController : MonoBehaviour
 
     void OnTimeButtonClicked()
     {
-        RefreshWalletState();
-
-        if (!_hasCoins || _usedThisMatch)
+        if (_usedThisMatch)
         {
+            return;
+        }
+
+        _hasCoins = WalletService.HasEnoughCoins(BoosterConfig.UseCostCoins);
+        if (!_hasCoins)
+        {
+            ApplyLockedVisuals();
             return;
         }
 
@@ -150,20 +149,24 @@ public class TimeBoosterController : MonoBehaviour
             return;
         }
 
+        // Coin harcaması Changed tetikler; used flag önce set edilmeli ki NoCoins ezmesin.
+        _usedThisMatch = true;
+
         if (!WalletService.TrySpendCoins(BoosterConfig.UseCostCoins))
         {
+            _usedThisMatch = false;
             RefreshWalletState();
             return;
         }
 
         if (!LeagueMatchController.Instance.AddMatchTime(_bonusSeconds))
         {
+            _usedThisMatch = false;
             WalletService.AddReward(BoosterConfig.UseCostCoins, 0);
             RefreshWalletState();
             return;
         }
 
-        _usedThisMatch = true;
         _timeUsedFeedback?.PlayTime(_usedFeedbackTiming);
         SetUsedVisuals();
     }
@@ -176,13 +179,16 @@ public class TimeBoosterController : MonoBehaviour
 
     void SetUsedVisuals()
     {
+        // Kullanıldı: Disabled Sprite (Booster_InUse) + Time_BW, Cost gizli.
         if (_timeButton != null)
         {
+            _timeButton.transition = _defaultButtonTransition;
             _timeButton.interactable = false;
         }
 
         if (_iconImage != null && _usedIconSprite != null)
         {
+            _iconImage.overrideSprite = null;
             _iconImage.sprite = _usedIconSprite;
         }
 
@@ -194,38 +200,71 @@ public class TimeBoosterController : MonoBehaviour
 
     void ApplyLockedVisuals()
     {
-        if (_backgroundImage != null && _lockedBackgroundSprite != null)
-        {
-            _backgroundImage.sprite = _lockedBackgroundSprite;
-        }
-
-        if (_iconImage != null && _lockedIconSprite != null)
-        {
-            _iconImage.sprite = _lockedIconSprite;
-        }
+        ShowCostLabel();
 
         if (_timeButton != null)
         {
             _timeButton.transition = Selectable.Transition.None;
             _timeButton.interactable = false;
         }
+
+        SetBackgroundSprite(_lockedBackgroundSprite);
+
+        if (_iconImage != null && _lockedIconSprite != null)
+        {
+            _iconImage.overrideSprite = null;
+            _iconImage.sprite = _lockedIconSprite;
+        }
+    }
+
+    void ShowCostLabel()
+    {
+        if (_costText == null)
+        {
+            return;
+        }
+
+        _costText.SetActive(true);
+
+        TextMeshProUGUI label = _costText.GetComponent<TextMeshProUGUI>();
+        if (label != null)
+        {
+            label.text = BoosterConfig.UseCostCoins.ToString();
+        }
     }
 
     void ApplyActiveVisuals()
     {
-        if (_backgroundImage != null && _activeBackgroundSprite != null)
-        {
-            _backgroundImage.sprite = _activeBackgroundSprite;
-        }
+        SetBackgroundSprite(_activeBackgroundSprite);
 
         if (_iconImage != null && _activeIconSprite != null)
         {
+            _iconImage.overrideSprite = null;
             _iconImage.sprite = _activeIconSprite;
         }
 
         if (_timeButton != null)
         {
             _timeButton.transition = _defaultButtonTransition;
+        }
+    }
+
+    void SetBackgroundSprite(Sprite sprite)
+    {
+        if (_backgroundImage == null || sprite == null)
+        {
+            return;
+        }
+
+        _backgroundImage.overrideSprite = null;
+        _backgroundImage.sprite = sprite;
+    }
+
+    void SetButtonInteractable(bool interactable)
+    {
+        if (_timeButton != null)
+        {
+            _timeButton.interactable = interactable;
         }
     }
 

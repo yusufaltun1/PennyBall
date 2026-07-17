@@ -230,18 +230,18 @@ public static class BotLevelUpBoostPolicy
 
     public static void LogAiConfig(int strength, float thinkSeconds, in AiConfig config, int shotNumber = 0)
     {
-        string context = shotNumber > 0 ? $"atış#{shotNumber}" : "maç";
-        string mod = config.Mode == AiConfigMode.LevelUpBoost
-            ? $"BOOST→Lv{config.MilestoneTargetLevel}"
-            : "Normal";
-
-        Debug.Log(
-            $"[Bot AI] {context} | strength={strength} | think={thinkSeconds:F2}s | mod={mod} | " +
-            $"oyuncuLv={config.PlayerLevelBefore} | maç#{BotTurnThinkDelay.GetCompletedMatchCount()}");
+        // string context = shotNumber > 0 ? $"atış#{shotNumber}" : "maç";
+        // string mod = config.Mode == AiConfigMode.LevelUpBoost
+        //     ? $"BOOST→Lv{config.MilestoneTargetLevel}"
+        //     : "Normal";
+        //
+        // Debug.Log(
+        //     $"[Bot AI] {context} | strength={strength} | think={thinkSeconds:F2}s | mod={mod} | " +
+        //     $"oyuncuLv={config.PlayerLevelBefore} | maç#{BotTurnThinkDelay.GetCompletedMatchCount()}");
     }
 
     public static void LogAiConfigInspector(int strength, float thinkSeconds)
     {
-        Debug.Log($"[Bot AI] maç | strength={strength} | think={thinkSeconds:F2}s | mod=Inspector");
+        // Debug.Log($"[Bot AI] maç | strength={strength} | think={thinkSeconds:F2}s | mod=Inspector");
     }
 }

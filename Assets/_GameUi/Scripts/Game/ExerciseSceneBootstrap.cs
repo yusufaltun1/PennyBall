@@ -56,8 +56,6 @@ public class ExerciseSceneBootstrap : MonoBehaviour
             return;
         }
 
-        exitObject.transform.SetAsLastSibling();
-
         ExerciseExitController controller = exitObject.GetComponent<ExerciseExitController>();
         if (controller == null)
         {

@@ -19,10 +19,12 @@ public class OpponentBotController : MonoBehaviour
     [Tooltip("Test için manuel süre. Kapalıyken maç sayısı veya level-up boost algoritması kullanılır.")]
     [SerializeField] [Min(0f)] float _turnThinkDelaySeconds = 2.4f;
     [SerializeField] bool _useInspectorTurnDelay;
+    [Tooltip("Maç başındaki ilk AI hamlesi, Turn Think Delay'in bu oranını kullanır.")]
+    [SerializeField] [Range(0.05f, 1f)] float _firstMatchThinkDelayScale = 0.35f;
 
     [Header("Oyun Kuralları")]
     [SerializeField] OpponentBotDifficulty _difficulty = new() { Level = 7 };
-    [SerializeField] float _gateMargin        = 0.09f;
+    [SerializeField] float _gateMargin        = 0.02f;
     [SerializeField] float _rollbackDuration  = 0.45f;
     [SerializeField] float _coinStopTimeout   = 8f;
     [SerializeField] float _coinBlockRadius   = 0.07f;   // yol engeli tespiti için coin yarıçapı
@@ -32,12 +34,19 @@ public class OpponentBotController : MonoBehaviour
 
     CoinIdentity _resolvingCoin;
     Vector3 _shotStartPosition;
-    bool _goalEnteredDuringShot;
+    Vector3 _gateAAtShotStart;
+    Vector3 _gateBAtShotStart;
+    bool _hasGateSnapshot;
+    bool _goalEligibleThisShot;
+    bool _scoredGoalThisShot;
     bool _isResolving;
     bool _isOpeningShot;
     int  _roundShotNumber = 1;   // bu turdaki atış sırası (1, 2, 3, 4+)
+    int  _consecutiveInvalidGateFails;
+    CoinIdentity _lastFailedGateShooter;
     Coroutine _playLoopRoutine;
     bool _resumePlayPending;
+    bool _useShortFirstMatchThink;
     BotLevelUpBoostPolicy.AiConfig _aiConfig;
     bool _sessionBoostLogged;
 
@@ -120,14 +129,14 @@ public class OpponentBotController : MonoBehaviour
 
             if (logSessionEvaluation)
             {
-                BotLevelUpBoostPolicy.LogAiConfigInspector(_aiStrength, GetTurnThinkDelay());
+                // BotLevelUpBoostPolicy.LogAiConfigInspector(_aiStrength, GetTurnThinkDelay());
             }
 
-            Debug.Log(
-                $"[Bot] AI gücü={_aiStrength} (Inspector) | Think={GetTurnThinkDelay():F2}s | " +
-                $"AimNoise={_difficulty.AimNoiseDegrees:F1}° | PullNoise={_difficulty.PullNoise:F3} | " +
-                $"MaxPull={_difficulty.MaxPullScale:P0} | GoalPull={_difficulty.GoalFinishPullScale:P0} | " +
-                $"GoalFocus={_difficulty.GoalFocus:F2}");
+            // Debug.Log(
+            //     $"[Bot] AI gücü={_aiStrength} (Inspector) | Think={GetTurnThinkDelay():F2}s | " +
+            //     $"AimNoise={_difficulty.AimNoiseDegrees:F1}° | PullNoise={_difficulty.PullNoise:F3} | " +
+            //     $"MaxPull={_difficulty.MaxPullScale:P0} | GoalPull={_difficulty.GoalFinishPullScale:P0} | " +
+            //     $"GoalFocus={_difficulty.GoalFocus:F2}");
             return;
         }
 
@@ -142,15 +151,15 @@ public class OpponentBotController : MonoBehaviour
 
         if (logSessionEvaluation || !_sessionBoostLogged)
         {
-            BotLevelUpBoostPolicy.LogAiConfig(_aiStrength, GetTurnThinkDelay(), _aiConfig);
+            // BotLevelUpBoostPolicy.LogAiConfig(_aiStrength, GetTurnThinkDelay(), _aiConfig);
             _sessionBoostLogged = true;
         }
 
-        Debug.Log(
-            $"[Bot] AI gücü={_aiStrength} | Mod={_aiConfig.Mode} | Think={GetTurnThinkDelay():F2}s | " +
-            $"AimNoise={_difficulty.AimNoiseDegrees:F1}° | PullNoise={_difficulty.PullNoise:F3} | " +
-            $"MaxPull={_difficulty.MaxPullScale:P0} | GoalPull={_difficulty.GoalFinishPullScale:P0} | " +
-            $"GoalFocus={_difficulty.GoalFocus:F2}");
+        // Debug.Log(
+        //     $"[Bot] AI gücü={_aiStrength} | Mod={_aiConfig.Mode} | Think={GetTurnThinkDelay():F2}s | " +
+        //     $"AimNoise={_difficulty.AimNoiseDegrees:F1}° | PullNoise={_difficulty.PullNoise:F3} | " +
+        //     $"MaxPull={_difficulty.MaxPullScale:P0} | GoalPull={_difficulty.GoalFinishPullScale:P0} | " +
+        //     $"GoalFocus={_difficulty.GoalFocus:F2}");
     }
 
     float GetTurnThinkDelay()
@@ -169,6 +178,18 @@ public class OpponentBotController : MonoBehaviour
         return BotTurnThinkDelay.GetDelayForCurrentPlayer();
     }
 
+    float ConsumeThinkDelayForNextShot()
+    {
+        float delay = GetTurnThinkDelay();
+        if (!_useShortFirstMatchThink)
+        {
+            return delay;
+        }
+
+        _useShortFirstMatchThink = false;
+        return delay * _firstMatchThinkDelayScale;
+    }
+
     void OnDestroy()
     {
         if (Instance == this)
@@ -177,11 +198,18 @@ public class OpponentBotController : MonoBehaviour
         }
     }
 
-    public void ResetRoundState()
+    public void ResetRoundState(bool isMatchOpening = false)
     {
         StopPlayLoop();
         ClearResolvingState();
         _roundShotNumber = 1;
+        _consecutiveInvalidGateFails = 0;
+        _lastFailedGateShooter = null;
+        if (isMatchOpening)
+        {
+            _useShortFirstMatchThink = true;
+        }
+
         TeamRulesService.BeginNewRound(_state);
         TeamRulesService.DiscoverCoins(_state, "_E");
         PrepareOpeningTurn();
@@ -195,7 +223,18 @@ public class OpponentBotController : MonoBehaviour
             return;
         }
 
-        _goalEnteredDuringShot = true;
+        if (!_goalEligibleThisShot)
+        {
+            return;
+        }
+
+        if (_scoredGoalThisShot)
+        {
+            return;
+        }
+
+        _scoredGoalThisShot = true;
+        Debug.Log($"GoalArea: Entered | {coin.gameObject.name}");
         GameRulesManager.Instance?.PreviewFreezeForPossibleGoal();
         coin.DragController.ForceStopSliding();
     }
@@ -271,7 +310,8 @@ public class OpponentBotController : MonoBehaviour
     {
         _resolvingCoin = null;
         _isResolving = false;
-        _goalEnteredDuringShot = false;
+        _goalEligibleThisShot = false;
+        _scoredGoalThisShot = false;
     }
 
     IEnumerator PlayLoopRoutine()
@@ -285,18 +325,20 @@ public class OpponentBotController : MonoBehaviour
             }
 
             SyncAiStrength();
-            if (!_useInspectorAiStrength)
-            {
-                BotLevelUpBoostPolicy.LogAiConfig(_aiStrength, GetTurnThinkDelay(), _aiConfig, _roundShotNumber);
-            }
+            // if (!_useInspectorAiStrength)
+            // {
+            //     BotLevelUpBoostPolicy.LogAiConfig(_aiStrength, GetTurnThinkDelay(), _aiConfig, _roundShotNumber);
+            // }
 
-            yield return new WaitForSeconds(GetTurnThinkDelay());
+            yield return new WaitForSeconds(ConsumeThinkDelayForNextShot());
 
             if (!OpponentBotBrain.TryChooseShot(
                     _state, _difficulty, _isResolving, _gateMargin,
                     _roundShotNumber, _coinBlockRadius,
                     out OpponentBotBrain.ShotPlan plan,
-                    out bool pathBlocked))
+                    out bool pathBlocked,
+                    _lastFailedGateShooter,
+                    _consecutiveInvalidGateFails))
             {
                 yield return new WaitForSeconds(pathBlocked ? 5f : 0.5f);
                 continue;
@@ -313,10 +355,31 @@ public class OpponentBotController : MonoBehaviour
             Debug.Log($"[Bot] {plan.Coin.name} fırlatıldı | atış#{_roundShotNumber} | {plan.Kind} | " +
                       $"+{plan.GoalAdvanceMeters:F2}m | pull={launchPull:F3}/{plan.Coin.DragController.MaxPullDistance:F3} | skor={plan.Score:F2}");
 
-            _resolvingCoin          = plan.Coin;
-            _goalEnteredDuringShot  = false;
-            _isOpeningShot          = _roundShotNumber == 1;   // yalnızca 1. atış gate validation'dan muaf
-            _shotStartPosition      = plan.Coin.transform.position;
+            _resolvingCoin = plan.Coin;
+            GoalZone playerGoal = GoalZone.FindPlayerGoalArea();
+            bool overlappingAtStart = playerGoal != null && playerGoal.OverlapsCoin(plan.Coin);
+            _goalEligibleThisShot = !overlappingAtStart;
+            _scoredGoalThisShot = false;
+            if (_goalEligibleThisShot)
+            {
+                playerGoal?.ClearTrackingForCoin(plan.Coin);
+            }
+
+            _isOpeningShot = _roundShotNumber == 1;
+            _shotStartPosition = plan.Coin.transform.position;
+            _hasGateSnapshot = false;
+            if (!_isOpeningShot
+                && TeamRulesService.TryGetGateCoins(_state, plan.Coin, out CoinIdentity gateA, out CoinIdentity gateB))
+            {
+                _gateAAtShotStart = gateA.transform.position;
+                _gateBAtShotStart = gateB.transform.position;
+                _hasGateSnapshot = true;
+            }
+
+            if (!_goalEligibleThisShot)
+            {
+                Debug.Log($"GoalArea: Eligible=false (atış başında overlap) | {plan.Coin.name}");
+            }
 
             yield return ResolveShotRoutine(plan.Coin);
         }
@@ -340,10 +403,18 @@ public class OpponentBotController : MonoBehaviour
     IEnumerator ResolveShotRoutine(CoinIdentity coin)
     {
         _isResolving = true;
-        bool isOpeningShot = _isOpeningShot;
+        // Açılış muafiyeti: yalnızca turun ilk hamlesi (orta para).
+        bool isOpeningShot = _state.IsFirstMove;
 
         _pathSamples.Clear();
         yield return WaitUntilCoinStops(coin.DragController, coin, _pathSamples);
+
+        if (coin.DragController != null && coin.DragController.SlidePath.Count >= 2)
+        {
+            coin.DragController.CopySlidePathTo(_pathSamples);
+        }
+
+        TryCaptureBotGoalOverlap(coin);
 
         bool shotValid;
         bool pendingInvalidRollbackFinished = false;
@@ -356,17 +427,34 @@ public class OpponentBotController : MonoBehaviour
         }
         else
         {
-            TeamRulesService.TryGetGateCoins(_state, coin, out CoinIdentity dbgA, out CoinIdentity dbgB);
-            Debug.Log($"[Bot] Validasyon | atar={coin.name} " +
-                      $"gateA={dbgA?.name}@{(dbgA != null ? dbgA.transform.position.ToString("F2") : "null")} " +
-                      $"gateB={dbgB?.name}@{(dbgB != null ? dbgB.transform.position.ToString("F2") : "null")} " +
-                      $"pathSamples={_pathSamples.Count}");
+            float traveled = Vector3.Distance(_shotStartPosition, coin.transform.position);
+            bool pathReliable = _pathSamples.Count >= 3 || traveled <= 0.12f;
 
-            bool passedBetween = TeamRulesService.ValidatePassBetween(_state, coin, _pathSamples, _gateMargin);
+            bool passedBetween = false;
+            if (pathReliable && _pathSamples.Count >= 2)
+            {
+                if (_hasGateSnapshot)
+                {
+                    passedBetween = PassBetweenValidator.DidPassBetweenAlongPath(
+                        _pathSamples, _gateAAtShotStart, _gateBAtShotStart, _gateMargin);
+                }
+                else
+                {
+                    passedBetween = TeamRulesService.ValidatePassBetween(
+                        _state, coin, _pathSamples, _gateMargin);
+                }
+            }
+
+            Debug.Log(
+                $"[Bot] Kapı kontrolü | {coin.name} | atış#{_roundShotNumber} | " +
+                $"path={_pathSamples.Count} | traveled={traveled:F2} | reliable={pathReliable} | geçti={passedBetween}");
+
             if (!passedBetween)
             {
                 Debug.Log($"[Bot] {coin.gameObject.name} GEÇERSİZ — kapıdan geçemedi | " +
                           $"son pozisyon={coin.transform.position:F2}");
+                _consecutiveInvalidGateFails++;
+                _lastFailedGateShooter = coin;
                 InvalidMoveRollbackStarted?.Invoke(CoinTeam.Opponent);
                 yield return RollbackCoin(coin, _shotStartPosition);
                 pendingInvalidRollbackFinished = true;
@@ -375,6 +463,8 @@ public class OpponentBotController : MonoBehaviour
             else
             {
                 shotValid = true;
+                _consecutiveInvalidGateFails = 0;
+                _lastFailedGateShooter = null;
                 Debug.Log($"[Bot] {coin.gameObject.name} geçerli — kapıdan geçti");
             }
         }
@@ -389,10 +479,8 @@ public class OpponentBotController : MonoBehaviour
             _roundShotNumber++;
         }
 
-        bool inGoal = IsCoinInPlayerGoal(coin);
-        if (shotValid && (_goalEnteredDuringShot || inGoal))
+        if (shotValid && _scoredGoalThisShot)
         {
-            Debug.Log($"[Bot] {coin.gameObject.name} GOL");
             _resolvingCoin = null;
             _isResolving = false;
 
@@ -428,51 +516,73 @@ public class OpponentBotController : MonoBehaviour
 
     IEnumerator WaitUntilCoinStops(CoinDragController dragController, CoinIdentity shotCoin, List<Vector3> pathSamples)
     {
+        // Player (GameRulesManager.WaitUntilCoinStops) ile aynı örnekleme.
         pathSamples.Clear();
         pathSamples.Add(dragController.transform.position);
 
+        yield return new WaitForSeconds(0.05f);
+
         float elapsed = 0f;
-        bool everSlid = false;
-        while (true)
+        while (dragController.IsSliding)
         {
-            yield return null;
             pathSamples.Add(dragController.transform.position);
 
-            if (shotCoin != null && (_goalEnteredDuringShot || IsCoinInPlayerGoal(shotCoin)))
+            if (shotCoin != null && _scoredGoalThisShot)
             {
                 GameRulesManager.Instance?.PreviewFreezeForPossibleGoal();
                 dragController.ForceStopSliding();
                 break;
             }
 
-            if (dragController.IsSliding)
+            if (shotCoin != null
+                && _goalEligibleThisShot
+                && !_scoredGoalThisShot
+                && IsOverlappingPlayerGoalArea(shotCoin))
             {
-                everSlid = true;
-                elapsed += Time.deltaTime;
-                if (elapsed >= _coinStopTimeout)
-                {
-                    Debug.LogWarning($"[Bot] {dragController.gameObject.name} timeout — coin durduruluyor");
-                    dragController.ForceStopSliding();
-                    break;
-                }
-            }
-            else if (everSlid)
-            {
+                _scoredGoalThisShot = true;
+                Debug.Log($"GoalArea: Entered | {shotCoin.gameObject.name}");
+                GameRulesManager.Instance?.PreviewFreezeForPossibleGoal();
+                dragController.ForceStopSliding();
                 break;
             }
-            else if (elapsed > 0.3f)
+
+            elapsed += Time.deltaTime;
+            if (elapsed >= _coinStopTimeout)
             {
+                Debug.LogWarning($"[Bot] {dragController.gameObject.name} timeout — coin durduruluyor");
+                dragController.ForceStopSliding();
                 break;
             }
-            else
-            {
-                elapsed += Time.deltaTime;
-            }
+
+            yield return null;
         }
 
         pathSamples.Add(dragController.transform.position);
         yield return new WaitForSeconds(0.1f);
         pathSamples.Add(dragController.transform.position);
+
+        if (shotCoin != null)
+        {
+            TryCaptureBotGoalOverlap(shotCoin);
+        }
+    }
+
+    void TryCaptureBotGoalOverlap(CoinIdentity coin)
+    {
+        if (coin == null || !_goalEligibleThisShot || _scoredGoalThisShot)
+        {
+            return;
+        }
+
+        if (!IsOverlappingPlayerGoalArea(coin))
+        {
+            return;
+        }
+
+        _scoredGoalThisShot = true;
+        Debug.Log($"GoalArea: Entered (capture) | {coin.gameObject.name}");
+        GameRulesManager.Instance?.PreviewFreezeForPossibleGoal();
+        coin.DragController.ForceStopSliding();
     }
 
     IEnumerator RollbackCoin(CoinIdentity coin, Vector3 targetPosition)
@@ -485,21 +595,15 @@ public class OpponentBotController : MonoBehaviour
         yield return GameRulesManager.Instance.AnimateCoinToPosition(coin, targetPosition, _rollbackDuration);
     }
 
-    static bool IsCoinInPlayerGoal(CoinIdentity coin)
+    static bool IsOverlappingPlayerGoalArea(CoinIdentity coin, bool useVisualMesh = true)
     {
-        GoalZone[] zones = FindObjectsByType<GoalZone>(FindObjectsSortMode.None);
-        for (int i = 0; i < zones.Length; i++)
+        if (coin == null)
         {
-            GoalZone zone = zones[i];
-            if (zone.transform.parent != null
-                && zone.transform.parent.name.Contains("_P")
-                && (zone.IsCoinInside(coin) || zone.ContainsWorldPosition(coin.transform.position)))
-            {
-                return true;
-            }
+            return false;
         }
 
-        return false;
+        GoalZone zone = GoalZone.FindPlayerGoalArea();
+        return zone != null && zone.OverlapsCoin(coin, useVisualMesh);
     }
 
     void SetCoinPassive(CoinIdentity coin, bool passive)

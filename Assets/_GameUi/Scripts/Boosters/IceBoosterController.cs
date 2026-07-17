@@ -22,6 +22,8 @@ public class IceBoosterController : MonoBehaviour
 
     bool _hasCoins = true;
 
+    public Sprite NoCoinsBackgroundSprite => _lockedBackgroundSprite;
+
     [Header("Booster Süreleri")]
     [SerializeField] IceBoosterTimingSettings _boosterTiming = new();
 
@@ -36,6 +38,7 @@ public class IceBoosterController : MonoBehaviour
 
     Coroutine _activationRoutine;
     Selectable.Transition _defaultButtonTransition;
+    bool _cooldownActive;
 
     void Awake()
     {
@@ -53,7 +56,7 @@ public class IceBoosterController : MonoBehaviour
             _iceButton.onClick.AddListener(OnIceButtonClicked);
         }
 
-        if (_activationRoutine == null)
+        if (!_cooldownActive && _activationRoutine == null)
         {
             RefreshWalletState();
         }
@@ -72,6 +75,13 @@ public class IceBoosterController : MonoBehaviour
     public void RefreshWalletState()
     {
         _hasCoins = WalletService.HasEnoughCoins(BoosterConfig.UseCostCoins);
+
+        // Sayaç / kullanım sırasında coin yetersizliği InUse görünümünü ezmesin.
+        if (_cooldownActive || _activationRoutine != null)
+        {
+            return;
+        }
+
         ApplyCoinsAvailability();
     }
 
@@ -81,6 +91,7 @@ public class IceBoosterController : MonoBehaviour
         {
             StopCoroutine(_activationRoutine);
             _activationRoutine = null;
+            _cooldownActive = false;
             IceOpponentFreezeUtility.UnfreezeAllOpponentCoins();
             IceOpponentFreezeUtility.ResumeOpponentBotAfterIceBooster();
         }
@@ -162,13 +173,17 @@ public class IceBoosterController : MonoBehaviour
     {
         RefreshWalletState();
 
-        if (!_hasCoins || _activationRoutine != null)
+        if (!_hasCoins || _activationRoutine != null || _cooldownActive)
         {
             return;
         }
 
+        // Coin harcaması Changed tetikler; sayaç başlamadan önce kilitle ki NoCoins uygulanmasın.
+        _cooldownActive = true;
+
         if (!WalletService.TrySpendCoins(BoosterConfig.UseCostCoins))
         {
+            _cooldownActive = false;
             RefreshWalletState();
             return;
         }
@@ -178,7 +193,8 @@ public class IceBoosterController : MonoBehaviour
 
     IEnumerator ActivateIceBoosterRoutine()
     {
-        SetButtonInteractable(false);
+        // Rakip hazır olmayı beklemeden InUse + Cost gizle; aksi halde Cost kısa süre görünür kalır.
+        BeginCooldownVisuals(_boosterTiming.CooldownSeconds);
 
         try
         {
@@ -190,7 +206,6 @@ public class IceBoosterController : MonoBehaviour
                 _boosterTiming.FreezeDurationSeconds,
                 _frostSettings);
             _iceUsedFeedback?.Play(_usedFeedbackTiming);
-            BeginCooldownVisuals(_boosterTiming.CooldownSeconds);
 
             float startTime = Time.time;
             bool coinsUnfrozen = false;
@@ -218,18 +233,27 @@ public class IceBoosterController : MonoBehaviour
 
             UpdateRemainingText(0);
             IceOpponentFreezeUtility.UnfreezeAllOpponentCoins();
-            ResetReadyVisuals();
         }
         finally
         {
             IceOpponentFreezeUtility.UnfreezeAllOpponentCoins();
             IceOpponentFreezeUtility.ResumeOpponentBotAfterIceBooster();
             _activationRoutine = null;
+            _cooldownActive = false;
+            RefreshWalletState();
         }
     }
 
     void BeginCooldownVisuals(int remainingSeconds)
     {
+        // Sprite Swap DisabledSprite = Booster_InUse (overrideSprite üzerinden)
+        if (_iceButton != null)
+        {
+            _iceButton.transition = _defaultButtonTransition;
+        }
+
+        SetButtonInteractable(false);
+
         if (_icon != null)
         {
             _icon.SetActive(false);
@@ -247,74 +271,87 @@ public class IceBoosterController : MonoBehaviour
         }
     }
 
-    void ResetReadyVisuals()
+    void ApplyCoinsAvailability()
     {
+        if (_cooldownActive || _activationRoutine != null)
+        {
+            return;
+        }
+
+        EndCooldownChrome();
+        ShowCostLabel();
+
         if (!_hasCoins)
         {
             ApplyLockedVisuals();
             return;
-        }
-
-        if (_icon != null)
-        {
-            _icon.SetActive(true);
-        }
-
-        if (_costText != null)
-        {
-            _costText.SetActive(true);
-        }
-
-        if (_remainingText != null)
-        {
-            _remainingText.gameObject.SetActive(false);
         }
 
         ApplyActiveVisuals();
         SetButtonInteractable(true);
     }
 
-    void ApplyCoinsAvailability()
+    void EndCooldownChrome()
     {
-        if (!_hasCoins)
+        if (_remainingText != null)
         {
-            ApplyLockedVisuals();
+            _remainingText.gameObject.SetActive(false);
+        }
+
+        if (_icon != null)
+        {
+            _icon.SetActive(true);
+        }
+    }
+
+    void ShowCostLabel()
+    {
+        if (_costText == null)
+        {
             return;
         }
 
-        ApplyActiveVisuals();
-        SetButtonInteractable(_activationRoutine == null);
+        _costText.SetActive(true);
+
+        TextMeshProUGUI label = _costText.GetComponent<TextMeshProUGUI>();
+        if (label != null)
+        {
+            label.text = BoosterConfig.UseCostCoins.ToString();
+        }
     }
 
     void ApplyLockedVisuals()
     {
-        if (_backgroundImage != null && _lockedBackgroundSprite != null)
-        {
-            _backgroundImage.sprite = _lockedBackgroundSprite;
-        }
+        ShowCostLabel();
 
-        if (_iconImage != null && _lockedIconSprite != null)
-        {
-            _iconImage.sprite = _lockedIconSprite;
-        }
-
+        // Önce Sprite Swap'ı kapat; aksi halde Button'ın InUse overrideSprite'ı kalır.
         if (_iceButton != null)
         {
             _iceButton.transition = Selectable.Transition.None;
+            _iceButton.interactable = false;
         }
 
-        SetButtonInteractable(false);
+        SetBackgroundSprite(_lockedBackgroundSprite);
+
+        if (_iconImage != null && _lockedIconSprite != null)
+        {
+            _iconImage.overrideSprite = null;
+            _iconImage.sprite = _lockedIconSprite;
+        }
+
+        if (_icon != null)
+        {
+            _icon.SetActive(true);
+        }
     }
 
     void ApplyActiveVisuals()
     {
-        if (_backgroundImage != null && _activeBackgroundSprite != null)
-        {
-            _backgroundImage.sprite = _activeBackgroundSprite;
-        }
+        SetBackgroundSprite(_activeBackgroundSprite);
 
         if (_iconImage != null && _activeIconSprite != null)
         {
+            _iconImage.overrideSprite = null;
             _iconImage.sprite = _activeIconSprite;
         }
 
@@ -322,6 +359,19 @@ public class IceBoosterController : MonoBehaviour
         {
             _iceButton.transition = _defaultButtonTransition;
         }
+    }
+
+    void SetBackgroundSprite(Sprite sprite)
+    {
+        if (_backgroundImage == null || sprite == null)
+        {
+            return;
+        }
+
+        // Button Sprite Swap, sprite yerine overrideSprite kullanır.
+        // Sayaç bitince InUse override'ı temizlenmezse NoCoins görünmez.
+        _backgroundImage.overrideSprite = null;
+        _backgroundImage.sprite = sprite;
     }
 
     void UpdateRemainingText(int remainingSeconds)

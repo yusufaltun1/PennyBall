@@ -139,14 +139,14 @@ public class LeagueMatchController : MonoBehaviour
 
             if (elapsedSeconds >= BackgroundForfeitThresholdSeconds)
             {
-                Debug.Log(
-                    $"[Match] Arka plan {elapsedSeconds:F1}s (≥{BackgroundForfeitThresholdSeconds:F0}s) — " +
-                    $"hükmen {BackgroundForfeitOpponentGoals}-{BackgroundForfeitPlayerGoals} mağlubiyet.");
+                // Debug.Log(
+                    // $"[Match] Arka plan {elapsedSeconds:F1}s (≥{BackgroundForfeitThresholdSeconds:F0}s) — " +
+                    // $"hükmen {BackgroundForfeitOpponentGoals}-{BackgroundForfeitPlayerGoals} mağlubiyet.");
                 ForfeitMatchFromBackground();
                 return;
             }
 
-            Debug.Log($"[Match] Arka plan {elapsedSeconds:F1}s — maç devam ediyor.");
+            // Debug.Log($"[Match] Arka plan {elapsedSeconds:F1}s — maç devam ediyor.");
         }
         else
         {

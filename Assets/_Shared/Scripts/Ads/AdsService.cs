@@ -82,8 +82,8 @@ public class AdsService : MonoBehaviour,
     {
         if (!AdsConfig.HasValidKeys)
         {
-            Debug.LogWarning(
-                "[Ads] Game ID eksik. AdsConfig.cs içine Unity Ads Project settings Game ID yaz.");
+            // Debug.LogWarning(
+            //     "[Ads] Game ID eksik. AdsConfig.cs içine Unity Ads Project settings Game ID yaz.");
             return;
         }
 
@@ -94,14 +94,14 @@ public class AdsService : MonoBehaviour,
             return;
         }
 
-        Debug.Log($"[Ads] Unity Ads init... gameId={AdsConfig.GameId}, testMode={AdsConfig.TestMode}");
+        // Debug.Log($"[Ads] Unity Ads init... gameId={AdsConfig.GameId}, testMode={AdsConfig.TestMode}");
         Advertisement.Initialize(AdsConfig.GameId, AdsConfig.TestMode, this);
     }
 
     public void OnInitializationComplete()
     {
         IsInitialized = true;
-        Debug.Log("[Ads] Unity Ads init OK.");
+        // Debug.Log("[Ads] Unity Ads init OK.");
         LoadAllAds();
     }
 
@@ -134,12 +134,12 @@ public class AdsService : MonoBehaviour,
         if (placementId == AdsConfig.RewardedAdUnitId)
         {
             IsRewardedReady = true;
-            Debug.Log("[Ads] Rewarded loaded.");
+            // Debug.Log("[Ads] Rewarded loaded.");
         }
         else if (placementId == AdsConfig.InterstitialAdUnitId)
         {
             IsInterstitialReady = true;
-            Debug.Log("[Ads] Interstitial loaded.");
+            // Debug.Log("[Ads] Interstitial loaded.");
         }
     }
 
@@ -148,12 +148,12 @@ public class AdsService : MonoBehaviour,
         if (placementId == AdsConfig.RewardedAdUnitId)
         {
             IsRewardedReady = false;
-            Debug.LogWarning($"[Ads] Rewarded load failed: {error} - {message}");
+            // Debug.LogWarning($"[Ads] Rewarded load failed: {error} - {message}");
         }
         else if (placementId == AdsConfig.InterstitialAdUnitId)
         {
             IsInterstitialReady = false;
-            Debug.LogWarning($"[Ads] Interstitial load failed: {error} - {message}");
+            // Debug.LogWarning($"[Ads] Interstitial load failed: {error} - {message}");
         }
     }
 
@@ -178,7 +178,7 @@ public class AdsService : MonoBehaviour,
 
         if (!IsInitialized || !IsRewardedReady)
         {
-            Debug.LogWarning("[Ads] Rewarded hazır değil.");
+            // Debug.LogWarning("[Ads] Rewarded hazır değil.");
             if (IsInitialized)
             {
                 LoadRewardedAd();
@@ -194,7 +194,7 @@ public class AdsService : MonoBehaviour,
         _showInProgress = true;
         IsRewardedReady = false;
 
-        Debug.Log($"[Ads] Show rewarded: {AdsConfig.RewardedAdUnitId}");
+        // Debug.Log($"[Ads] Show rewarded: {AdsConfig.RewardedAdUnitId}");
         Advertisement.Show(AdsConfig.RewardedAdUnitId, this);
     }
 
@@ -219,7 +219,7 @@ public class AdsService : MonoBehaviour,
 
         if (!IsInitialized || !IsInterstitialReady)
         {
-            Debug.LogWarning("[Ads] Interstitial hazır değil, devam ediliyor.");
+            // Debug.LogWarning("[Ads] Interstitial hazır değil, devam ediliyor.");
             if (IsInitialized)
             {
                 LoadInterstitialAd();
@@ -234,7 +234,7 @@ public class AdsService : MonoBehaviour,
         _showInProgress = true;
         IsInterstitialReady = false;
 
-        Debug.Log($"[Ads] Show interstitial: {AdsConfig.InterstitialAdUnitId}");
+        // Debug.Log($"[Ads] Show interstitial: {AdsConfig.InterstitialAdUnitId}");
         Advertisement.Show(AdsConfig.InterstitialAdUnitId, this);
     }
 
@@ -253,7 +253,7 @@ public class AdsService : MonoBehaviour,
 
         if (Instance != null && MatchAdTracker.ShouldShowInterstitial())
         {
-            Debug.Log($"[Ads] Interstitial gösterilecek (match #{MatchAdTracker.CompletedMatchCount}).");
+            // Debug.Log($"[Ads] Interstitial gösterilecek (match #{MatchAdTracker.CompletedMatchCount}).");
             Instance.StartCoroutine(Instance.NavigateToMainMenuWithInterstitial());
             return;
         }
@@ -299,7 +299,7 @@ public class AdsService : MonoBehaviour,
         {
             if (!IsInitialized)
             {
-                Debug.LogWarning("[Ads] Interstitial beklenemedi: Unity Ads henüz init olmadı.");
+                // Debug.LogWarning("[Ads] Interstitial beklenemedi: Unity Ads henüz init olmadı.");
                 yield break;
             }
 
@@ -310,13 +310,13 @@ public class AdsService : MonoBehaviour,
 
         if (!IsInterstitialReady)
         {
-            Debug.LogWarning("[Ads] Interstitial süre içinde yüklenemedi, menüye devam ediliyor.");
+            // Debug.LogWarning("[Ads] Interstitial süre içinde yüklenemedi, menüye devam ediliyor.");
         }
     }
 
     public void OnUnityAdsShowStart(string placementId)
     {
-        Debug.Log($"[Ads] Show start: {placementId}");
+        // Debug.Log($"[Ads] Show start: {placementId}");
         TrackAdEvent("ad_show_start", placementId);
     }
 
@@ -326,7 +326,7 @@ public class AdsService : MonoBehaviour,
 
     public void OnUnityAdsShowComplete(string placementId, UnityAdsShowCompletionState showCompletionState)
     {
-        Debug.Log($"[Ads] Show complete: {placementId}, state={showCompletionState}");
+        // Debug.Log($"[Ads] Show complete: {placementId}, state={showCompletionState}");
 
         PendingShowType type = _pendingShow;
         Action rewarded = _onRewarded;
@@ -363,7 +363,7 @@ public class AdsService : MonoBehaviour,
 
     public void OnUnityAdsShowFailure(string placementId, UnityAdsShowError error, string message)
     {
-        Debug.LogWarning($"[Ads] Show failed: {error} - {message}");
+        // Debug.LogWarning($"[Ads] Show failed: {error} - {message}");
 
         PendingShowType type = _pendingShow;
         Action failed = _onFailed;
@@ -406,7 +406,7 @@ public class AdsService : MonoBehaviour,
     IEnumerator PlayEditorMockAd(string title, float duration, Action onSuccess, Action onFail)
     {
         _showInProgress = true;
-        Debug.Log($"[Ads] Editor mock: {title}");
+        // Debug.Log($"[Ads] Editor mock: {title}");
 
         TextMeshProUGUI label = CreateEditorMockUi(title);
         float elapsed = 0f;

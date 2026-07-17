@@ -56,6 +56,14 @@ public static class MatchSessionContext
         LevelAfter = levelAfter;
     }
 
+    /// <summary>
+    /// Claim x2 sonrası gösterilen coin miktarını günceller (cüzdana ekleme ayrı yapılır).
+    /// </summary>
+    public static void SetDisplayedEarnedCoins(int coins)
+    {
+        EarnedCoins = UnityEngine.Mathf.Max(0, coins);
+    }
+
     public static void Clear()
     {
         _currentOpponent = null;

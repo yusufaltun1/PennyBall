@@ -27,6 +27,7 @@ public class MatchingPanelController : MonoBehaviour
     [SerializeField] private float rotateSpeed = 360f;
     [SerializeField] private float slideDuration = 0.5f;
     [SerializeField] private float countdownStepDuration = 1f;
+    [SerializeField] private int countdownStart = 3;
     [SerializeField] private float hornLeadTime = 2f;
     [SerializeField] private float vsRevealDuration = 0.22f;
     [SerializeField] private float vsStartScale = 20f;
@@ -350,7 +351,7 @@ public class MatchingPanelController : MonoBehaviour
         sayacObject?.SetActive(true);
 
         bool hornPlayed = false;
-        for (int count = 5; count >= 0; count--)
+        for (int count = countdownStart; count >= 0; count--)
         {
             if (sayacText != null)
             {

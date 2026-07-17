@@ -32,7 +32,7 @@ public class MatchTurnCoordinator : MonoBehaviour
 
         if (_enableOpponentBot && OpponentBotController.Instance != null)
         {
-            OpponentBotController.Instance.ResetRoundState();
+            OpponentBotController.Instance.ResetRoundState(isMatchOpening: true);
         }
     }
 

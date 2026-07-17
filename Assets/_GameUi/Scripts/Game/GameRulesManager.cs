@@ -25,7 +25,8 @@ public class GameRulesManager : MonoBehaviour
     CoinIdentity _openingCoin;
     CoinIdentity _guidedPlayableCoin;
     Vector3 _shotStartPosition;
-    bool _goalEnteredDuringShot;
+    bool _goalEligibleThisShot;
+    bool _scoredGoalThisShot;
     bool _isResolvingMove;
     bool _isFirstPlayerMove = true;
     bool _isOpeningShot;
@@ -199,7 +200,8 @@ public class GameRulesManager : MonoBehaviour
         _playerShotNumber = 1;
         _shotCoin = null;
         _resolvingShotCoin = null;
-        _goalEnteredDuringShot = false;
+        _goalEligibleThisShot = false;
+        _scoredGoalThisShot = false;
         GateIndicator.Instance?.Hide();
     }
 
@@ -384,13 +386,25 @@ public class GameRulesManager : MonoBehaviour
 
         _shotCoin = coin;
         _resolvingShotCoin = coin;
-        _goalEnteredDuringShot = false;
+
+        GoalZone enemyGoal = GoalZone.FindOpponentGoalArea();
+        bool overlappingAtStart = enemyGoal != null && enemyGoal.OverlapsCoin(coin);
+        _goalEligibleThisShot = !overlappingAtStart;
+        _scoredGoalThisShot = false;
+        // Önceki atıştan kalan trigger tracking desync'ini temizle.
+        if (_goalEligibleThisShot)
+        {
+            enemyGoal?.ClearTrackingForCoin(coin);
+        }
+
         _isOpeningShot = IsOpeningShotNumber(_playerShotNumber);
         _isResolvingMove = true;
         _shotStartPosition = coin.transform.position;
 
-        Debug.Log(
-            $"[Shot] {coin.gameObject.name} fırlatıldı | açılış={_isOpeningShot} | ilkHamle={_isFirstPlayerMove} | pos={_shotStartPosition}");
+        if (!_goalEligibleThisShot)
+        {
+            Debug.Log($"GoalArea: Eligible=false (atış başında overlap) | {coin.gameObject.name}");
+        }
 
         _resolveRoutine = StartCoroutine(ResolveShotRoutine(coin));
     }
@@ -407,8 +421,20 @@ public class GameRulesManager : MonoBehaviour
             return;
         }
 
-        _goalEnteredDuringShot = true;
+        if (!_goalEligibleThisShot)
+        {
+            return;
+        }
+
+        if (_scoredGoalThisShot)
+        {
+            return;
+        }
+
+        _scoredGoalThisShot = true;
+        Debug.Log($"GoalArea: Entered | {coin.gameObject.name}");
         PreviewFreezeForPossibleGoal();
+        coin.DragController?.ForceStopSliding();
     }
 
     public void PreviewFreezeForPossibleGoal()
@@ -495,7 +521,8 @@ public class GameRulesManager : MonoBehaviour
     {
         _shotCoin = null;
         _resolvingShotCoin = null;
-        _goalEnteredDuringShot = false;
+        _goalEligibleThisShot = false;
+        _scoredGoalThisShot = false;
         _isOpeningShot = false;
         GateIndicator.Instance?.Hide();
     }
@@ -510,7 +537,8 @@ public class GameRulesManager : MonoBehaviour
 
         _shotCoin = null;
         _resolvingShotCoin = null;
-        _goalEnteredDuringShot = false;
+        _goalEligibleThisShot = false;
+        _scoredGoalThisShot = false;
         _isResolvingMove = false;
         _isOpeningShot = false;
         GateIndicator.Instance?.Hide();
@@ -522,6 +550,15 @@ public class GameRulesManager : MonoBehaviour
 
         _shotPathSamples.Clear();
         yield return WaitUntilCoinStops(coin.DragController, coin, _shotPathSamples);
+
+        // Fizik path’i varsa onu kullan (seyrek coroutine örnekleri yanlış “kapıdan geçti” üretebiliyor).
+        if (coin.DragController != null && coin.DragController.SlidePath.Count >= 2)
+        {
+            coin.DragController.CopySlidePathTo(_shotPathSamples);
+        }
+
+        // Gol overlap'ini kapı rollback'inden ÖNCE kaydet (coin hâlâ kale içindeyken).
+        TryCapturePlayerGoalOverlap(coin);
 
         bool shotValid;
         bool pendingInvalidRollbackFinished = false;
@@ -539,14 +576,19 @@ public class GameRulesManager : MonoBehaviour
             }
 
             shotValid = true;
-            Debug.Log($"[Shot] {coin.gameObject.name} geçerli (gate kontrolü yok)");
         }
         else
         {
-            bool passedBetween = ValidatePassBetween(coin, _shotPathSamples);
+            float traveled = Vector3.Distance(_shotStartPosition, coin.transform.position);
+            bool pathReliable = _shotPathSamples.Count >= 3 || traveled <= 0.12f;
+            bool passedBetween = pathReliable
+                                 && _shotPathSamples.Count >= 2
+                                 && ValidatePassBetween(coin, _shotPathSamples);
+            Debug.Log(
+                $"[Player] Kapı kontrolü | {coin.name} | path={_shotPathSamples.Count} | " +
+                $"traveled={traveled:F2} | reliable={pathReliable} | geçti={passedBetween}");
             if (!passedBetween)
             {
-                Debug.Log($"[Shot] {coin.gameObject.name} geçersiz — diğer iki coin arasından geçmedi");
                 InvalidMoveRollbackStarted?.Invoke(CoinTeam.Player);
                 yield return RollbackCoin(coin, _shotStartPosition);
                 pendingInvalidRollbackFinished = true;
@@ -555,12 +597,17 @@ public class GameRulesManager : MonoBehaviour
             else
             {
                 shotValid = true;
-                Debug.Log($"[Shot] {coin.gameObject.name} geçerli — kapıdan geçti");
             }
         }
 
-        bool inGoal = IsCoinInOpponentGoal(coin);
-        bool scoredGoal = shotValid && (_goalEnteredDuringShot || inGoal);
+        bool scoredGoal = shotValid && _scoredGoalThisShot;
+        if (!scoredGoal)
+        {
+            Debug.Log(
+                $"GoalArea: No goal | {coin.gameObject.name} | eligible={_goalEligibleThisShot} | " +
+                $"scoredFlag={_scoredGoalThisShot} | shotValid={shotValid} | " +
+                $"overlap={IsOverlappingEnemyGoalArea(coin)}");
+        }
 
         if (shotValid && !scoredGoal)
         {
@@ -581,7 +628,7 @@ public class GameRulesManager : MonoBehaviour
                 yield break;
             }
 
-            Debug.Log($"[Shot] {coin.gameObject.name} GOL | trigger={_goalEnteredDuringShot} | içerde={inGoal}");
+            // Debug.Log($"[GoalLine][Shot] GOL {coin.gameObject.name} | lineCrossed=true");
             HandlePlayerGoalCelebration();
             _resolvingShotCoin = null;
             _resolveRoutine = null;
@@ -609,19 +656,15 @@ public class GameRulesManager : MonoBehaviour
         OpponentBotController.Instance?.ResumePlayIfIdle();
     }
 
-    static bool IsCoinInOpponentGoal(CoinIdentity coin)
+    static bool IsOverlappingEnemyGoalArea(CoinIdentity coin, bool useVisualMesh = true)
     {
-        GoalZone[] goalZones = FindObjectsByType<GoalZone>(FindObjectsSortMode.None);
-        for (int i = 0; i < goalZones.Length; i++)
+        if (coin == null)
         {
-            GoalZone goalZone = goalZones[i];
-            if (goalZone.IsOpponentGoal && (goalZone.IsCoinInside(coin) || goalZone.ContainsWorldPosition(coin.transform.position)))
-            {
-                return true;
-            }
+            return false;
         }
 
-        return false;
+        GoalZone zone = GoalZone.FindOpponentGoalArea();
+        return zone != null && zone.OverlapsCoin(coin, useVisualMesh);
     }
 
     void UnlockAllPlayerCoins()
@@ -672,8 +715,20 @@ public class GameRulesManager : MonoBehaviour
         {
             pathSamples.Add(dragController.transform.position);
 
-            if (shotCoin != null && (_goalEnteredDuringShot || IsCoinInOpponentGoal(shotCoin)))
+            if (shotCoin != null && _scoredGoalThisShot)
             {
+                PreviewFreezeForPossibleGoal();
+                dragController.ForceStopSliding();
+                break;
+            }
+
+            if (shotCoin != null
+                && _goalEligibleThisShot
+                && !_scoredGoalThisShot
+                && IsOverlappingEnemyGoalArea(shotCoin))
+            {
+                _scoredGoalThisShot = true;
+                Debug.Log($"GoalArea: Entered | {shotCoin.gameObject.name}");
                 PreviewFreezeForPossibleGoal();
                 dragController.ForceStopSliding();
                 break;
@@ -682,7 +737,7 @@ public class GameRulesManager : MonoBehaviour
             elapsed += Time.deltaTime;
             if (elapsed >= _coinStopTimeout)
             {
-                Debug.LogWarning($"[Shot] {dragController.gameObject.name} timeout — coin durduruluyor");
+                // Debug.LogWarning($"[Shot] {dragController.gameObject.name} timeout — coin durduruluyor");
                 dragController.ForceStopSliding();
                 break;
             }
@@ -693,6 +748,30 @@ public class GameRulesManager : MonoBehaviour
         pathSamples.Add(dragController.transform.position);
         yield return new WaitForSeconds(0.1f);
         pathSamples.Add(dragController.transform.position);
+
+        // Durduktan sonra son bir overlap kontrolü (IsSliding bittiğinde kaçmasın).
+        if (shotCoin != null)
+        {
+            TryCapturePlayerGoalOverlap(shotCoin);
+        }
+    }
+
+    void TryCapturePlayerGoalOverlap(CoinIdentity coin)
+    {
+        if (coin == null || !_goalEligibleThisShot || _scoredGoalThisShot)
+        {
+            return;
+        }
+
+        if (!IsOverlappingEnemyGoalArea(coin))
+        {
+            return;
+        }
+
+        _scoredGoalThisShot = true;
+        Debug.Log($"GoalArea: Entered (capture) | {coin.gameObject.name}");
+        PreviewFreezeForPossibleGoal();
+        coin.DragController?.ForceStopSliding();
     }
 
     bool ValidatePassBetween(CoinIdentity movingCoin, IReadOnlyList<Vector3> pathSamples)

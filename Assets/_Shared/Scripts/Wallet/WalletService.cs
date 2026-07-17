@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 public static class WalletService
 {
@@ -12,6 +13,26 @@ public static class WalletService
 
     public static event Action Changed;
     public static event Action<int, int> LevelChanged;
+
+    // Domain Reload kapalıyken bile Play'e her girişte diskteki kaydı yeniden yükle.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetStaticState()
+    {
+        _data = null;
+        Changed = null;
+        LevelChanged = null;
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void ReloadBeforePlay()
+    {
+        _data = WalletRepository.Load();
+    }
+
+    public static void InvalidateCache()
+    {
+        _data = null;
+    }
 
     public static WalletData Data
     {

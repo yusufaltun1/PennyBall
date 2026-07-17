@@ -6,7 +6,7 @@ public static class LeagueConfig
     public const int PointsWin = 3;
     public const int PointsDraw = 1;
     public const int MatchDurationSeconds = 90;
-    public const int ExerciseMatchDurationSeconds = 60;
+    public const int ExerciseMatchDurationSeconds = 30;
 
     public const string SaveKey = "pennyball.league.save";
     public const string BotDatabaseResourcePath = "League/BotPlayers";
