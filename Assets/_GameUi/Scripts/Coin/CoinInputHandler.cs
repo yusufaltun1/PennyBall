@@ -63,6 +63,7 @@ public class CoinInputHandler : MonoBehaviour
 
             GateIndicator.Instance?.Hide();
             _cameraZoom?.SetDragState(0f);
+            _cameraZoom?.EndEdgeAssist();
             return;
         }
 

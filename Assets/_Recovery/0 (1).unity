@@ -5699,123 +5699,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 787296817}
   m_CullTransparentMesh: 1
---- !u!1001 &796586536
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1051592123}
-    m_Modifications:
-    - target: {fileID: 608424122760331637, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_Name
-      value: LeagueChange
-      objectReference: {fileID: 0}
-    - target: {fileID: 608424122760331637, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_Pivot.x
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_Pivot.y
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_AnchorMax.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_AnchorMin.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
---- !u!224 &796586537 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 8277402234897966695, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-  m_PrefabInstance: {fileID: 796586536}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &796586538 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2783093792241440641, guid: 46d98d1ab1a4448bf9b52bda5067850e, type: 3}
-  m_PrefabInstance: {fileID: 796586536}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8a4c1f29b3d4e7a9f0c2d5e6b8a1c3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LeagueChangePresenter
 --- !u!1 &823684579
 GameObject:
   m_ObjectHideFlags: 0
@@ -7927,7 +7810,6 @@ RectTransform:
   - {fileID: 1266195180}
   - {fileID: 860393431}
   - {fileID: 1406541601}
-  - {fileID: 796586537}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -8703,7 +8585,6 @@ GameObject:
   - component: {fileID: 1222336891}
   - component: {fileID: 1222336890}
   - component: {fileID: 1222336892}
-  - component: {fileID: 1222336893}
   m_Layer: 5
   m_Name: UIManager
   m_TagString: Untagged
@@ -8758,19 +8639,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuMusicController
   audioLibrary: {fileID: 11400000, guid: c8d9e0f1a2b3c4d5e6f708192a3b4c5d, type: 2}
   volume: 0.3
---- !u!114 &1222336893
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1222336889}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c3f8a350aa4943ee9c01922a8d078b0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LeagueSeasonResultController
-  _leagueChangePanel: {fileID: 796586538}
 --- !u!1 &1233772925
 GameObject:
   m_ObjectHideFlags: 0

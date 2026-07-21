@@ -2,11 +2,11 @@ using UnityEngine;
 
 /// <summary>
 /// Oyuncunun tamamladığı maç sayısına göre bot hamle bekleme süresini hesaplar.
-/// İlk 10 maç: 2.4s, her sonraki 10 maçta -0.1s, minimum 1.5s.
+/// İlk 10 maç: 2s, her sonraki 10 maçta -0.1s, minimum 1.5s.
 /// </summary>
 public static class BotTurnThinkDelay
 {
-    public const float BaseDelaySeconds = 2.4f;
+    public const float BaseDelaySeconds = 2f;
     public const float MinDelaySeconds = 1.5f;
     public const float DecrementPerTenMatchesSeconds = 0.1f;
     public const int MatchesPerTier = 10;

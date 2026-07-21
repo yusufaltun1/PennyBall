@@ -437,6 +437,16 @@ public static class LeagueSimulation
             return pointsDelta;
         }
 
+        if (a.isPlayer)
+        {
+            return -1;
+        }
+
+        if (b.isPlayer)
+        {
+            return 1;
+        }
+
         return string.Compare(a.displayName, b.displayName, StringComparison.Ordinal);
     }
 

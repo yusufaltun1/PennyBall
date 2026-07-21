@@ -11,19 +11,19 @@ public class OpponentBotController : MonoBehaviour
     public static OpponentBotController Instance { get; private set; }
 
     [Header("AI Gücü")]
-    [Tooltip("Kapalıyken varsayılan strength (7) veya level-up boost kullanılır.")]
-    [SerializeField] [Range(1, OpponentBotDifficulty.MaxStrengthLevel)] int _aiStrength = 7;
+    [Tooltip("Kapalıyken varsayılan strength (12) veya level-up boost kullanılır.")]
+    [SerializeField] [Range(1, OpponentBotDifficulty.MaxStrengthLevel)] int _aiStrength = 12;
     [SerializeField] bool _useInspectorAiStrength;
 
     [Header("Hamle Tempo")]
     [Tooltip("Test için manuel süre. Kapalıyken maç sayısı veya level-up boost algoritması kullanılır.")]
-    [SerializeField] [Min(0f)] float _turnThinkDelaySeconds = 2.4f;
+    [SerializeField] [Min(0f)] float _turnThinkDelaySeconds = 2f;
     [SerializeField] bool _useInspectorTurnDelay;
     [Tooltip("Maç başındaki ilk AI hamlesi, Turn Think Delay'in bu oranını kullanır.")]
     [SerializeField] [Range(0.05f, 1f)] float _firstMatchThinkDelayScale = 0.35f;
 
     [Header("Oyun Kuralları")]
-    [SerializeField] OpponentBotDifficulty _difficulty = new() { Level = 7 };
+    [SerializeField] OpponentBotDifficulty _difficulty = new() { Level = 12 };
     [SerializeField] float _gateMargin        = 0.02f;
     [SerializeField] float _rollbackDuration  = 0.45f;
     [SerializeField] float _coinStopTimeout   = 8f;
@@ -125,7 +125,7 @@ public class OpponentBotController : MonoBehaviour
         }
 
         _aiConfig = BotLevelUpBoostPolicy.Evaluate(_useInspectorTurnDelay, _turnThinkDelaySeconds);
-        _aiStrength = _aiConfig.AppliedStrength;
+        _aiStrength = BotLevelUpBoostPolicy.ApplyScoreLeadStrength(_aiConfig.AppliedStrength);
         _difficulty.Level = _aiStrength;
 
         if (!Application.isPlaying)
@@ -148,18 +148,28 @@ public class OpponentBotController : MonoBehaviour
 
     float GetTurnThinkDelay()
     {
+        float delay;
+
         if (_useInspectorTurnDelay)
         {
-            return _turnThinkDelaySeconds;
+            delay = _turnThinkDelaySeconds;
         }
-
-        if (!_useInspectorAiStrength
-            && _aiConfig.Mode == BotLevelUpBoostPolicy.AiConfigMode.LevelUpBoost)
+        else if (!_useInspectorAiStrength
+                 && _aiConfig.Mode == BotLevelUpBoostPolicy.AiConfigMode.LevelUpBoost)
         {
-            return BotLevelUpBoostPolicy.BoostThinkDelaySeconds;
+            delay = BotLevelUpBoostPolicy.BoostThinkDelaySeconds;
+        }
+        else
+        {
+            delay = BotTurnThinkDelay.GetDelayForCurrentPlayer();
         }
 
-        return BotTurnThinkDelay.GetDelayForCurrentPlayer();
+        if (!_useInspectorAiStrength)
+        {
+            delay = BotLevelUpBoostPolicy.ApplyScoreLeadThinkDelay(delay);
+        }
+
+        return delay;
     }
 
     float ConsumeThinkDelayForNextShot()
