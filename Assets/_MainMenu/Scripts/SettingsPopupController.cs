@@ -300,6 +300,11 @@ public class SettingsPopupController : MonoBehaviour
         MainMenuClickSound.Play();
         isOpen = true;
         gameObject.SetActive(true);
+        transform.SetAsLastSibling();
+        if (closeButton != null)
+        {
+            closeButton.transform.SetAsLastSibling();
+        }
         EnsureInitialized();
 
         if (animationCoroutine != null)

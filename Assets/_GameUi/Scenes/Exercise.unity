@@ -15623,6 +15623,7 @@ GameObject:
   - component: {fileID: 8808235878063149796}
   - component: {fileID: 8808235878063149797}
   - component: {fileID: 8808235878063149799}
+  - component: {fileID: 9100000001}
   m_Layer: 0
   m_Name: Camera
   m_TagString: Untagged
@@ -16650,3 +16651,17 @@ SceneRoots:
   - {fileID: 521461112}
   - {fileID: 1424921129}
   - {fileID: 1424105570}
+--- !u!114 &9100000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 65702495022897742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b195798a66c34009a12c51d7663205c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _referenceResolution: {x: 1170, y: 2532}
+  _zoomStrength: 1

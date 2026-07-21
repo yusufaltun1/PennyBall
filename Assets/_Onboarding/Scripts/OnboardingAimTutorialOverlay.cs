@@ -110,6 +110,26 @@ public class OnboardingAimTutorialOverlay : MonoBehaviour
         ApplyDashedLine(_rightAngleLine, coinPosition, rightDirection, _angleGuideLineLength, lineColor);
     }
 
+    public void ShowAngleGuidesThroughPoints(
+        Vector3 coinPosition,
+        Vector3 leftPassPoint,
+        Vector3 rightPassPoint,
+        Color lineColor)
+    {
+        EnsureInitialized();
+
+        Vector3 leftDirection = Flatten(leftPassPoint - coinPosition);
+        Vector3 rightDirection = Flatten(rightPassPoint - coinPosition);
+        if (leftDirection.sqrMagnitude < 0.0001f || rightDirection.sqrMagnitude < 0.0001f)
+        {
+            HideAngleGuides();
+            return;
+        }
+
+        ApplyDashedLine(_leftAngleLine, coinPosition, leftDirection.normalized, _angleGuideLineLength, lineColor);
+        ApplyDashedLine(_rightAngleLine, coinPosition, rightDirection.normalized, _angleGuideLineLength, lineColor);
+    }
+
     public void HideAngleGuides()
     {
         if (_leftAngleLine != null)

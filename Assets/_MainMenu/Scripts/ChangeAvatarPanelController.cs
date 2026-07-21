@@ -26,17 +26,71 @@ public class ChangeAvatarPanelController : MonoBehaviour
     Coroutine                  _anim;
     float                      _openY, _closedY;
     bool                       _isOpen;
+    bool                       _wired;
 
-    void Awake()
+    // Panel sahnede kapalı başladığı için Awake hiç çalışmayabilir;
+    // buton bağlama işini sahne yüklenince buradan yap.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void RegisterSceneHook()
     {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+        WireAllPanels();
+    }
+
+    static void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        WireAllPanels();
+    }
+
+    static void WireAllPanels()
+    {
+        ChangeAvatarPanelController[] controllers = FindObjectsByType<ChangeAvatarPanelController>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+
+        for (int i = 0; i < controllers.Length; i++)
+        {
+            controllers[i].EnsureWired();
+        }
+    }
+
+    void EnsureWired()
+    {
+        if (_wired)
+            return;
+
+        _wired = true;
         _rect = GetComponent<RectTransform>();
         CachePositions();
         SetToClosedPosition();
+
+        if (_openButton != null)
+        {
+            _openButton.onClick.RemoveListener(Open);
+            _openButton.onClick.AddListener(Open);
+        }
+
+        if (_closeButton != null)
+        {
+            _closeButton.onClick.RemoveListener(Close);
+            _closeButton.onClick.AddListener(Close);
+        }
+    }
+
+    void Awake()
+    {
+        EnsureWired();
         if (!_isOpen)
             gameObject.SetActive(false);
+    }
 
-        if (_openButton  != null) _openButton.onClick.AddListener(Open);
-        if (_closeButton != null) _closeButton.onClick.AddListener(Close);
+    void Start()
+    {
+        // Sahnede yanlışlıkla açık kalsa bile başlangıçta kapalı tut — aksi halde
+        // Settings/LevelStatus tıklamalarını tam ekran Overlay yer.
+        if (!_isOpen && gameObject.activeSelf)
+            gameObject.SetActive(false);
     }
 
     void OnDestroy()
@@ -54,7 +108,10 @@ public class ChangeAvatarPanelController : MonoBehaviour
         _currentIndex = LeagueService.Instance?.PlayerAvatarIndex ?? 0;
 
         gameObject.SetActive(true);
+        transform.SetAsLastSibling();
         BuildGrid();
+        Canvas.ForceUpdateCanvases();
+        CachePositions();
         SetToClosedPosition();
         Animate(_openY, deactivateOnDone: false);
     }
@@ -149,24 +206,46 @@ public class ChangeAvatarPanelController : MonoBehaviour
 
     void CachePositions()
     {
-        float halfHeight = GetCanvasHalfHeight();
+        float canvasHeight = GetCanvasHeight();
+
+        // Stretch-stretch + pivot altta: açıkken y=0 (ekranı doldurur),
+        // kapalıyken tam canvas yüksekliği kadar yukarı kayar.
+        if (IsStretchFullRect())
+        {
+            _openY = 0f;
+            _closedY = canvasHeight;
+            return;
+        }
+
+        // Eski center-center layout (pivot altta): ± halfHeight.
+        float halfHeight = canvasHeight * 0.5f;
         _closedY = halfHeight;
-        _openY   = -halfHeight;
+        _openY = -halfHeight;
+    }
+
+    bool IsStretchFullRect()
+    {
+        return _rect != null
+            && Mathf.Approximately(_rect.anchorMin.x, 0f)
+            && Mathf.Approximately(_rect.anchorMin.y, 0f)
+            && Mathf.Approximately(_rect.anchorMax.x, 1f)
+            && Mathf.Approximately(_rect.anchorMax.y, 1f);
     }
 
     void SetToClosedPosition()
     {
         var pos = _rect.anchoredPosition;
+        pos.x = 0f;
         pos.y = _closedY;
         _rect.anchoredPosition = pos;
     }
 
-    float GetCanvasHalfHeight()
+    float GetCanvasHeight()
     {
-        const float fallback = 1170f;
-        Canvas c = GetComponentInParent<Canvas>();
+        const float fallback = 2340f;
+        Canvas c = GetComponentInParent<Canvas>(true);
         if (c == null) return fallback;
         RectTransform cr = c.GetComponent<RectTransform>();
-        return cr != null && cr.rect.height > 0f ? cr.rect.height * 0.5f : fallback;
+        return cr != null && cr.rect.height > 0f ? cr.rect.height : fallback;
     }
 }

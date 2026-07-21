@@ -42,6 +42,7 @@ public class OnboardingGuideController : MonoBehaviour
     public bool IsOnboardingSceneInteractionBlocked =>
         _sceneInteractionBlockedUntilStageEight
         || _awaitingFinalGoalCelebration
+        || _stageElevenAlertVisible
         || _phase == GuidePhase.Stage7_ResetCoins
         || (_phase == GuidePhase.Completed && _onboardingCompletePending)
         || IsOnboardingCompletePanelVisible();
@@ -139,6 +140,15 @@ public class OnboardingGuideController : MonoBehaviour
     static readonly int HoleSoftnessId = Shader.PropertyToID("_HoleSoftness");
     static readonly int HoleAspectId = Shader.PropertyToID("_HoleAspect");
     static readonly int ColorId = Shader.PropertyToID("_Color");
+    static readonly int WedgeEnabledId = Shader.PropertyToID("_WedgeEnabled");
+    static readonly int WedgeApexId = Shader.PropertyToID("_WedgeApex");
+    static readonly int WedgePointLeftId = Shader.PropertyToID("_WedgePointLeft");
+    static readonly int WedgePointRightId = Shader.PropertyToID("_WedgePointRight");
+    static readonly int WedgeSoftnessId = Shader.PropertyToID("_WedgeSoftness");
+    static readonly int GateEnabledId = Shader.PropertyToID("_GateEnabled");
+    static readonly int GatePointAId = Shader.PropertyToID("_GatePointA");
+    static readonly int GatePointBId = Shader.PropertyToID("_GatePointB");
+    static readonly int WedgeNearColorId = Shader.PropertyToID("_WedgeNearColor");
 
     [SerializeField] RectTransform _guideElement;
     [SerializeField] RectTransform _pullGuideElement;
@@ -306,6 +316,10 @@ public class OnboardingGuideController : MonoBehaviour
     [SerializeField] Color _overlayColor = new(0f, 0f, 0f, 0.72f);
     [SerializeField] float _holeRadiusUv = 0.14f;
     [SerializeField] float _holeSoftnessUv = 0.035f;
+    [Tooltip("Aşama 10-11: Yeşil rehber çizgileri arasındaki aydınlık alanın kenar yumuşaklığı (UV).")]
+    [SerializeField] float _wedgeSoftnessUv = 0.02f;
+    [Tooltip("Aşama 11: Yeşil çizgiler ile GateIndicator arasındaki bölgenin maske rengi.")]
+    [SerializeField] Color _stageElevenNearGateColor = new(1f, 0f, 0f, 60f / 255f);
 
     enum GuideAnchorMode
     {
@@ -339,6 +353,9 @@ public class OnboardingGuideController : MonoBehaviour
     GuidePhase _phase = GuidePhase.Inactive;
     bool _guideStarted;
     bool _isAimInputFrozen;
+    GameObject _alertObject;
+    Button _alertOkButton;
+    bool _stageElevenAlertVisible;
     bool _waitingForCoinStop;
     bool _wasAimingLastFrame;
     bool _alignedForCurrentAim;
@@ -372,6 +389,7 @@ public class OnboardingGuideController : MonoBehaviour
         SetOnboardingCanvasVisible(false);
         OnboardingSceneBootstrap.EnsureSceneSetup();
         ResolveReferences();
+        HideAlertOnStart();
         EnsureTutorialOverlay();
         EnsureOverlay();
         PrepareGuideElement();
@@ -622,6 +640,23 @@ public class OnboardingGuideController : MonoBehaviour
         TryEnterReleaseToShotFromDrag(dragController, EnterStage11);
     }
 
+    void ShowStageTenAngleGuides(Vector3 coinPosition)
+    {
+        EnsureTutorialOverlay();
+
+        if (_openingCoin == null || _sideCoinRight == null)
+        {
+            _tutorialOverlay.HideAngleGuides();
+            return;
+        }
+
+        _tutorialOverlay.ShowAngleGuidesThroughPoints(
+            coinPosition,
+            _openingCoin.position,
+            _sideCoinRight.position,
+            _alignedAngleGuideColor);
+    }
+
     void HandleStage11(bool isAiming, CoinDragController dragController)
     {
         if (!isAiming || dragController == null)
@@ -629,7 +664,7 @@ public class OnboardingGuideController : MonoBehaviour
             return;
         }
 
-        TryUpdateStageElevenAimLock(dragController);
+        UpdateStageElevenAimPower(dragController);
         UpdateReleaseToShotPresentation(isAiming, dragController);
     }
 
@@ -830,7 +865,14 @@ public class OnboardingGuideController : MonoBehaviour
             return;
         }
 
-        _tutorialOverlay.HideAngleGuides();
+        if (_phase == GuidePhase.Stage11_ReleaseToShot)
+        {
+            ShowStageTenAngleGuides(dragController.transform.position);
+        }
+        else
+        {
+            _tutorialOverlay.HideAngleGuides();
+        }
 
         HideCoinGuideElementOnly();
         EnsurePullGuidePresentation();
@@ -1027,17 +1069,16 @@ public class OnboardingGuideController : MonoBehaviour
         return true;
     }
 
-    bool TryUpdateStageElevenAimLock(CoinDragController dragController)
+    void UpdateStageElevenAimPower(CoinDragController dragController)
     {
         if (dragController == null || !dragController.IsAiming)
         {
-            return false;
+            return;
         }
 
         Vector3 coinPosition = dragController.transform.position;
         Vector3 target = ResolveStageElevenShotTarget();
         Vector3 direction = GetStageElevenLaunchDirection(coinPosition);
-        dragController.LockAimDirection(direction);
 
         if (dragController.TryGetPower01ForWorldTarget(coinPosition, direction, target, out float power01))
         {
@@ -1047,9 +1088,6 @@ public class OnboardingGuideController : MonoBehaviour
         {
             _stageElevenResolvedPower01 = _stageOneShotPower01;
         }
-
-        dragController.SetAimPullForPower01(_stageElevenResolvedPower01);
-        return true;
     }
 
     bool TryUpdateStageSeventeenAimLock(CoinDragController dragController)
@@ -1086,7 +1124,7 @@ public class OnboardingGuideController : MonoBehaviour
 
         if (phase == GuidePhase.Stage11_ReleaseToShot)
         {
-            TryUpdateStageElevenAimLock(dragController);
+            UpdateStageElevenAimPower(dragController);
             return;
         }
 
@@ -1383,7 +1421,9 @@ public class OnboardingGuideController : MonoBehaviour
                     StopCoroutine(_flowRoutine);
                 }
 
-                _flowRoutine = StartCoroutine(AdvanceAfterNormalRulesShotResolved(() => EnterStage12(), EnterStage10));
+                _flowRoutine = StartCoroutine(AdvanceAfterNormalRulesShotResolved(
+                    () => EnterStage12(),
+                    BeginStageElevenInvalidShotRecovery));
                 break;
             case GuidePhase.Stage17_ReleaseToShot:
                 if (_flowRoutine != null)
@@ -1512,6 +1552,7 @@ public class OnboardingGuideController : MonoBehaviour
         GameRulesManager.Instance?.PrepareForStageTenElevenGuidedShot(GetSideCoinLeftIdentity());
 
         SetPhase(GuidePhase.Stage10_Drag);
+        ShowStageTenAngleGuides(GetSideCoinLeftPosition());
         SetCoinGuideAnchors();
         ShowCoinGuideVisuals();
         SetActiveGuideText(_dragMessage);
@@ -1521,6 +1562,134 @@ public class OnboardingGuideController : MonoBehaviour
     void EnterStage11(CoinDragController dragController)
     {
         EnterReleaseToShotStage(dragController, GuidePhase.Stage11_ReleaseToShot);
+    }
+
+    void BeginStageElevenInvalidShotRecovery()
+    {
+        if (_flowRoutine != null)
+        {
+            StopCoroutine(_flowRoutine);
+        }
+
+        _flowRoutine = StartCoroutine(StageElevenInvalidShotRecoveryRoutine());
+    }
+
+    IEnumerator StageElevenInvalidShotRecoveryRoutine()
+    {
+        HideGuideVisuals();
+
+        if (GameRulesManager.Instance != null)
+        {
+            yield return GameRulesManager.Instance.ResetAllCoinPositionsRoutine();
+        }
+
+        _flowRoutine = null;
+
+        if (!TryShowStageElevenAlert())
+        {
+            EnterStage10();
+        }
+    }
+
+    bool TryShowStageElevenAlert()
+    {
+        ResolveAlertReferences();
+        if (_alertObject == null)
+        {
+            return false;
+        }
+
+        _stageElevenAlertVisible = true;
+        _alertObject.SetActive(true);
+        _alertObject.transform.SetAsLastSibling();
+
+        if (_alertOkButton != null)
+        {
+            _alertOkButton.onClick.RemoveListener(OnStageElevenAlertOkClicked);
+            _alertOkButton.onClick.AddListener(OnStageElevenAlertOkClicked);
+        }
+
+        return true;
+    }
+
+    void OnStageElevenAlertOkClicked()
+    {
+        _stageElevenAlertVisible = false;
+
+        if (_alertObject != null)
+        {
+            _alertObject.SetActive(false);
+        }
+
+        EnterStage10();
+    }
+
+    void HideAlertOnStart()
+    {
+        ResolveAlertReferences();
+        if (_alertObject != null)
+        {
+            _alertObject.SetActive(false);
+        }
+    }
+
+    void ResolveAlertReferences()
+    {
+        if (_alertObject == null)
+        {
+            _alertObject = FindCanvasChildByName("Alert");
+        }
+
+        if (_alertObject != null && _alertOkButton == null)
+        {
+            Transform okTransform = FindChildByName(_alertObject.transform, "Btn_Ok");
+            _alertOkButton = okTransform != null
+                ? okTransform.GetComponent<Button>()
+                : _alertObject.GetComponentInChildren<Button>(true);
+        }
+    }
+
+    GameObject FindCanvasChildByName(string objectName)
+    {
+        if (_onboardingCanvas != null)
+        {
+            Transform match = FindChildByName(_onboardingCanvas.transform, objectName);
+            if (match != null)
+            {
+                return match.gameObject;
+            }
+        }
+
+        Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < canvases.Length; i++)
+        {
+            if (canvases[i] == _onboardingCanvas)
+            {
+                continue;
+            }
+
+            Transform match = FindChildByName(canvases[i].transform, objectName);
+            if (match != null)
+            {
+                return match.gameObject;
+            }
+        }
+
+        return null;
+    }
+
+    static Transform FindChildByName(Transform root, string childName)
+    {
+        Transform[] children = root.GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < children.Length; i++)
+        {
+            if (children[i] != root && children[i].name == childName)
+            {
+                return children[i];
+            }
+        }
+
+        return null;
     }
 
     void EnterStage17ReleaseToShot(CoinDragController dragController)
@@ -1731,7 +1900,14 @@ public class OnboardingGuideController : MonoBehaviour
     {
         SetPhase(phase);
 
-        _tutorialOverlay.HideAngleGuides();
+        if (phase == GuidePhase.Stage11_ReleaseToShot && dragController != null)
+        {
+            ShowStageTenAngleGuides(dragController.transform.position);
+        }
+        else
+        {
+            _tutorialOverlay.HideAngleGuides();
+        }
 
         bool usesExactShotTargetAnchor = phase == GuidePhase.Stage11_ReleaseToShot
             || phase == GuidePhase.Stage17_ReleaseToShot;
@@ -3594,11 +3770,6 @@ public class OnboardingGuideController : MonoBehaviour
             return;
         }
 
-        if (!TryGetSpotlightWorldPosition(out Vector3 worldPosition))
-        {
-            return;
-        }
-
         Canvas.ForceUpdateCanvases();
         LayoutRebuilder.ForceRebuildLayoutImmediate(_overlayRect);
 
@@ -3611,10 +3782,84 @@ public class OnboardingGuideController : MonoBehaviour
         float aspect = overlayRect.width / overlayRect.height;
         _overlayMaterial.SetFloat(HoleAspectId, aspect);
 
+        if (TryUpdateWedgeSpotlight(worldCamera, overlayRect))
+        {
+            return;
+        }
+
+        _overlayMaterial.SetFloat(WedgeEnabledId, 0f);
+
+        if (!TryGetSpotlightWorldPosition(out Vector3 worldPosition))
+        {
+            return;
+        }
+
+        if (!TryGetOverlayUv(worldCamera, overlayRect, worldPosition, out Vector2 holeCenter))
+        {
+            return;
+        }
+
+        _overlayMaterial.SetVector(HoleCenterId, new Vector4(holeCenter.x, holeCenter.y, 0f, 0f));
+    }
+
+    /// <summary>
+    /// Aşama 10-11: Yuvarlak spot yerine yeşil rehber çizgileri arasındaki kama
+    /// biçimindeki atış koridorunu aydınlatır.
+    /// </summary>
+    bool TryUpdateWedgeSpotlight(Camera worldCamera, Rect overlayRect)
+    {
+        bool usesWedgePhase = _phase == GuidePhase.Stage10_Drag
+            || _phase == GuidePhase.Stage11_ReleaseToShot;
+        if (!usesWedgePhase || _sideCoinLeft == null || _openingCoin == null || _sideCoinRight == null)
+        {
+            return false;
+        }
+
+        if (!TryGetOverlayUv(worldCamera, overlayRect, _sideCoinLeft.position, out Vector2 apexUv)
+            || !TryGetOverlayUv(worldCamera, overlayRect, _openingCoin.position, out Vector2 leftUv)
+            || !TryGetOverlayUv(worldCamera, overlayRect, _sideCoinRight.position, out Vector2 rightUv))
+        {
+            return false;
+        }
+
+        _overlayMaterial.SetFloat(WedgeEnabledId, 1f);
+        _overlayMaterial.SetFloat(WedgeSoftnessId, _wedgeSoftnessUv);
+        _overlayMaterial.SetVector(WedgeApexId, new Vector4(apexUv.x, apexUv.y, 0f, 0f));
+        _overlayMaterial.SetVector(WedgePointLeftId, new Vector4(leftUv.x, leftUv.y, 0f, 0f));
+        _overlayMaterial.SetVector(WedgePointRightId, new Vector4(rightUv.x, rightUv.y, 0f, 0f));
+        UpdateNearGateMask(worldCamera, overlayRect);
+        return true;
+    }
+
+    /// <summary>
+    /// Aşama 11: Koridor içinde, coin ile GateIndicator çizgisi arasında kalan
+    /// bölgeyi kırmızı maskeyle işaretler.
+    /// </summary>
+    void UpdateNearGateMask(Camera worldCamera, Rect overlayRect)
+    {
+        if (_phase == GuidePhase.Stage11_ReleaseToShot
+            && TryGetGateArrowEndpoints(out Vector3 gateStart, out Vector3 gateEnd)
+            && TryGetOverlayUv(worldCamera, overlayRect, gateStart, out Vector2 gateAUv)
+            && TryGetOverlayUv(worldCamera, overlayRect, gateEnd, out Vector2 gateBUv))
+        {
+            _overlayMaterial.SetFloat(GateEnabledId, 1f);
+            _overlayMaterial.SetColor(WedgeNearColorId, _stageElevenNearGateColor);
+            _overlayMaterial.SetVector(GatePointAId, new Vector4(gateAUv.x, gateAUv.y, 0f, 0f));
+            _overlayMaterial.SetVector(GatePointBId, new Vector4(gateBUv.x, gateBUv.y, 0f, 0f));
+            return;
+        }
+
+        _overlayMaterial.SetFloat(GateEnabledId, 0f);
+    }
+
+    bool TryGetOverlayUv(Camera worldCamera, Rect overlayRect, Vector3 worldPosition, out Vector2 uv)
+    {
+        uv = default;
+
         Vector3 screenPoint = worldCamera.WorldToScreenPoint(worldPosition);
         if (screenPoint.z < 0f)
         {
-            return;
+            return false;
         }
 
         if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
@@ -3623,14 +3868,14 @@ public class OnboardingGuideController : MonoBehaviour
                 GetUiCamera(),
                 out Vector2 localPoint))
         {
-            return;
+            return false;
         }
 
-        Vector2 holeCenter = new Vector2(
-            Mathf.InverseLerp(overlayRect.xMin, overlayRect.xMax, localPoint.x),
-            Mathf.InverseLerp(overlayRect.yMin, overlayRect.yMax, localPoint.y));
-
-        _overlayMaterial.SetVector(HoleCenterId, new Vector4(holeCenter.x, holeCenter.y, 0f, 0f));
+        // Kama geometrisi bozulmasın diye 0-1 aralığına kırpmadan hesaplanır.
+        uv = new Vector2(
+            (localPoint.x - overlayRect.xMin) / overlayRect.width,
+            (localPoint.y - overlayRect.yMin) / overlayRect.height);
+        return true;
     }
 
     void UpdateActiveGuideElementPosition()
