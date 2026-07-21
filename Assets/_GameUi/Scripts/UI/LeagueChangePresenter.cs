@@ -11,6 +11,7 @@ public class LeagueChangePresenter : MonoBehaviour
     [SerializeField] RectTransform xp;
     [SerializeField] RectTransform buttons;
     [SerializeField] TextMeshProUGUI titleLabel;
+    [SerializeField] TextMeshProUGUI leagueNameLabel;
     [SerializeField] TextMeshProUGUI coinsLabel;
     [SerializeField] TextMeshProUGUI xpLabel;
     [SerializeField] Button continueButton;
@@ -183,6 +184,8 @@ public class LeagueChangePresenter : MonoBehaviour
         if (LeagueService.Instance != null
             && LeagueService.Instance.TryGetPendingSeasonResult(out LeagueSeasonResult result))
         {
+            ApplyLeagueNameLabel(result.NewLeague);
+
             if (titleLabel != null)
             {
                 if (result.Promoted)
@@ -231,10 +234,23 @@ public class LeagueChangePresenter : MonoBehaviour
             return;
         }
 
+        int fallbackLeague = LeagueService.Instance?.PlayerLeague ?? 1;
+        ApplyLeagueNameLabel(fallbackLeague);
+
         if (titleLabel != null)
         {
             titleLabel.SetText("Your league did not change!");
         }
+    }
+
+    void ApplyLeagueNameLabel(int league)
+    {
+        if (leagueNameLabel == null)
+        {
+            return;
+        }
+
+        leagueNameLabel.SetText(LeagueConfig.GetLeagueName(league));
     }
 
     void BindCloseButtons()
@@ -286,6 +302,12 @@ public class LeagueChangePresenter : MonoBehaviour
 
             switch (rect.name)
             {
+                case "LigName":
+                    if (leagueNameLabel == null)
+                    {
+                        leagueNameLabel = rect.GetComponent<TextMeshProUGUI>();
+                    }
+                    break;
                 case "Text (TMP)":
                 case "Title":
                     if (titleText == null)
@@ -307,6 +329,15 @@ public class LeagueChangePresenter : MonoBehaviour
                 case "Buttons" when rect.parent == transform && buttons == null:
                     buttons = rect;
                     break;
+            }
+        }
+
+        if (leagueNameLabel == null)
+        {
+            Transform ligName = FindDeepChild(transform, "LigName");
+            if (ligName != null)
+            {
+                leagueNameLabel = ligName.GetComponent<TextMeshProUGUI>();
             }
         }
 

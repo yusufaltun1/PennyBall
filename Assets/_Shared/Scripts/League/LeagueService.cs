@@ -620,6 +620,28 @@ public class LeagueService : MonoBehaviour
     }
 
     /// <summary>
+    /// Test/debug: oyuncunun lig puanını ayarlar.
+    /// </summary>
+    public void DebugSetPlayerLeaguePoints(int points)
+    {
+        if (_save?.standings == null)
+        {
+            return;
+        }
+
+        LeagueStandingEntry player = FindPlayerStanding();
+        if (player == null)
+        {
+            return;
+        }
+
+        player.points = Mathf.Max(0, points);
+        SortStandings();
+        LeagueRepository.Save(_save);
+        StandingsUpdated?.Invoke();
+    }
+
+    /// <summary>
     /// Test/debug: 1. sıraya al, sezonu bitir.
     /// </summary>
     public void DebugForceRankOneAndExpireSeason()

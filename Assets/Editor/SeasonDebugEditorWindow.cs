@@ -8,6 +8,7 @@ public class SeasonDebugEditorWindow : EditorWindow
 
     float _remainingHours = DefaultSeasonHours;
     float _remainingMinutes;
+    int _playerLeaguePoints;
     bool _autoApply;
 
     [MenuItem("PennyBall/League/Open Season Debug")]
@@ -16,6 +17,12 @@ public class SeasonDebugEditorWindow : EditorWindow
         SeasonDebugEditorWindow window = GetWindow<SeasonDebugEditorWindow>("Season Debug");
         window.RefreshFromSave();
         window.Show();
+    }
+
+    [MenuItem("PennyBall/League/Open League Points Debug")]
+    public static void OpenLeaguePoints()
+    {
+        Open();
     }
 
     void OnEnable()
@@ -49,6 +56,8 @@ public class SeasonDebugEditorWindow : EditorWindow
             MessageType.Info);
 
         DrawCurrentState();
+        EditorGUILayout.Space(8f);
+        DrawLeaguePointsSection();
         EditorGUILayout.Space(8f);
 
         _autoApply = EditorGUILayout.Toggle("Otomatik uygula", _autoApply);
@@ -152,6 +161,7 @@ public class SeasonDebugEditorWindow : EditorWindow
             EditorGUILayout.LabelField("Kalan", FormatRemaining(seasonRemaining));
             EditorGUILayout.LabelField("Lig", $"{league} — {LeagueConfig.GetLeagueName(league)}");
             EditorGUILayout.LabelField("Sıra", $"#{rank}");
+            EditorGUILayout.LabelField("Lig puanı", GetPlayerLeaguePoints().ToString());
             EditorGUILayout.LabelField("Sezon süresi", $"{DefaultSeasonHours} saat");
             EditorGUILayout.LabelField(
                 "Bekleyen sezon sonucu",
@@ -172,8 +182,195 @@ public class SeasonDebugEditorWindow : EditorWindow
 
         EditorGUILayout.LabelField("Kalan", FormatRemaining(savedRemaining));
         EditorGUILayout.LabelField("Lig", $"{save.playerLeague} — {LeagueConfig.GetLeagueName(save.playerLeague)}");
+        EditorGUILayout.LabelField("Lig puanı", GetPlayerLeaguePoints(save).ToString());
         EditorGUILayout.LabelField("Sezon başlangıç (UTC)", seasonStart.ToString("yyyy-MM-dd HH:mm"));
         EditorGUILayout.LabelField("Sezon bitiş (UTC)", seasonEnd.ToString("yyyy-MM-dd HH:mm"));
+    }
+
+    void DrawLeaguePointsSection()
+    {
+        EditorGUILayout.LabelField("Lig Puanı", EditorStyles.boldLabel);
+        _playerLeaguePoints = EditorGUILayout.IntField("Puan", _playerLeaguePoints);
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Puanı Uygula"))
+        {
+            ApplyPlayerLeaguePoints();
+        }
+
+        if (GUILayout.Button("Puanı Yenile"))
+        {
+            RefreshPlayerLeaguePoints();
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("0"))
+        {
+            SetPlayerLeaguePointsPreset(0);
+        }
+
+        if (GUILayout.Button("15"))
+        {
+            SetPlayerLeaguePointsPreset(15);
+        }
+
+        if (GUILayout.Button("30"))
+        {
+            SetPlayerLeaguePointsPreset(30);
+        }
+
+        if (GUILayout.Button("1. Sıra"))
+        {
+            ForceRankOnePoints();
+        }
+        EditorGUILayout.EndHorizontal();
+    }
+
+    void RefreshPlayerLeaguePoints()
+    {
+        _playerLeaguePoints = GetPlayerLeaguePoints();
+        Repaint();
+    }
+
+    void SetPlayerLeaguePointsPreset(int points)
+    {
+        _playerLeaguePoints = points;
+        ApplyPlayerLeaguePoints();
+    }
+
+    void ForceRankOnePoints()
+    {
+        if (Application.isPlaying && LeagueService.Instance != null)
+        {
+            LeagueService.Instance.DebugForcePlayerFirstPlace();
+            RefreshPlayerLeaguePoints();
+            Debug.Log("[SeasonDebug] Oyuncu 1. sıraya alındı (puan güncellendi).");
+            Repaint();
+            return;
+        }
+
+        LeagueSaveData save = LeagueRepository.Load();
+        if (save?.standings == null)
+        {
+            Debug.LogWarning("[SeasonDebug] Lig kaydı yok.");
+            return;
+        }
+
+        int maxPoints = 0;
+        for (int i = 0; i < save.standings.Length; i++)
+        {
+            maxPoints = Mathf.Max(maxPoints, save.standings[i].points);
+        }
+
+        for (int i = 0; i < save.standings.Length; i++)
+        {
+            if (save.standings[i].isPlayer)
+            {
+                save.standings[i].points = maxPoints + 10;
+                break;
+            }
+        }
+
+        SortStandingsInSave(save);
+        LeagueRepository.Save(save);
+        RefreshPlayerLeaguePoints();
+        Debug.Log("[SeasonDebug] Kayda yazıldı → oyuncu 1. sıra puanı.");
+        Repaint();
+    }
+
+    void ApplyPlayerLeaguePoints()
+    {
+        _playerLeaguePoints = Mathf.Max(0, _playerLeaguePoints);
+
+        if (Application.isPlaying && LeagueService.Instance != null)
+        {
+            LeagueService.Instance.DebugSetPlayerLeaguePoints(_playerLeaguePoints);
+            Debug.Log($"[SeasonDebug] Lig puanı ayarlandı → {_playerLeaguePoints}");
+            Repaint();
+            return;
+        }
+
+        LeagueSaveData save = LeagueRepository.Load();
+        if (save?.standings == null)
+        {
+            Debug.LogWarning("[SeasonDebug] Lig kaydı yok. Önce oyunu bir kez başlat.");
+            return;
+        }
+
+        for (int i = 0; i < save.standings.Length; i++)
+        {
+            if (save.standings[i].isPlayer)
+            {
+                save.standings[i].points = _playerLeaguePoints;
+                break;
+            }
+        }
+
+        SortStandingsInSave(save);
+        LeagueRepository.Save(save);
+        Debug.Log($"[SeasonDebug] Kayda yazıldı → lig puanı {_playerLeaguePoints}");
+        Repaint();
+    }
+
+    static int GetPlayerLeaguePoints(LeagueSaveData save = null)
+    {
+        if (Application.isPlaying && LeagueService.Instance != null)
+        {
+            LeagueStandingEntry player = FindPlayerInSave(LeagueService.Instance.Save);
+            return player?.points ?? 0;
+        }
+
+        save ??= LeagueRepository.Load();
+        LeagueStandingEntry savedPlayer = FindPlayerInSave(save);
+        return savedPlayer?.points ?? 0;
+    }
+
+    static LeagueStandingEntry FindPlayerInSave(LeagueSaveData save)
+    {
+        if (save?.standings == null)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < save.standings.Length; i++)
+        {
+            if (save.standings[i].isPlayer)
+            {
+                return save.standings[i];
+            }
+        }
+
+        return null;
+    }
+
+    static void SortStandingsInSave(LeagueSaveData save)
+    {
+        if (save?.standings == null)
+        {
+            return;
+        }
+
+        Array.Sort(save.standings, (a, b) =>
+        {
+            int pointsDelta = b.points - a.points;
+            if (pointsDelta != 0)
+            {
+                return pointsDelta;
+            }
+
+            if (a.isPlayer)
+            {
+                return -1;
+            }
+
+            if (b.isPlayer)
+            {
+                return 1;
+            }
+
+            return string.Compare(a.displayName, b.displayName, StringComparison.Ordinal);
+        });
     }
 
     void RefreshFromSave()
@@ -191,6 +388,7 @@ public class SeasonDebugEditorWindow : EditorWindow
             {
                 _remainingHours = DefaultSeasonHours;
                 _remainingMinutes = 0f;
+                _playerLeaguePoints = 0;
                 Repaint();
                 return;
             }
@@ -207,6 +405,7 @@ public class SeasonDebugEditorWindow : EditorWindow
 
         _remainingHours = (float)remaining.TotalHours;
         _remainingMinutes = remaining.Minutes + remaining.Seconds / 60f;
+        _playerLeaguePoints = GetPlayerLeaguePoints();
         Repaint();
     }
 
