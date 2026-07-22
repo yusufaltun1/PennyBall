@@ -84,15 +84,60 @@ public class CameraAimZoom : MonoBehaviour
     void OnEnable()
     {
         MatchIntroCameraFlythrough.Finished += CaptureHome;
+        StartCoroutine(SubscribeRoundResetWhenReady());
     }
 
     void OnDisable()
     {
         MatchIntroCameraFlythrough.Finished -= CaptureHome;
+        if (GameRulesManager.Instance != null)
+        {
+            GameRulesManager.Instance.RoundReset -= OnRoundReset;
+        }
+
         StopEdgeRestore();
         _edgeAssistActive = false;
         _activeEdgeMode = EdgeCameraMode.None;
         _edgeCoin = null;
+    }
+
+    IEnumerator SubscribeRoundResetWhenReady()
+    {
+        while (GameRulesManager.Instance == null)
+        {
+            yield return null;
+        }
+
+        GameRulesManager.Instance.RoundReset -= OnRoundReset;
+        GameRulesManager.Instance.RoundReset += OnRoundReset;
+    }
+
+    void OnRoundReset()
+    {
+        // Gol sonrası round yeniden başlarken kamera home'a dönmeli.
+        ForceResetToHome();
+    }
+
+    /// <summary>
+    /// Aim / edge zoom ne olursa olsun kamerayı anında başlangıç pozisyonuna alır.
+    /// </summary>
+    public void ForceResetToHome()
+    {
+        StopEdgeRestore();
+        _edgeAssistActive = false;
+        _activeEdgeMode = EdgeCameraMode.None;
+        _edgeCoin = null;
+        _edgeShotDirection = Vector3.zero;
+        _dragSidePullDirection = Vector3.zero;
+        _edgePullRatio = 0f;
+        _currentOffset = 0f;
+        _wasOffset = false;
+
+        transform.SetPositionAndRotation(_homePosition, _homeRotation);
+        if (_camera != null)
+        {
+            _camera.fieldOfView = _homeFieldOfView;
+        }
     }
 
     void Start()

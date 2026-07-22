@@ -6,6 +6,9 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public class SplashController : MonoBehaviour
 {
+    const string OnboardingScenePath = "Assets/_Onboarding/Scenes/Onboarding.unity";
+    const string MainMenuScenePath = "Assets/_MainMenu/Scenes/MainMenu_Scene.unity";
+
     [SerializeField] Slider _loadingSlider;
     [SerializeField] string _nextSceneName = GameSceneNames.MainMenu;
     [SerializeField] float _minDisplaySeconds = 1.5f;
@@ -38,16 +41,133 @@ public class SplashController : MonoBehaviour
 
     static string ResolveNextSceneName()
     {
-        return OnboardingProgress.IsCompleted
-            ? GameSceneNames.MainMenu
-            : OnboardingSceneNames.Onboarding;
+        if (OnboardingProgress.IsCompleted)
+        {
+            return GameSceneNames.MainMenu;
+        }
+
+        if (TryResolveBuildScene(OnboardingSceneNames.Onboarding, OnboardingScenePath, out string onboardingScene))
+        {
+            return onboardingScene;
+        }
+
+        Debug.LogWarning(
+            $"[Splash] '{OnboardingSceneNames.Onboarding}' build listesinde görünmedi. Main Menu'ye düşülüyor.");
+        return GameSceneNames.MainMenu;
+    }
+
+    static bool TryResolveBuildScene(string sceneName, string scenePath, out string loadName)
+    {
+        loadName = null;
+
+        if (string.IsNullOrEmpty(sceneName))
+        {
+            return false;
+        }
+
+        // 1) Build index by asset path (Unity 6 Build Profiles için daha güvenilir)
+        if (!string.IsNullOrEmpty(scenePath))
+        {
+            int pathIndex = SceneUtility.GetBuildIndexByScenePath(scenePath);
+            if (pathIndex >= 0)
+            {
+                loadName = sceneName;
+                return true;
+            }
+        }
+
+        // 2) Classic streamed-level check
+        if (Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            loadName = sceneName;
+            return true;
+        }
+
+        // 3) Scan all build scenes by file name
+        int sceneCount = SceneManager.sceneCountInBuildSettings;
+        for (int i = 0; i < sceneCount; i++)
+        {
+            string path = SceneUtility.GetScenePathByBuildIndex(i);
+            if (string.IsNullOrEmpty(path))
+            {
+                continue;
+            }
+
+            string name = System.IO.Path.GetFileNameWithoutExtension(path);
+            if (name == sceneName)
+            {
+                loadName = sceneName;
+                return true;
+            }
+        }
+
+#if UNITY_EDITOR
+        // 4) Editor: diskteki EditorBuildSettings (Play Mode'da runtime API gecikebiliyor)
+        foreach (UnityEditor.EditorBuildSettingsScene scene in UnityEditor.EditorBuildSettings.scenes)
+        {
+            if (!scene.enabled || string.IsNullOrEmpty(scene.path))
+            {
+                continue;
+            }
+
+            if (System.IO.Path.GetFileNameWithoutExtension(scene.path) == sceneName
+                || scene.path == scenePath)
+            {
+                loadName = sceneName;
+                return true;
+            }
+        }
+#endif
+
+        return false;
     }
 
     IEnumerator LoadNextSceneRoutine(string sceneName)
     {
         SetProgress(0f);
 
+        string scenePath = sceneName == OnboardingSceneNames.Onboarding
+            ? OnboardingScenePath
+            : sceneName == GameSceneNames.MainMenu
+                ? MainMenuScenePath
+                : null;
+
+        if (!TryResolveBuildScene(sceneName, scenePath, out string resolvedName))
+        {
+            Debug.LogError($"[Splash] Scene yüklenemedi: '{sceneName}'. Main Menu deneniyor.");
+            sceneName = GameSceneNames.MainMenu;
+        }
+        else
+        {
+            sceneName = resolvedName;
+        }
+
         AsyncOperation loadOperation = SceneManager.LoadSceneAsync(sceneName);
+#if UNITY_EDITOR
+        if (loadOperation == null)
+        {
+            string fallbackPath = sceneName == OnboardingSceneNames.Onboarding
+                ? OnboardingScenePath
+                : sceneName == GameSceneNames.MainMenu
+                    ? MainMenuScenePath
+                    : null;
+
+            if (!string.IsNullOrEmpty(fallbackPath))
+            {
+                Debug.LogWarning(
+                    $"[Splash] Runtime build listesi güncel değil; Editor Play Mode ile yükleniyor: {fallbackPath}");
+                loadOperation = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(
+                    fallbackPath,
+                    new LoadSceneParameters(LoadSceneMode.Single));
+            }
+        }
+#endif
+        if (loadOperation == null)
+        {
+            Debug.LogError($"[Splash] LoadSceneAsync null döndü: '{sceneName}'");
+            yield break;
+        }
+
         loadOperation.allowSceneActivation = false;
 
         float elapsed = 0f;

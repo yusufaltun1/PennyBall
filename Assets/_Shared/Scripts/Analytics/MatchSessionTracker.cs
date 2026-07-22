@@ -15,6 +15,9 @@ public static class MatchSessionTracker
 
     public static string CurrentMatchId => _currentMatchId;
     public static bool HasPendingResult => _resultPending;
+    public static bool HasPendingAbandon =>
+        _resultPending && !string.IsNullOrEmpty(_pendingAbandonReason);
+    public static string PendingAbandonReason => _pendingAbandonReason;
     public static float ElapsedSeconds => _resultPending ? Mathf.Max(0f, Time.realtimeSinceStartup - _matchStartRealtime) : 0f;
 
     public static void BeginMatch()

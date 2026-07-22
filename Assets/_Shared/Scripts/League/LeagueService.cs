@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -10,17 +11,20 @@ public class LeagueService : MonoBehaviour
     public event Action SeasonChanged;
     public event Action StandingsUpdated;
     public event Action<int> PlayerPromoted;
+    public event Action SeasonResultPending;
     public event Action AvatarChanged;
     public event Action DisplayNameChanged;
     public event Action<MatchResultType, string, string, int> MatchResultRegistered;
 
     LeagueSaveData _save;
+    Coroutine _seasonWatchRoutine;
 
     public LeagueSaveData Save => _save;
     public int PlayerLeague => _save?.playerLeague ?? 1;
     public int PlayerTotalMatches => _save?.playerTotalMatches ?? 0;
     public int PlayerAvatarIndex => _save?.playerAvatarIndex ?? 0;
     public TimeSpan SeasonRemaining => GetSeasonRemaining();
+    public bool HasPendingSeasonResult => _save != null && _save.hasPendingSeasonResult;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void EnsureService()
@@ -46,12 +50,19 @@ public class LeagueService : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
         SceneManager.sceneLoaded += OnSceneLoaded;
+        _seasonWatchRoutine = StartCoroutine(WatchSeasonExpiryRoutine());
         Initialize();
     }
 
     void OnDestroy()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
+
+        if (_seasonWatchRoutine != null)
+        {
+            StopCoroutine(_seasonWatchRoutine);
+            _seasonWatchRoutine = null;
+        }
 
         if (Instance == this)
         {
@@ -89,6 +100,41 @@ public class LeagueService : MonoBehaviour
         if (scene.name == GameSceneNames.MainMenu)
         {
             RefreshStandingsSimulation(LeagueSimulationTrigger.MainMenu);
+            NotifyPendingSeasonResultIfNeeded();
+        }
+    }
+
+    IEnumerator WatchSeasonExpiryRoutine()
+    {
+        var wait = new WaitForSeconds(1f);
+
+        while (true)
+        {
+            yield return wait;
+
+            if (_save == null)
+            {
+                continue;
+            }
+
+            string sceneName = SceneManager.GetActiveScene().name;
+            if (sceneName != GameSceneNames.MainMenu)
+            {
+                continue;
+            }
+
+            if (IsSeasonExpired())
+            {
+                EnsureSeasonActive();
+            }
+        }
+    }
+
+    void NotifyPendingSeasonResultIfNeeded()
+    {
+        if (_save != null && _save.hasPendingSeasonResult)
+        {
+            SeasonResultPending?.Invoke();
         }
     }
 
@@ -106,10 +152,7 @@ public class LeagueService : MonoBehaviour
 
         BackfillTotalMatchesIfNeeded();
 
-        if (IsSeasonExpired())
-        {
-            ResolveSeasonEnd();
-        }
+        ResolveSeasonIfNeeded(invokeEvents: false);
 
         LeagueSimulation.RefreshStandings(_save, LeagueSimulationTrigger.Initialize);
         SortStandings();
@@ -397,14 +440,98 @@ public class LeagueService : MonoBehaviour
         return -1;
     }
 
+    public bool ResolveSeasonIfNeeded(bool invokeEvents = true)
+    {
+        if (_save == null || !IsSeasonExpired())
+        {
+            return false;
+        }
+
+        if (_save.hasPendingSeasonResult)
+        {
+            return false;
+        }
+
+        ResolveSeasonEnd();
+        LeagueSimulation.RefreshStandings(_save, LeagueSimulationTrigger.Initialize);
+        SortStandings();
+        LeagueRepository.Save(_save);
+
+        if (invokeEvents)
+        {
+            SeasonChanged?.Invoke();
+            StandingsUpdated?.Invoke();
+            SeasonResultPending?.Invoke();
+        }
+
+        return true;
+    }
+
+    void FinalizeExpiringSeasonStandings()
+    {
+        LeagueSimulation.SimulateUntilNow(_save);
+        SortStandings();
+    }
+
+    public bool TryGetPendingSeasonResult(out LeagueSeasonResult result)
+    {
+        result = default;
+        if (_save == null || !_save.hasPendingSeasonResult)
+        {
+            return false;
+        }
+
+        result = new LeagueSeasonResult
+        {
+            Promoted = _save.pendingPromoted,
+            PreviousLeague = _save.pendingPreviousLeague,
+            NewLeague = _save.pendingNewLeague,
+            FinalRank = _save.pendingFinalRank,
+            RewardCoins = _save.pendingRewardCoins,
+            RewardXp = _save.pendingRewardXp
+        };
+        return true;
+    }
+
+    public bool ClaimPendingSeasonReward(int multiplier = 1)
+    {
+        if (_save == null || !_save.hasPendingSeasonResult)
+        {
+            return false;
+        }
+
+        int safeMultiplier = Mathf.Max(1, multiplier);
+        int coins = _save.pendingRewardCoins * safeMultiplier;
+        int xp = _save.pendingRewardXp * safeMultiplier;
+        if (coins > 0 || xp > 0)
+        {
+            WalletService.AddReward(coins, xp);
+        }
+
+        ConsumePendingSeasonResult();
+        return true;
+    }
+
+    public void ConsumePendingSeasonResult()
+    {
+        if (_save == null || !_save.hasPendingSeasonResult)
+        {
+            return;
+        }
+
+        _save.hasPendingSeasonResult = false;
+        _save.pendingPromoted = false;
+        _save.pendingPreviousLeague = 0;
+        _save.pendingNewLeague = 0;
+        _save.pendingFinalRank = 0;
+        _save.pendingRewardCoins = 0;
+        _save.pendingRewardXp = 0;
+        LeagueRepository.Save(_save);
+    }
+
     void EnsureSeasonActive()
     {
-        if (IsSeasonExpired())
-        {
-            ResolveSeasonEnd();
-            RefreshStandingsSimulation(LeagueSimulationTrigger.Initialize);
-            SeasonChanged?.Invoke();
-        }
+        ResolveSeasonIfNeeded(invokeEvents: true);
     }
 
     bool IsSeasonExpired()
@@ -429,18 +556,135 @@ public class LeagueService : MonoBehaviour
         return seasonEnd - DateTime.UtcNow;
     }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    /// <summary>
+    /// Test/debug: sezon bitişine kalan süreyi ayarlar.
+    /// </summary>
+    public void DebugSetSeasonRemaining(TimeSpan remaining)
+    {
+        if (_save == null)
+        {
+            return;
+        }
+
+        DateTime seasonEnd = DateTime.UtcNow.Add(remaining);
+        DateTime seasonStart = seasonEnd.AddHours(-LeagueConfig.SeasonDurationHours);
+        _save.seasonStartUtcTicks = seasonStart.Ticks;
+        LeagueRepository.Save(_save);
+    }
+
+    /// <summary>
+    /// Test/debug: sezon süresi dolmuşsa ResolveSeasonEnd akışını tetikler.
+    /// </summary>
+    public void DebugForceSeasonCheck()
+    {
+        EnsureSeasonActive();
+        StandingsUpdated?.Invoke();
+    }
+
+    /// <summary>
+    /// Test/debug: sezonu hemen bitmiş sayar ve kontrol eder.
+    /// </summary>
+    public void DebugExpireSeasonNow()
+    {
+        DebugSetSeasonRemaining(TimeSpan.FromSeconds(-1));
+        ConsumePendingSeasonResult();
+        DebugForceSeasonCheck();
+    }
+
+    /// <summary>
+    /// Test/debug: oyuncuyu 1. sıraya alır (promotion senaryosu için).
+    /// </summary>
+    public void DebugForcePlayerFirstPlace()
+    {
+        if (_save?.standings == null)
+        {
+            return;
+        }
+
+        int maxPoints = 0;
+        for (int i = 0; i < _save.standings.Length; i++)
+        {
+            maxPoints = Mathf.Max(maxPoints, _save.standings[i].points);
+        }
+
+        LeagueStandingEntry player = FindPlayerStanding();
+        if (player != null)
+        {
+            player.points = maxPoints + 10;
+        }
+
+        SortStandings();
+        LeagueRepository.Save(_save);
+        StandingsUpdated?.Invoke();
+    }
+
+    /// <summary>
+    /// Test/debug: oyuncunun lig puanını ayarlar.
+    /// </summary>
+    public void DebugSetPlayerLeaguePoints(int points)
+    {
+        if (_save?.standings == null)
+        {
+            return;
+        }
+
+        LeagueStandingEntry player = FindPlayerStanding();
+        if (player == null)
+        {
+            return;
+        }
+
+        player.points = Mathf.Max(0, points);
+        SortStandings();
+        LeagueRepository.Save(_save);
+        StandingsUpdated?.Invoke();
+    }
+
+    /// <summary>
+    /// Test/debug: 1. sıraya al, sezonu bitir.
+    /// </summary>
+    public void DebugForceRankOneAndExpireSeason()
+    {
+        DebugForcePlayerFirstPlace();
+        DebugExpireSeasonNow();
+    }
+#endif
+
     void ResolveSeasonEnd()
     {
-        SortStandings();
+        FinalizeExpiringSeasonStandings();
         int playerRank = GetPlayerRank();
+        int previousLeague = _save.playerLeague;
+        bool promoted = playerRank == 1 && previousLeague < LeagueConfig.LeagueCount;
 
-        if (playerRank == 1 && _save.playerLeague < LeagueConfig.LeagueCount)
+        if (promoted)
         {
             _save.playerLeague++;
             PlayerPromoted?.Invoke(_save.playerLeague);
         }
 
+        _save.hasPendingSeasonResult = true;
+        _save.pendingPromoted = promoted;
+        _save.pendingPreviousLeague = previousLeague;
+        _save.pendingNewLeague = _save.playerLeague;
+        _save.pendingFinalRank = playerRank;
+        _save.pendingRewardCoins = promoted
+            ? WalletService.LeaguePromotionCoins
+            : WalletService.LeaguePromotionCoins / 2;
+        _save.pendingRewardXp = promoted
+            ? WalletService.LeaguePromotionXp
+            : WalletService.LeaguePromotionXp / 2;
+
         StartNewSeason();
+        LeagueRepository.Save(_save);
+        SeasonResultPending?.Invoke();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log(
+            $"[League] Sezon bitti. Sıra={playerRank}, Promote={promoted}, " +
+            $"Lig {previousLeague}→{_save.playerLeague}, Puan={FindPlayerStanding()?.points ?? 0}");
+#endif
     }
 
     void StartNewSeason()

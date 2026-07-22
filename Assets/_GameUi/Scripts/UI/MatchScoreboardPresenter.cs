@@ -92,14 +92,51 @@ public class MatchScoreboardPresenter : MonoBehaviour
         OpponentBotController.Instance?.FreezeMatch();
         GameFeedback.EnsureInstance()?.PlayWhistle();
 
+        bool isForfeit = MatchSessionTracker.HasPendingAbandon;
+
         MatchResultType result = MatchResultType.Draw;
         if (LeagueMatchController.Instance != null)
             result = LeagueMatchController.Instance.CompleteMatchFromTimer();
 
         RefreshAll();
 
-        ResultPanelController resultPanel =
-            FindAnyObjectByType<ResultPanelController>(FindObjectsInactive.Include);
+        if (isForfeit)
+        {
+            HukmenMaglupController forfeitPanel = HukmenMaglupController.FindPanel();
+            if (forfeitPanel != null)
+            {
+                forfeitPanel.Show();
+                return;
+            }
+
+            Debug.LogWarning("[Match] Hükmen mağlup paneli (HukmenMaglup) sahnede bulunamadı.");
+        }
+
+        ResultPanelController resultPanel = FindNormalResultPanel();
         resultPanel?.ShowResult(result);
+    }
+
+    static ResultPanelController FindNormalResultPanel()
+    {
+        ResultPanelController[] panels =
+            FindObjectsByType<ResultPanelController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        for (int i = 0; i < panels.Length; i++)
+        {
+            if (panels[i] != null && panels[i].gameObject.name == "ResultPanel")
+            {
+                return panels[i];
+            }
+        }
+
+        for (int i = 0; i < panels.Length; i++)
+        {
+            if (panels[i] != null && panels[i].gameObject.name != "HukmenMaglup")
+            {
+                return panels[i];
+            }
+        }
+
+        return null;
     }
 }
