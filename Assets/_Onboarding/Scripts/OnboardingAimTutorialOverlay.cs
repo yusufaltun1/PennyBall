@@ -130,6 +130,31 @@ public class OnboardingAimTutorialOverlay : MonoBehaviour
         ApplyDashedLine(_rightAngleLine, coinPosition, rightDirection.normalized, _angleGuideLineLength, lineColor);
     }
 
+    /// <summary>
+    /// Coin'den verilen uç noktalara kadar yeşil/renkli rehber çizgileri çizer.
+    /// </summary>
+    public void ShowGuideLinesToEndpoints(
+        Vector3 coinPosition,
+        Vector3 leftEndpoint,
+        Vector3 rightEndpoint,
+        Color lineColor)
+    {
+        EnsureInitialized();
+
+        Vector3 leftOffset = Flatten(leftEndpoint - coinPosition);
+        Vector3 rightOffset = Flatten(rightEndpoint - coinPosition);
+        float leftLength = leftOffset.magnitude;
+        float rightLength = rightOffset.magnitude;
+        if (leftLength < 0.0001f || rightLength < 0.0001f)
+        {
+            HideAngleGuides();
+            return;
+        }
+
+        ApplyDashedLine(_leftAngleLine, coinPosition, leftOffset / leftLength, leftLength, lineColor);
+        ApplyDashedLine(_rightAngleLine, coinPosition, rightOffset / rightLength, rightLength, lineColor);
+    }
+
     public void HideAngleGuides()
     {
         if (_leftAngleLine != null)

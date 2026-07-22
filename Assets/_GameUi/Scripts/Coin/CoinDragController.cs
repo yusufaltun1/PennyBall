@@ -753,7 +753,9 @@ public class CoinDragController : MonoBehaviour
 
         float power01 = ResolveAimPower01(pullDistance);
         float effectivePullDistance = GetPullDistanceForPower01(power01);
-        return launchDirection * (effectivePullDistance * _launchForceMultiplier);
+        float launchSpeed = Mathf.Min(effectivePullDistance * _launchForceMultiplier, _maxLaunchSpeed);
+
+        return launchDirection * launchSpeed;
     }
 
     float ResolveAimPower01(float pullDistance)
@@ -831,6 +833,45 @@ public class CoinDragController : MonoBehaviour
         }
 
         return distance * _travelDistanceScale;
+    }
+
+    public float EstimateTravelDistanceForLaunchSpeed(float launchSpeed)
+    {
+        return EstimateTravelDistance(launchSpeed);
+    }
+
+    /// <summary>
+    /// Verilen mesafe için (damping modeli ile) gereken minimum fırlatma hızı.
+    /// </summary>
+    public float GetRequiredLaunchSpeedForDistance(float distance)
+    {
+        distance = Mathf.Max(0f, distance);
+        if (distance <= 0.0001f)
+        {
+            return 0f;
+        }
+
+        if (EstimateTravelDistance(_maxLaunchSpeed) < distance)
+        {
+            return _maxLaunchSpeed;
+        }
+
+        float lo = 0f;
+        float hi = _maxLaunchSpeed;
+        for (int i = 0; i < 28; i++)
+        {
+            float mid = (lo + hi) * 0.5f;
+            if (EstimateTravelDistance(mid) >= distance)
+            {
+                hi = mid;
+            }
+            else
+            {
+                lo = mid;
+            }
+        }
+
+        return hi;
     }
 
     CoinAimIndicator.PathVisual BuildAimPath(Vector3 anchor, Vector3 direction, float totalDistance)

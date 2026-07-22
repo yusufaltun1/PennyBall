@@ -75,6 +75,12 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
 
     void OnInvalidMoveRollbackStarted(CoinTeam team)
     {
+        OnboardingGuideController onboarding = OnboardingGuideController.Instance;
+        if (onboarding != null && onboarding.ShouldSuppressInvalidMoveFeedback)
+        {
+            return;
+        }
+
         _consecutiveInvalidMoves++;
         UpdateCounterText();
         ShowInvalidMove();
@@ -82,6 +88,12 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
 
     void OnInvalidMoveRollbackFinished(CoinTeam team)
     {
+        OnboardingGuideController onboarding = OnboardingGuideController.Instance;
+        if (onboarding != null && onboarding.ShouldSuppressInvalidMoveFeedback)
+        {
+            return;
+        }
+
         if (_consecutiveInvalidMoves >= StreakResetThreshold)
         {
             if (_feedbackRoutine != null)

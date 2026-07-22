@@ -1,5 +1,5 @@
-using System;
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -17,21 +17,12 @@ public class OnboardingGuideController : MonoBehaviour
         Stage3_DragAgain,
         Stage4_AlignShot,
         Stage5_Drag,
-        Stage6_Power,
-        Stage7_ResetCoins,
+        Stage6_PowerAim,
+        Stage7_Drag,
         Stage8_Drag,
-        Stage9_ReleaseToShot,
-        Stage10_Drag,
-        Stage11_ReleaseToShot,
-        Stage12_Drag,
-        Stage12_PowerShot,
-        Stage13_PreAlignDrag,
-        Stage14_GateAlignPower,
-        Stage15_Drag,
-        Stage16_PowerShot,
-        Stage17_Drag,
-        Stage17_ReleaseToShot,
-        Stage18_PowerShot,
+        Stage9_PassBetween,
+        Stage10_PullAndGoal,
+        Stage11_PassAndGoal,
         Completed
     }
 
@@ -40,99 +31,200 @@ public class OnboardingGuideController : MonoBehaviour
     public bool IsAimInputFrozen => _isAimInputFrozen;
 
     public bool IsOnboardingSceneInteractionBlocked =>
-        _sceneInteractionBlockedUntilStageEight
-        || _awaitingFinalGoalCelebration
-        || _stageElevenAlertVisible
-        || _phase == GuidePhase.Stage7_ResetCoins
+        _stageFourPostShotSequenceActive
+        || _stage6PostShotSequenceActive
+        || _stage7PostShotSequenceActive
+        || _stage9PostShotSequenceActive
+        || _stage11PostShotSequenceActive
+        || _stage9AlertPending
+        || IsStageSixAlertVisible()
+        || IsStageSevenAlertVisible()
+        || IsStageNineAlertVisible()
+        || IsStageTenAlertVisible()
+        || IsSuccessPanelVisible()
         || (_phase == GuidePhase.Completed && _onboardingCompletePending)
         || IsOnboardingCompletePanelVisible();
 
     /// <summary>
-    /// Tek coin'li erken tutorial aşamalarında gate/InvalidMove kuralları kapalı (Aşama 1–9).
+    /// Guide çalışırken (Aşama 1–8) gate/InvalidMove kuralları kapalı.
+    /// Aşama 9+: gate doğrulaması açık; InvalidMove UI Aşama 9'da ayrıca bastırılır.
     /// </summary>
     public bool ShouldSuppressInvalidMoveRules =>
-        IsSingleCoinTutorialPhase() || IsStageTwelvePracticePhase();
+        IsSingleCoinTutorialPhase();
 
     /// <summary>
-    /// Tutorial aşamalarında çizgi uzunluğu ve güç sabit kalır (1–2: stage one güç, 4: açı öğretimi güç).
-    /// Aşama 2'de çekme yönü de kilitlenir; oyuncu sadece bırakır.
+    /// Aşama 9/10: kapı kaçırılınca coin(ler) geri çekilir ama InvalidMove UI gösterilmez.
+    /// </summary>
+    public bool ShouldSuppressInvalidMoveFeedback =>
+        _guideStarted
+        && (_phase == GuidePhase.Stage9_PassBetween
+            || _phase == GuidePhase.Stage11_PassAndGoal);
+
+    /// <summary>
+    /// Aşama 2 ve 4: sabit güç, kilitli açı. Aşama 1/3 serbest çekiş.
     /// </summary>
     public bool UsesFixedTutorialAimPower =>
-        _phase == GuidePhase.Stage1_Drag
-        || _phase == GuidePhase.Stage2_ReleaseToShot
-        || _phase == GuidePhase.Stage4_AlignShot
-        || _phase == GuidePhase.Stage8_Drag
-        || _phase == GuidePhase.Stage9_ReleaseToShot
-        || _phase == GuidePhase.Stage10_Drag
-        || _phase == GuidePhase.Stage11_ReleaseToShot
-        || _phase == GuidePhase.Stage17_ReleaseToShot;
+        _phase == GuidePhase.Stage2_ReleaseToShot
+        || _phase == GuidePhase.Stage4_AlignShot;
 
     public float FixedTutorialAimPower01 =>
-        _phase switch
-        {
-            GuidePhase.Stage4_AlignShot => _stageFourShotPower01,
-            GuidePhase.Stage11_ReleaseToShot => _stageElevenResolvedPower01,
-            GuidePhase.Stage17_ReleaseToShot => _stageSeventeenResolvedPower01,
-            _ => _stageOneShotPower01
-        };
+        _phase == GuidePhase.Stage4_AlignShot
+            ? _stageFourShotPower01
+            : _stageOneShotPower01;
 
     public float StageOneShotPower01 => _stageOneShotPower01;
 
-    public bool ShouldUseExtendedInvalidMoveHideDelay =>
-        _phase == GuidePhase.Stage18_PowerShot;
+    public bool ShouldUseExtendedInvalidMoveHideDelay => false;
 
-    public bool ShouldDeferGoalRoundReset =>
-        _guideStarted && _phase == GuidePhase.Stage6_Power;
+    public bool ShouldDeferGoalRoundReset => false;
 
     public bool ShouldDeferRoundResetForOnboardingCompletion =>
         _guideStarted
-        && (_phase == GuidePhase.Stage18_PowerShot
-            || (_phase == GuidePhase.Completed && _onboardingCompletePending)
-            || _onboardingCompletePending);
+        && (_phase == GuidePhase.Stage11_PassAndGoal
+            || _onboardingCompletePending
+            || (_phase == GuidePhase.Completed && _onboardingCompletePending));
+
+    /// <summary>
+    /// Aşama 5/7: CoinInputHandler idle Hide'ını engelle; GateIndicator açık kalsın.
+    /// </summary>
+    public bool ShouldKeepOnboardingGateIndicatorVisible =>
+        _guideStarted
+        && (_phase == GuidePhase.Stage5_Drag || _phase == GuidePhase.Stage7_Drag)
+        && !IsStageSixAlertVisible()
+        && !IsStageSevenAlertVisible()
+        && !_stage6PostShotSequenceActive
+        && !_stage7PostShotSequenceActive;
 
     public void NotifyPlayerGoalCelebrationStarting()
     {
-        if (_phase == GuidePhase.Stage6_Power)
+        if (_phase == GuidePhase.Stage11_PassAndGoal)
         {
-            _sceneInteractionBlockedUntilStageEight = true;
-            return;
-        }
-
-        if (_phase == GuidePhase.Stage18_PowerShot)
-        {
+            _stage11ConsecutiveFails = 0;
+            _stage11NoGoalFails = 0;
             CompleteOnboardingAfterFinalGoal();
         }
     }
 
-    public void OnFinalGoalCelebrationFinished()
+    /// <summary>
+    /// Aşama 8 gate denemesi (kodda Stage9_PassBetween): gol olsa bile Success → sonraki aşama.
+    /// </summary>
+    public bool ShouldTreatGoalAsStageEightGateSuccess =>
+        _guideStarted && _phase == GuidePhase.Stage9_PassBetween;
+
+    public void NotifyStageEightGateSuccess()
     {
-        if (_phase != GuidePhase.Stage6_Power)
+        if (_phase != GuidePhase.Stage9_PassBetween)
         {
             return;
         }
 
-        _awaitingFinalGoalCelebration = false;
-        EnterPostTutorialReset();
+        _stage9ConsecutiveFails = 0;
+        BeginStageNineSuccessToStageTen();
+    }
+
+    public void OnFinalGoalCelebrationFinished()
+    {
     }
 
     public bool CanReleaseAim(CoinDragController coin)
     {
-        Transform guidedCoin = GetGuidedCoinTransform();
-        if (coin == null || guidedCoin == null || coin.transform != guidedCoin)
+        _ = coin;
+        return true;
+    }
+
+    /// <summary>
+    /// CoinInputHandler BeginAim hemen ardından çağırır (TryShowGateIndicator'dan önce).
+    /// Aşama 8→9 geçişi burada yapılır ki GateIndicator aynı karede normal kurallarla açılsın.
+    /// </summary>
+    public void OnPlayerAimBegan(CoinDragController coin)
+    {
+        if (coin == null || !IsGuideRunning())
         {
-            return true;
+            return;
         }
 
-        return _phase switch
+        if (_phase == GuidePhase.Stage8_Drag)
         {
-            GuidePhase.Stage4_AlignShot => _alignedForCurrentAim,
-            GuidePhase.Stage6_Power => _powerOkForCurrentAim,
-            GuidePhase.Stage12_PowerShot => _powerOkForCurrentAim,
-            GuidePhase.Stage14_GateAlignPower => _powerOkForCurrentAim,
-            GuidePhase.Stage16_PowerShot => _powerOkForCurrentAim,
-            GuidePhase.Stage18_PowerShot => _powerOkForCurrentAim,
-            _ => true
-        };
+            EnterStage9(coin);
+            return;
+        }
+
+        if (_phase == GuidePhase.Stage10_PullAndGoal)
+        {
+            EnterStage11(coin);
+        }
+    }
+
+    /// <summary>
+    /// CoinInputHandler her karede UpdateAim'den önce çağırır.
+    /// Aşama 1→2 ve 3→4 geçişleri burada yapılır; AimArrow doğrudan Inspector hedefine kilitlenir.
+    /// </summary>
+    public void PrepareOnboardingAimLockBeforeAimUpdate(CoinDragController coin)
+    {
+        if (coin == null || !coin.IsAiming)
+        {
+            return;
+        }
+
+        if (_phase == GuidePhase.Stage8_Drag)
+        {
+            EnterStage9(coin);
+            return;
+        }
+
+        if (_phase == GuidePhase.Stage10_PullAndGoal)
+        {
+            EnterStage11(coin);
+            return;
+        }
+
+        if (_phase == GuidePhase.Stage6_PowerAim)
+        {
+            TryUpdateStageSixAimLock(coin);
+            return;
+        }
+
+        if (_phase == GuidePhase.Stage2_ReleaseToShot)
+        {
+            TryUpdateStageTwoAimLock(coin);
+            return;
+        }
+
+        if (_phase == GuidePhase.Stage4_AlignShot)
+        {
+            TryUpdateStageFourAimLock(coin);
+            return;
+        }
+
+        if (_phase == GuidePhase.Stage1_Drag)
+        {
+            if (!coin.TryGetActiveAimTarget(out _, out float power01) || power01 < _stage1MinPullPower01)
+            {
+                return;
+            }
+
+            TryUpdateStageTwoAimLock(coin);
+            EnterStage2(coin);
+            return;
+        }
+
+        if (_phase != GuidePhase.Stage3_DragAgain)
+        {
+            return;
+        }
+
+        if (!coin.TryGetActiveAimTarget(out _, out float stageThreePower01) || stageThreePower01 < _stage3MinPullPower01)
+        {
+            return;
+        }
+
+        TryUpdateStageFourAimLock(coin);
+        EnterStage4(coin);
+    }
+
+    public void PrepareStageTwoAimLockBeforeAimUpdate(CoinDragController coin)
+    {
+        PrepareOnboardingAimLockBeforeAimUpdate(coin);
     }
 
     static readonly int HoleCenterId = Shader.PropertyToID("_HoleCenter");
@@ -148,8 +240,11 @@ public class OnboardingGuideController : MonoBehaviour
     static readonly int GateEnabledId = Shader.PropertyToID("_GateEnabled");
     static readonly int GatePointAId = Shader.PropertyToID("_GatePointA");
     static readonly int GatePointBId = Shader.PropertyToID("_GatePointB");
-    static readonly int WedgeNearColorId = Shader.PropertyToID("_WedgeNearColor");
+    static readonly int HalfPlaneEnabledId = Shader.PropertyToID("_HalfPlaneEnabled");
+    static readonly int HalfPlaneBrightPointId = Shader.PropertyToID("_HalfPlaneBrightPoint");
+    static readonly int HalfPlaneSoftnessId = Shader.PropertyToID("_HalfPlaneSoftness");
 
+    [Header("References")]
     [SerializeField] RectTransform _guideElement;
     [SerializeField] RectTransform _pullGuideElement;
     [SerializeField] RectTransform _arrow;
@@ -158,146 +253,310 @@ public class OnboardingGuideController : MonoBehaviour
     [SerializeField] TextMeshProUGUI _guideText;
     [SerializeField] TextMeshProUGUI _pullGuideText;
     [SerializeField] Transform _openingCoin;
-    [SerializeField] Transform _sideCoinLeft;
-    [SerializeField] Transform _sideCoinRight;
     [SerializeField] Transform _enemyGoal;
-    [SerializeField] Transform _stageTwoShotTarget;
-    [SerializeField] Transform _stageNineShotTarget;
-    [SerializeField] Transform _stageElevenShotTarget;
-    [SerializeField] Transform _stageTwelveShotTarget;
-    [SerializeField] Transform _stageFourteenShotTarget;
-    [SerializeField] Transform _stageSixteenShotTarget;
-    [SerializeField] Transform _stageSeventeenShotTarget;
-    [SerializeField] Transform _stageSixGoalTarget;
     [SerializeField] GameObject _onboardingCompletePanel;
     [SerializeField] Camera _worldCamera;
-
-    [Header("Copy")]
-    [SerializeField] string _dragMessage = "Drag";
-    [SerializeField] string _tryAgainMessage = "Try again";
-    [SerializeField] string _releaseToShotMessage = "Release to shot";
-    [SerializeField] string _passBetweenCoinsMessage = "Pass between coins";
-    [SerializeField] string _dragAgainMessage = "Drag again";
-    [SerializeField] string _alignShotMessage = "Align the shot line between here";
-    [SerializeField] string _nowReleaseMessage = "Now release";
-    [SerializeField] string _releaseNowMessage = "Release now";
-    [SerializeField] string _increasePowerMessage = "Increase power";
 
     [Header("Dev")]
     [Tooltip("Geçici: tutorial mesajlarının sonuna (Aşama no) ekler. Onboarding bitince kapatılacak.")]
     [SerializeField] bool _appendStageNumberToGuideMessages = true;
 
-    [Header("Tuning")]
-    [SerializeField] float _minPullPower01 = 0.02f;
-    [SerializeField] float _stageOneShotPower01 = 0.5f;
-    [SerializeField] float _stageFourShotPower01 = 0.5f;
-    [SerializeField] Vector3 _stageTwoShotTargetPosition = new(1.02f, 0.1393f, 2.12f);
-    [Tooltip("Aşama 9: Coin_P2 tekrar atış hedefi (sahne boşsa fallback kullanılır).")]
-    [SerializeField] Vector3 _stageNineShotTargetPosition = new(1.33f, 0.1393f, 1.975f);
-    [Tooltip("Aşama 12: Coin_P3 sabit açı hedefi (sahne boşsa fallback kullanılır).")]
-    [SerializeField] Vector3 _stageTwelveShotTargetPosition = new(1.28f, 0.1485f, 2.55f);
-    [Tooltip("Aşama 14: Coin_P3 gate atışı hayalet hedefi (sahne boşsa fallback kullanılır).")]
-    [SerializeField] Vector3 _stageFourteenShotTargetPosition = new(1.408f, 0.129f, 2.344f);
-    [Tooltip("Aşama 16: Sahnedeki Stage16GoalTarget (boşsa bulunur, yoksa fallback Vector3).")]
-    [SerializeField] Vector3 _stageSixteenShotTargetPosition = new(1.452f, 0.1393f, 2.639f);
-    [Tooltip("Aşama 17: Sahnedeki Stage17GoalTarget (boşsa bulunur, yoksa fallback Vector3).")]
-    [SerializeField] Vector3 _stageSeventeenShotTargetPosition = new(1.62f, 0.1393f, 2.15f);
-    [Tooltip("Aşama 11: Sahnedeki Stage11GoalTarget (boşsa bulunur, yoksa fallback Vector3).")]
-    [SerializeField] Vector3 _stageElevenShotTargetPosition = new(1.682f, 0.139f, 2.026f);
-    [SerializeField] float _pullTargetGap;
-    [SerializeField] float _alignHalfAngleDegrees = 14f;
-    [SerializeField] float _angleArrowDistanceFromCoin = 0.5f;
-    [Tooltip("Aşama 6: Oyuncu çizgi ucu Stage Six Goal Target'a bu yarıçap içinde gelince Now release.")]
-    [SerializeField] float _stageSixTargetMatchRadius = 0.1f;
-    [SerializeField] float _coinReturnDuration = 1.2f;
-    [SerializeField] float _sideCoinEnterDelay = 0.25f;
-    [SerializeField] float _sideCoinEnterDuration = 0.85f;
-    [Tooltip("Ekran dışından kaydırma için ekran kenarından taşma (0-1).")]
-    [SerializeField] float _sideCoinSlideScreenPadding = 0.08f;
-    [SerializeField] float _sideCoinSlideFallbackOffset = 1.2f;
-    [SerializeField] float _ghostTargetRingRadius = 0.028f;
-    [SerializeField] float _stageSixGoalTargetInset = 0f;
+    [Header("Aşama 1 — Drag")]
+    [InspectorLabel("Drag Message")]
+    [SerializeField] string _dragMessage = "Drag";
+    [Tooltip("Aşama 1→2 geçişi için minimum çekme gücü (0-1).")]
+    [FormerlySerializedAs("_minPullPower01")]
+    [InspectorLabel("Min Pull Power")]
+    [SerializeField] float _stage1MinPullPower01 = 0.02f;
+    [SerializeField] Sprite _handDefaultSprite;
+    [SerializeField] Sprite _handPressedSprite;
+    [Tooltip("El boyutu (piksel). Aşama 1 ve 3 paylaşır.")]
+    [InspectorLabel("Hand Screen Size")]
+    [SerializeField] float _stageOneHandScreenSize = 180f;
+    [Tooltip("El offset (piksel). Pozitif X sağa.")]
+    [FormerlySerializedAs("_stageOneHandScreenOffset")]
+    [InspectorLabel("Hand Screen Offset")]
+    [SerializeField] Vector2 _stage1HandScreenOffset = new(45f, 0f);
+    [Tooltip("Explanation offset (piksel).")]
+    [FormerlySerializedAs("_stageOneExplanationScreenOffset")]
+    [InspectorLabel("Explanation Screen Offset")]
+    [SerializeField] Vector2 _stage1ExplanationScreenOffset = new(0f, 55f);
+    [Tooltip("Ok ucunun para merkezinin ne kadar üstünde duracağı (piksel). Aşama 1/3.")]
+    [InspectorLabel("Arrow Gap Above Coin")]
+    [SerializeField] float _arrowGapAboveCoin = 48f;
+    [Tooltip("Paradan çekme mesafesi (world). Aşama 1: atış yönünün tersi.")]
+    [InspectorLabel("Hand Drag World Distance")]
+    [SerializeField] float _stageOneHandDragWorldDistance = 0.18f;
+    [InspectorLabel("Hand Move Duration")]
+    [SerializeField] float _stageOneHandMoveDuration = 0.7f;
+    [InspectorLabel("Hand Press Hold")]
+    [SerializeField] float _stageOneHandPressHold = 0.2f;
+    [InspectorLabel("Hand Pause")]
+    [SerializeField] float _stageOneHandPause = 0.15f;
 
-    [Header("Arrow")]
-    [Tooltip("Okun yukarı-aşağı zıplama mesafesi (piksel). Büyütürsen ok paraya daha çok iner; küçültürsen kapatmaz.")]
+    [Header("Aşama 2 — Release To Shot")]
+    [FormerlySerializedAs("_releaseToShotMessage")]
+    [InspectorLabel("Release Message")]
+    [SerializeField] string _stage2ReleaseMessage = "Release to shot";
+    [Tooltip("Inspector hedefi (Transform atanırsa pozisyon yerine bunu kullanır).")]
+    [InspectorLabel("Shot Target")]
+    [SerializeField] Transform _stageTwoShotTarget;
+    [Tooltip("Transform boşsa AimArrow bu world noktasına kilitlenir.")]
+    [InspectorLabel("Shot Target Position")]
+    [SerializeField] Vector3 _stageTwoShotTargetPosition = new(1.02f, 0.1393f, 2.12f);
+    [Tooltip("Aşama 2 sabit atış gücü (0-1).")]
+    [InspectorLabel("Shot Power")]
+    [SerializeField] float _stageOneShotPower01 = 0.5f;
+    [Tooltip("Explanation offset (piksel). Maske/ok kapalıyken metin kutusu.")]
+    [InspectorLabel("Explanation Screen Offset")]
+    [SerializeField] Vector2 _stage2ExplanationScreenOffset = new(0f, 55f);
+    [Tooltip("Ok ucunun hedef noktanın ne kadar üstünde duracağı (piksel). Aşama 2/4.")]
+    [InspectorLabel("Pull Guide Screen Offset")]
+    [SerializeField] float _pullGuideScreenOffset = 8f;
+
+    [Header("Aşama 3 — Drag Again")]
+    [FormerlySerializedAs("_dragAgainMessage")]
+    [InspectorLabel("Drag Message")]
+    [SerializeField] string _stage3DragMessage = "Drag again";
+    [Tooltip("Aşama 3→4 geçişi için minimum çekme gücü (0-1).")]
+    [InspectorLabel("Min Pull Power")]
+    [SerializeField] float _stage3MinPullPower01 = 0.02f;
+    [Tooltip("El offset (piksel). Pozitif X sağa.")]
+    [FormerlySerializedAs("_stageThreeHandScreenOffset")]
+    [InspectorLabel("Hand Screen Offset")]
+    [SerializeField] Vector2 _stage3HandScreenOffset = new(45f, 0f);
+    [Tooltip("Explanation offset (piksel).")]
+    [FormerlySerializedAs("_stageThreeExplanationScreenOffset")]
+    [InspectorLabel("Explanation Screen Offset")]
+    [SerializeField] Vector2 _stage3ExplanationScreenOffset = new(0f, 55f);
+    [Tooltip("Paradan çekme mesafesi (world). Aşama 3: yukarıdan aşağı (ekran).")]
+    [InspectorLabel("Hand Drag World Distance")]
+    [SerializeField] float _stage3HandDragWorldDistance = 0.18f;
+    [InspectorLabel("Hand Move Duration")]
+    [SerializeField] float _stage3HandMoveDuration = 0.7f;
+    [InspectorLabel("Hand Press Hold")]
+    [SerializeField] float _stage3HandPressHold = 0.2f;
+    [InspectorLabel("Hand Pause")]
+    [SerializeField] float _stage3HandPause = 0.15f;
+
+    [Header("Aşama 4 — Align Shot")]
+    [InspectorLabel("Release Message")]
+    [SerializeField] string _stage4ReleaseMessage = "Release to shot";
+    [Tooltip("Inspector hedefi (Transform atanırsa pozisyon yerine bunu kullanır).")]
+    [InspectorLabel("Shot Target")]
+    [SerializeField] Transform _stageFourShotTarget;
+    [Tooltip("Transform boşsa AimArrow bu world noktasına kilitlenir.")]
+    [InspectorLabel("Shot Target Position")]
+    [SerializeField] Vector3 _stageFourShotTargetPosition = new(1.02f, 0.1393f, 2.12f);
+    [Tooltip("Aşama 4 sabit atış gücü (0-1).")]
+    [InspectorLabel("Shot Power")]
+    [SerializeField] float _stageFourShotPower01 = 0.5f;
+    [Tooltip("Explanation offset (piksel). Maske/ok kapalıyken metin kutusu.")]
+    [InspectorLabel("Explanation Screen Offset")]
+    [SerializeField] Vector2 _stage4ExplanationScreenOffset = new(0f, 55f);
+    [Tooltip("Atış sonrası coin'in spawn'a dönüş süresi (saniye).")]
+    [SerializeField] float _coinReturnDuration = 1.2f;
+    [Tooltip("Coin durduktan sonra spawn'a dönmeden önce bekleme (saniye).")]
+    [FormerlySerializedAs("_stageFourToFivePause")]
+    [InspectorLabel("Return Home Pause")]
+    [SerializeField] float _stageFourToCompletePause = 1.5f;
+
+    [Header("Aşama 5 — Drag")]
+    [InspectorLabel("Drag Message")]
+    [SerializeField] string _stage5DragMessage = "Pull";
+    [Tooltip("El offset (piksel). Pozitif X sağa.")]
+    [InspectorLabel("Hand Screen Offset")]
+    [SerializeField] Vector2 _stage5HandScreenOffset = new(45f, 0f);
+    [Tooltip("Explanation offset (piksel).")]
+    [InspectorLabel("Explanation Screen Offset")]
+    [SerializeField] Vector2 _stage5ExplanationScreenOffset = new(0f, 55f);
+    [Tooltip("Paradan çekme mesafesi (world).")]
+    [InspectorLabel("Hand Drag World Distance")]
+    [SerializeField] float _stage5HandDragWorldDistance = 0.18f;
+    [InspectorLabel("Hand Move Duration")]
+    [SerializeField] float _stage5HandMoveDuration = 0.7f;
+    [InspectorLabel("Hand Press Hold")]
+    [SerializeField] float _stage5HandPressHold = 0.2f;
+    [InspectorLabel("Hand Pause")]
+    [SerializeField] float _stage5HandPause = 0.15f;
+
+    [Header("Aşama 6 — Power Aim")]
+    [InspectorLabel("Drag Message")]
+    [SerializeField] string _stage6DragMessage = "Pull";
+    [Tooltip("Aim ucu GateIndicator'ü geçmeden önce.")]
+    [InspectorLabel("Increase Power Message")]
+    [SerializeField] string _stage6IncreasePowerMessage = "Increase Power";
+    [Tooltip("Aim ucu GateIndicator'ü geçince.")]
+    [InspectorLabel("Release Message")]
+    [SerializeField] string _stage6ReleaseMessage = "Release now";
+    [Tooltip("El offset (piksel). Pozitif X sağa.")]
+    [InspectorLabel("Hand Screen Offset")]
+    [SerializeField] Vector2 _stage6HandScreenOffset = new(45f, 0f);
+    [Tooltip("Explanation offset (piksel). Aim ucunun hemen üstü.")]
+    [InspectorLabel("Explanation Screen Offset")]
+    [SerializeField] Vector2 _stage6ExplanationScreenOffset = new(0f, 55f);
+    [Tooltip("Paradan çekme mesafesi (world).")]
+    [InspectorLabel("Hand Drag World Distance")]
+    [SerializeField] float _stage6HandDragWorldDistance = 0.18f;
+    [InspectorLabel("Hand Move Duration")]
+    [SerializeField] float _stage6HandMoveDuration = 0.7f;
+    [InspectorLabel("Hand Press Hold")]
+    [SerializeField] float _stage6HandPressHold = 0.2f;
+    [InspectorLabel("Hand Pause")]
+    [SerializeField] float _stage6HandPause = 0.15f;
+    [Tooltip("Explanation (Increase Power / Release) bu gücün altında gösterilmez.")]
+    [InspectorLabel("Min Pull Power")]
+    [SerializeField] float _stage6MinPullPower01 = 0.05f;
+    [Tooltip("GateIndicator uç noktası (Stg6-Coin1).")]
+    [InspectorLabel("Gate Coin 1")]
+    [SerializeField] Transform _stage6GateCoin1;
+    [Tooltip("GateIndicator uç noktası (Stg6-Coin2).")]
+    [InspectorLabel("Gate Coin 2")]
+    [SerializeField] Transform _stage6GateCoin2;
+    [Tooltip("Aim yolu gate geçiş toleransı (world).")]
+    [InspectorLabel("Gate Margin")]
+    [SerializeField] float _stage6GateMargin = 0.09f;
+    [Tooltip("Üst üste 2 başarısız atıştan sonra gösterilir.")]
+    [InspectorLabel("Alert Panel")]
+    [SerializeField] GameObject _stage6Alert;
+    [Tooltip("Başarılı gate geçişinden sonra coin spawn'a dönmeden önce bekleme (saniye).")]
+    [InspectorLabel("Success Return Home Pause")]
+    [SerializeField] float _stage6SuccessReturnHomePause = 1f;
+
+    [Header("Aşama 7 — Drag")]
+    [InspectorLabel("Drag Message")]
+    [SerializeField] string _stage7DragMessage = "Pull";
+    [Tooltip("El offset (piksel). Pozitif X sağa.")]
+    [InspectorLabel("Hand Screen Offset")]
+    [SerializeField] Vector2 _stage7HandScreenOffset = new(45f, 0f);
+    [Tooltip("Explanation offset (piksel).")]
+    [InspectorLabel("Explanation Screen Offset")]
+    [SerializeField] Vector2 _stage7ExplanationScreenOffset = new(0f, 55f);
+    [Tooltip("Paradan çekme mesafesi (world).")]
+    [InspectorLabel("Hand Drag World Distance")]
+    [SerializeField] float _stage7HandDragWorldDistance = 0.18f;
+    [InspectorLabel("Hand Move Duration")]
+    [SerializeField] float _stage7HandMoveDuration = 0.7f;
+    [InspectorLabel("Hand Press Hold")]
+    [SerializeField] float _stage7HandPressHold = 0.2f;
+    [InspectorLabel("Hand Pause")]
+    [SerializeField] float _stage7HandPause = 0.15f;
+    [Tooltip("GateIndicator uç noktası (Stg7-Coin1).")]
+    [InspectorLabel("Gate Coin 1")]
+    [SerializeField] Transform _stage7GateCoin1;
+    [Tooltip("GateIndicator uç noktası (Stg7-Coin2).")]
+    [InspectorLabel("Gate Coin 2")]
+    [SerializeField] Transform _stage7GateCoin2;
+    [Tooltip("GateIndicator animasyon hız çarpanı.")]
+    [InspectorLabel("Gate Animation Speed Scale")]
+    [SerializeField] float _stage7GateAnimationSpeedScale = 0.5f;
+    [Tooltip("Coin → gate uçları yeşil rehber çizgi rengi.")]
+    [InspectorLabel("Guide Line Color")]
+    [SerializeField] Color _stage7GuideLineColor = new(0.15f, 0.88f, 0.28f, 0.92f);
+    [Tooltip("Kama maske kenar yumuşaklığı (UV).")]
+    [InspectorLabel("Wedge Softness")]
+    [SerializeField] float _stage7WedgeSoftnessUv = 0.02f;
+    [Tooltip("Aim yolu gate geçiş toleransı (world).")]
+    [InspectorLabel("Gate Margin")]
+    [SerializeField] float _stage7GateMargin = 0.09f;
+    [Tooltip("Üst üste 2 başarısız atıştan sonra gösterilir.")]
+    [InspectorLabel("Alert Panel")]
+    [SerializeField] GameObject _stage7Alert;
+
+    [Header("Aşama 8 — Drag")]
+    [InspectorLabel("Drag Message")]
+    [SerializeField] string _stage8DragMessage = "Drag";
+    [Tooltip("El offset (piksel). Pozitif X sağa.")]
+    [InspectorLabel("Hand Screen Offset")]
+    [SerializeField] Vector2 _stage8HandScreenOffset = new(45f, 0f);
+    [Tooltip("Explanation offset (piksel).")]
+    [InspectorLabel("Explanation Screen Offset")]
+    [SerializeField] Vector2 _stage8ExplanationScreenOffset = new(0f, 55f);
+    [Tooltip("Paradan çekme mesafesi (world).")]
+    [InspectorLabel("Hand Drag World Distance")]
+    [SerializeField] float _stage8HandDragWorldDistance = 0.18f;
+    [InspectorLabel("Hand Move Duration")]
+    [SerializeField] float _stage8HandMoveDuration = 0.7f;
+    [InspectorLabel("Hand Press Hold")]
+    [SerializeField] float _stage8HandPressHold = 0.2f;
+    [InspectorLabel("Hand Pause")]
+    [SerializeField] float _stage8HandPause = 0.15f;
+    [Tooltip("Coin_P1 hedefi (Stg8-Coin1).")]
+    [InspectorLabel("Target Coin 1")]
+    [SerializeField] Transform _stage8Coin1Target;
+    [Tooltip("Coin_P3 hedefi (Stg8-Coin2).")]
+    [InspectorLabel("Target Coin 2")]
+    [SerializeField] Transform _stage8Coin2Target;
+    [Tooltip("Yan coinlerin hedef pozisyona hareket süresi (saniye).")]
+    [InspectorLabel("Side Coin Reveal Duration")]
+    [SerializeField] float _sideCoinRevealDuration = 1.0f;
+
+    [Header("Aşama 9 — Pass Between (GameUI Rules)")]
+    [Tooltip("Üst üste 2 başarısız gate geçişinden sonra gösterilir.")]
+    [InspectorLabel("Alert Panel")]
+    [SerializeField] GameObject _stage9Alert;
+    [Tooltip("Gate kaçırılınca coinlerin başlangıca dönüş süresi (saniye).")]
+    [InspectorLabel("Reset Duration")]
+    [SerializeField] float _stage9CoinResetDuration = 0.75f;
+
+    [Header("Aşama 10 — Pull and Goal")]
+    [InspectorLabel("Pull Message")]
+    [SerializeField] string _stage10DragMessage = "Pull and Goal";
+    [Tooltip("El offset (piksel). Pozitif X sağa.")]
+    [InspectorLabel("Hand Screen Offset")]
+    [SerializeField] Vector2 _stage10HandScreenOffset = new(45f, 0f);
+    [Tooltip("Explanation offset (piksel).")]
+    [InspectorLabel("Explanation Screen Offset")]
+    [SerializeField] Vector2 _stage10ExplanationScreenOffset = new(0f, 55f);
+    [Tooltip("Paradan çekme mesafesi (world).")]
+    [InspectorLabel("Hand Drag World Distance")]
+    [SerializeField] float _stage10HandDragWorldDistance = 0.18f;
+    [InspectorLabel("Hand Move Duration")]
+    [SerializeField] float _stage10HandMoveDuration = 0.7f;
+    [InspectorLabel("Hand Press Hold")]
+    [SerializeField] float _stage10HandPressHold = 0.2f;
+    [InspectorLabel("Hand Pause")]
+    [SerializeField] float _stage10HandPause = 0.15f;
+    [Tooltip("Coin_P1 hedefi (Stg10-Coin1).")]
+    [InspectorLabel("Target Coin 1")]
+    [SerializeField] Transform _stage10Coin1Target;
+    [Tooltip("Coin_P3 hedefi (Stg10-Coin2).")]
+    [InspectorLabel("Target Coin 2")]
+    [SerializeField] Transform _stage10Coin2Target;
+    [Tooltip("Coin_P2 hedefi (Stg10-CoinHit).")]
+    [InspectorLabel("Target Coin Hit")]
+    [SerializeField] Transform _stage10CoinHitTarget;
+    [Tooltip("Coinlerin Stg10 hedeflerine hareket süresi (saniye).")]
+    [InspectorLabel("Coin Move Duration")]
+    [SerializeField] float _stage10CoinMoveDuration = 1.0f;
+
+    [Header("Aşama 11 — Pass and Goal")]
+    [Tooltip("Gate geçilip gol kaçırılınca üst üste 2. denemede gösterilir (Alert-10).")]
+    [InspectorLabel("Alert Panel")]
+    [SerializeField] GameObject _stage10Alert;
+    [Tooltip("Alert kapatılınca / aşama resetinde coinlerin dönüş süresi (saniye).")]
+    [InspectorLabel("Reset Duration")]
+    [SerializeField] float _stage11CoinResetDuration = 0.75f;
+
+    [Header("Shared — Success")]
+    [Tooltip("Görev başarıldığında kısa süre gösterilir.")]
+    [InspectorLabel("Success Panel")]
+    [SerializeField] GameObject _successPanel;
+    [Tooltip("Success paneli görünür kalma süresi (saniye).")]
+    [InspectorLabel("Success Display Duration")]
+    [SerializeField] float _successDisplayDuration = 1f;
+    [Tooltip("Success paneli gösterilirken çalınır (_Onboarding/Assets/Success).")]
+    [InspectorLabel("Success Sound")]
+    [SerializeField] AudioClip _successSound;
+
+    [Header("Shared — Arrow / Layout")]
+    [Tooltip("Okun yukarı-aşağı zıplama mesafesi (piksel).")]
     [SerializeField] float _arrowBounceHeight = 50f;
     [Tooltip("Ok animasyonunun bir yönü için süre (saniye).")]
     [SerializeField] float _arrowMoveDuration = 0.85f;
-    [Tooltip("Aşama 1/3/5: Ok ucunun para merkezinin ne kadar üstünde duracağı (piksel). Parayı kapatıyorsa artır (ör. 48–72).")]
-    [SerializeField] float _arrowGapAboveCoin = 48f;
-    [Tooltip("Aşama 2/4/6: Ok ucunun hedef noktanın ne kadar üstünde duracağı (piksel).")]
-    [SerializeField] float _pullGuideScreenOffset = 8f;
-
-    [Header("Hand Drag — Stage 1 / 3 / 5 / 8 / 10 / 12 / 13 / 15 / 17 / 18")]
-    [SerializeField] Sprite _handDefaultSprite;
-    [SerializeField] Sprite _handPressedSprite;
-    [SerializeField] float _stageOneHandScreenSize = 180f;
-
-    [Tooltip("Stage 1: El offset (piksel). Pozitif X sağa.")]
-    [FormerlySerializedAs("_stageOneHandScreenOffset")]
-    [SerializeField] Vector2 _stage1HandScreenOffset = new(45f, 0f);
-    [Tooltip("Stage 1: Explanation offset (piksel).")]
-    [FormerlySerializedAs("_stageOneExplanationScreenOffset")]
-    [SerializeField] Vector2 _stage1ExplanationScreenOffset = new(0f, 55f);
-
-    [Tooltip("Stage 3: El offset (piksel). Pozitif X sağa.")]
-    [FormerlySerializedAs("_stageThreeHandScreenOffset")]
-    [SerializeField] Vector2 _stage3HandScreenOffset = new(45f, 0f);
-    [Tooltip("Stage 3: Explanation offset (piksel).")]
-    [FormerlySerializedAs("_stageThreeExplanationScreenOffset")]
-    [SerializeField] Vector2 _stage3ExplanationScreenOffset = new(0f, 55f);
-
-    [Tooltip("Stage 5: El offset (piksel). Pozitif X sağa.")]
-    [FormerlySerializedAs("_stageFiveHandScreenOffset")]
-    [SerializeField] Vector2 _stage5HandScreenOffset = new(45f, 0f);
-    [Tooltip("Stage 5: Explanation offset (piksel).")]
-    [FormerlySerializedAs("_stageFiveExplanationScreenOffset")]
-    [SerializeField] Vector2 _stage5ExplanationScreenOffset = new(0f, 55f);
-
-    [Tooltip("Stage 8: El offset (piksel). Pozitif X sağa.")]
-    [SerializeField] Vector2 _stage8HandScreenOffset = new(45f, 0f);
-    [Tooltip("Stage 8: Explanation offset (piksel).")]
-    [SerializeField] Vector2 _stage8ExplanationScreenOffset = new(0f, 55f);
-
-    [Tooltip("Stage 10: El offset (piksel). Pozitif X sağa.")]
-    [SerializeField] Vector2 _stage10HandScreenOffset = new(45f, 0f);
-    [Tooltip("Stage 10: Explanation offset (piksel).")]
-    [SerializeField] Vector2 _stage10ExplanationScreenOffset = new(0f, 55f);
-
-    [Tooltip("Stage 12 (Pull): El offset (piksel). Pozitif X sağa.")]
-    [SerializeField] Vector2 _stage12HandScreenOffset = new(45f, 0f);
-    [Tooltip("Stage 12 (Pull): Explanation offset (piksel).")]
-    [SerializeField] Vector2 _stage12ExplanationScreenOffset = new(0f, 55f);
-
-    [Tooltip("Stage 13 (Try again): El offset (piksel). Pozitif X sağa.")]
-    [SerializeField] Vector2 _stage13HandScreenOffset = new(45f, 0f);
-    [Tooltip("Stage 13 (Try again): Explanation offset (piksel).")]
-    [SerializeField] Vector2 _stage13ExplanationScreenOffset = new(0f, 55f);
-
-    [Tooltip("Stage 15: El offset (piksel). Pozitif X sağa.")]
-    [SerializeField] Vector2 _stage15HandScreenOffset = new(45f, 0f);
-    [Tooltip("Stage 15: Explanation offset (piksel).")]
-    [SerializeField] Vector2 _stage15ExplanationScreenOffset = new(0f, 55f);
-
-    [Tooltip("Stage 17 (Pull): El offset (piksel). Pozitif X sağa.")]
-    [SerializeField] Vector2 _stage17HandScreenOffset = new(45f, 0f);
-    [Tooltip("Stage 17 (Pull): Explanation offset (piksel).")]
-    [SerializeField] Vector2 _stage17ExplanationScreenOffset = new(0f, 55f);
-
-    [Tooltip("Stage 18 (Pull): El offset (piksel). Pozitif X sağa.")]
-    [SerializeField] Vector2 _stage18HandScreenOffset = new(45f, 0f);
-    [Tooltip("Stage 18 (Pull): Explanation offset (piksel).")]
-    [SerializeField] Vector2 _stage18ExplanationScreenOffset = new(0f, 55f);
-
-    [Tooltip("Paradan çekme mesafesi (world). Stage 3: yukarıdan aşağı; diğerleri atış yönünün tersi.")]
-    [SerializeField] float _stageOneHandDragWorldDistance = 0.18f;
-    [SerializeField] float _stageOneHandMoveDuration = 0.7f;
-    [SerializeField] float _stageOneHandPressHold = 0.2f;
-    [SerializeField] float _stageOneHandPause = 0.15f;
-
     [Tooltip("Coin Pull modunda mesaj kutusu ile ok arasındaki boşluk (piksel).")]
     [SerializeField] float _coinGuideExplanationGap = 10f;
-    [Tooltip("Coin Pull modunda ok ölçeği (parayı kapatmaması için küçültülür).")]
+    [Tooltip("Coin Pull modunda ok ölçeği.")]
     [SerializeField] float _coinGuideArrowScale = 0.42f;
     [Tooltip("Pull/hedef modunda ok ölçeği.")]
     [SerializeField] float _pullGuideArrowScale = 0.68f;
@@ -305,21 +564,13 @@ public class OnboardingGuideController : MonoBehaviour
     [SerializeField] float _explanationArrowGap = 24f;
     [SerializeField] float _guideElementMinWidth = 120f;
 
-    [Header("Explanation Colors")]
+    [Header("Shared — Colors / Spotlight")]
     [SerializeField] Color _positiveExplanationColor = new(0.08f, 0.42f, 0.82f, 1f);
-    [SerializeField] Color _misalignExplanationColor = new(0.75f, 0.05f, 0.05f, 1f);
-    [SerializeField] Color _alignedAngleGuideColor = new(0.15f, 0.88f, 0.28f, 0.92f);
-    [SerializeField] Color _powerLowExplanationColor = new(1f, 0.45f, 0f, 1f);
-
-    [Header("Spotlight")]
+    [SerializeField] Color _negativeExplanationColor = new(0.82f, 0.16f, 0.16f, 1f);
     [SerializeField] Shader _overlayShader;
     [SerializeField] Color _overlayColor = new(0f, 0f, 0f, 0.72f);
     [SerializeField] float _holeRadiusUv = 0.14f;
     [SerializeField] float _holeSoftnessUv = 0.035f;
-    [Tooltip("Aşama 10-11: Yeşil rehber çizgileri arasındaki aydınlık alanın kenar yumuşaklığı (UV).")]
-    [SerializeField] float _wedgeSoftnessUv = 0.02f;
-    [Tooltip("Aşama 11: Yeşil çizgiler ile GateIndicator arasındaki bölgenin maske rengi.")]
-    [SerializeField] Color _stageElevenNearGateColor = new(1f, 0f, 0f, 60f / 255f);
 
     enum GuideAnchorMode
     {
@@ -353,27 +604,47 @@ public class OnboardingGuideController : MonoBehaviour
     GuidePhase _phase = GuidePhase.Inactive;
     bool _guideStarted;
     bool _isAimInputFrozen;
-    GameObject _alertObject;
-    Button _alertOkButton;
-    bool _stageElevenAlertVisible;
     bool _waitingForCoinStop;
+    bool _coinStopAdvanceTriggered;
+    bool _stageFourPostShotSequenceActive;
+    bool _stage6PostShotSequenceActive;
+    bool _stage7PostShotSequenceActive;
+    bool _stage9PostShotSequenceActive;
+    bool _stage11PostShotSequenceActive;
+    bool _stage9AlertPending;
     bool _wasAimingLastFrame;
-    bool _alignedForCurrentAim;
-    bool _powerOkForCurrentAim;
-    float _stageElevenResolvedPower01;
-    float _stageSeventeenResolvedPower01;
-    bool _stage18AwaitingP3Drag;
     bool _onboardingCompletePending;
-    bool _awaitingFinalGoalCelebration;
-    bool _sceneInteractionBlockedUntilStageEight;
     float _activeGuideVerticalOffset;
+    int _stage6ConsecutiveFails;
+    int _stage7ConsecutiveFails;
+    int _stage9ConsecutiveFails;
+    int _stage11ConsecutiveFails;
+    int _stage11NoGoalFails;
+    readonly List<Vector3> _stage6ShotPathSamples = new(64);
+    readonly List<Vector3> _stage7ShotPathSamples = new(64);
+    Button _stage6AlertButton;
+    Button _stage7AlertButton;
+    Button _stage9AlertButton;
+    Button _stage10AlertButton;
+    AudioSource _successAudioSource;
 
     Vector3 _centerCoinSpawnPosition;
     Quaternion _centerCoinSpawnRotation = Quaternion.identity;
-    Vector3 _sideCoinLeftSpawnPosition;
-    Quaternion _sideCoinLeftSpawnRotation = Quaternion.identity;
-    Vector3 _sideCoinRightSpawnPosition;
-    Quaternion _sideCoinRightSpawnRotation = Quaternion.identity;
+    Vector3 _stage11CenterStartPosition;
+    Quaternion _stage11CenterStartRotation = Quaternion.identity;
+    Vector3 _stage11LeftStartPosition;
+    Quaternion _stage11LeftStartRotation = Quaternion.identity;
+    Vector3 _stage11RightStartPosition;
+    Quaternion _stage11RightStartRotation = Quaternion.identity;
+    bool _hasStage11StartPoses;
+
+    Vector3 _stage8CenterStartPosition;
+    Quaternion _stage8CenterStartRotation = Quaternion.identity;
+    Vector3 _stage8LeftStartPosition;
+    Quaternion _stage8LeftStartRotation = Quaternion.identity;
+    Vector3 _stage8RightStartPosition;
+    Quaternion _stage8RightStartRotation = Quaternion.identity;
+    bool _hasStage8StartPoses;
 
     void Awake()
     {
@@ -389,13 +660,22 @@ public class OnboardingGuideController : MonoBehaviour
         SetOnboardingCanvasVisible(false);
         OnboardingSceneBootstrap.EnsureSceneSetup();
         ResolveReferences();
-        HideAlertOnStart();
         EnsureTutorialOverlay();
         EnsureOverlay();
         PrepareGuideElement();
         CachePositiveExplanationColorFromScene();
+        HideStageSixAlert();
+        HideStageSevenAlert();
+        HideStageNineAlert();
+        HideStageTenAlert();
+        HideSuccessPanel();
+        BindStageSixAlertButton();
+        BindStageSevenAlertButton();
+        BindStageNineAlertButton();
+        BindStageTenAlertButton();
         HideGuideVisuals();
         SubscribeIntroFinished();
+        SubscribeGameRulesEvents();
     }
 
     void SubscribeIntroFinished()
@@ -440,6 +720,11 @@ public class OnboardingGuideController : MonoBehaviour
         }
 
         MatchIntroCameraFlythrough.Finished -= OnIntroFlythroughFinished;
+        UnsubscribeGameRulesEvents();
+        UnbindStageSixAlertButton();
+        UnbindStageSevenAlertButton();
+        UnbindStageNineAlertButton();
+        UnbindStageTenAlertButton();
     }
 
     void OnDisable()
@@ -454,6 +739,11 @@ public class OnboardingGuideController : MonoBehaviour
     void Update()
     {
         if (!IsGuideRunning())
+        {
+            return;
+        }
+
+        if (_waitingForCoinStop || _stageFourPostShotSequenceActive || _stage6PostShotSequenceActive || _stage7PostShotSequenceActive || _stage9PostShotSequenceActive || _stage11PostShotSequenceActive || _stage9AlertPending || IsStageNineAlertVisible() || IsStageTenAlertVisible() || IsSuccessPanelVisible())
         {
             return;
         }
@@ -473,16 +763,34 @@ public class OnboardingGuideController : MonoBehaviour
         CoinDragController dragController = GetGuidedCoinDragController();
         bool isAiming = dragController != null && dragController.IsAiming;
 
-        if (_waitingForCoinStop || _awaitingFinalGoalCelebration)
+        if (_waitingForCoinStop)
         {
             if (_waitingForCoinStop
+                && !_coinStopAdvanceTriggered
                 && dragController != null
                 && !dragController.IsAiming
                 && !dragController.IsSliding)
             {
+                _coinStopAdvanceTriggered = true;
                 OnCoinStopped();
             }
 
+            _wasAimingLastFrame = isAiming;
+            return;
+        }
+
+        if (_stageFourPostShotSequenceActive
+            || _stage6PostShotSequenceActive
+            || _stage7PostShotSequenceActive
+            || _stage9PostShotSequenceActive
+            || _stage11PostShotSequenceActive
+            || _stage9AlertPending
+            || IsStageSixAlertVisible()
+            || IsStageSevenAlertVisible()
+            || IsStageNineAlertVisible()
+            || IsStageTenAlertVisible()
+            || IsSuccessPanelVisible())
+        {
             _wasAimingLastFrame = isAiming;
             return;
         }
@@ -502,49 +810,25 @@ public class OnboardingGuideController : MonoBehaviour
                 HandleStage4(isAiming, dragController);
                 break;
             case GuidePhase.Stage5_Drag:
-                HandleStage5(isAiming);
+                HandleStage5(isAiming, dragController);
                 break;
-            case GuidePhase.Stage6_Power:
+            case GuidePhase.Stage6_PowerAim:
                 HandleStage6(isAiming, dragController);
+                break;
+            case GuidePhase.Stage7_Drag:
+                HandleStage7(isAiming, dragController);
                 break;
             case GuidePhase.Stage8_Drag:
                 HandleStage8(isAiming, dragController);
                 break;
-            case GuidePhase.Stage9_ReleaseToShot:
+            case GuidePhase.Stage9_PassBetween:
                 HandleStage9(isAiming, dragController);
                 break;
-            case GuidePhase.Stage10_Drag:
+            case GuidePhase.Stage10_PullAndGoal:
                 HandleStage10(isAiming, dragController);
                 break;
-            case GuidePhase.Stage11_ReleaseToShot:
+            case GuidePhase.Stage11_PassAndGoal:
                 HandleStage11(isAiming, dragController);
-                break;
-            case GuidePhase.Stage12_Drag:
-                HandleStage12(isAiming, dragController);
-                break;
-            case GuidePhase.Stage12_PowerShot:
-                HandleStage12PowerShot(isAiming, dragController);
-                break;
-            case GuidePhase.Stage13_PreAlignDrag:
-                HandleStage13PreAlignDrag(isAiming, dragController);
-                break;
-            case GuidePhase.Stage14_GateAlignPower:
-                HandleStage14GateAlignPower(isAiming, dragController);
-                break;
-            case GuidePhase.Stage15_Drag:
-                HandleStage15(isAiming, dragController);
-                break;
-            case GuidePhase.Stage16_PowerShot:
-                HandleStage16PowerShot(isAiming, dragController);
-                break;
-            case GuidePhase.Stage17_Drag:
-                HandleStage17(isAiming, dragController);
-                break;
-            case GuidePhase.Stage17_ReleaseToShot:
-                HandleStage17ReleaseToShot(isAiming, dragController);
-                break;
-            case GuidePhase.Stage18_PowerShot:
-                HandleStage18PowerShot(isAiming, dragController);
                 break;
         }
 
@@ -563,7 +847,13 @@ public class OnboardingGuideController : MonoBehaviour
 
     void UpdateStageIdlePresentation(bool isAiming, CoinDragController dragController)
     {
-        if (_waitingForCoinStop || _awaitingFinalGoalCelebration || isAiming)
+        if (_waitingForCoinStop
+            || _stageFourPostShotSequenceActive
+            || _stage6PostShotSequenceActive
+            || _stage7PostShotSequenceActive
+            || _stage9PostShotSequenceActive
+            || _stage11PostShotSequenceActive
+            || isAiming)
         {
             return;
         }
@@ -573,7 +863,8 @@ public class OnboardingGuideController : MonoBehaviour
             return;
         }
 
-        if (_phase != GuidePhase.Stage4_AlignShot && _phase != GuidePhase.Stage6_Power)
+        if (_phase != GuidePhase.Stage2_ReleaseToShot
+            && _phase != GuidePhase.Stage4_AlignShot)
         {
             return;
         }
@@ -581,281 +872,27 @@ public class OnboardingGuideController : MonoBehaviour
         SetCoinGuideAnchors();
         HideTutorialOverlay();
         HidePullGuideVisuals();
-
-        if (_guideElement != null && !_guideElement.gameObject.activeSelf)
-        {
-            ShowCoinGuideVisuals();
-            SetActiveGuideText(_dragAgainMessage);
-            SetExplanationBackground(_positiveExplanationColor);
-        }
+        ShowGuideTextOnlyPresentation();
+        SetActiveGuideText(_phase == GuidePhase.Stage4_AlignShot
+            ? _stage4ReleaseMessage
+            : _stage2ReleaseMessage);
+        SetExplanationBackground(_positiveExplanationColor);
     }
 
     void HandleStage1(bool isAiming, CoinDragController dragController)
     {
-        if (!isAiming || dragController == null)
-        {
-            return;
-        }
-
-        TryEnterReleaseToShotFromDrag(dragController, EnterStage2);
-    }
-
-    void HandleStage8(bool isAiming, CoinDragController dragController)
-    {
-        if (!isAiming || dragController == null)
-        {
-            return;
-        }
-
-        TryEnterReleaseToShotFromDrag(dragController, EnterStage9);
-    }
-
-    void TryEnterReleaseToShotFromDrag(CoinDragController dragController, Action<CoinDragController> enterReleaseStage)
-    {
-        if (!dragController.TryGetActiveAimTarget(out _, out float power01) || power01 < _minPullPower01)
-        {
-            return;
-        }
-
-        enterReleaseStage(dragController);
+        // Aşama 1 → 2 geçişi PrepareStageTwoAimLockBeforeAimUpdate içinde (Update, UpdateAim'den önce).
     }
 
     void HandleStage2(bool isAiming, CoinDragController dragController)
     {
+        if (!isAiming || dragController == null)
+        {
+            return;
+        }
+
+        TryUpdateStageTwoAimLock(dragController);
         UpdateReleaseToShotPresentation(isAiming, dragController);
-    }
-
-    void HandleStage9(bool isAiming, CoinDragController dragController)
-    {
-        UpdateReleaseToShotPresentation(isAiming, dragController);
-    }
-
-    void HandleStage10(bool isAiming, CoinDragController dragController)
-    {
-        if (!isAiming || dragController == null)
-        {
-            return;
-        }
-
-        TryEnterReleaseToShotFromDrag(dragController, EnterStage11);
-    }
-
-    void ShowStageTenAngleGuides(Vector3 coinPosition)
-    {
-        EnsureTutorialOverlay();
-
-        if (_openingCoin == null || _sideCoinRight == null)
-        {
-            _tutorialOverlay.HideAngleGuides();
-            return;
-        }
-
-        _tutorialOverlay.ShowAngleGuidesThroughPoints(
-            coinPosition,
-            _openingCoin.position,
-            _sideCoinRight.position,
-            _alignedAngleGuideColor);
-    }
-
-    void HandleStage11(bool isAiming, CoinDragController dragController)
-    {
-        if (!isAiming || dragController == null)
-        {
-            return;
-        }
-
-        UpdateStageElevenAimPower(dragController);
-        UpdateReleaseToShotPresentation(isAiming, dragController);
-    }
-
-    void HandleStage12(bool isAiming, CoinDragController dragController)
-    {
-        if (!isAiming || dragController == null)
-        {
-            return;
-        }
-
-        TryEnterReleaseToShotFromDrag(dragController, EnterStage12PowerShot);
-    }
-
-    void HandleStage12PowerShot(bool isAiming, CoinDragController dragController)
-    {
-        if (!isAiming || dragController == null)
-        {
-            return;
-        }
-
-        HideCoinGuideElementOnly();
-        EnsurePullGuidePresentation();
-        EnsureTutorialOverlay();
-
-        Vector3 anchor = dragController.transform.position;
-        Vector3 shotTarget = GetStageTwelveShotTarget();
-        Vector3 direction = OnboardingAimTutorialOverlay.GetMidAngleDirection(anchor, shotTarget);
-
-        var ghostPath = new CoinAimIndicator.PathVisual(anchor, shotTarget, false, shotTarget);
-        _tutorialOverlay.ShowPowerGuide(ghostPath, _ghostTargetRingRadius);
-        SetPullGuideAnchors(shotTarget);
-
-        if (!dragController.TryGetActiveAimTarget(out Vector3 playerEnd, out _))
-        {
-            _powerOkForCurrentAim = false;
-            SetActiveGuideText(_increasePowerMessage);
-            SetExplanationBackground(_misalignExplanationColor);
-            return;
-        }
-
-        float powerDelta = OnboardingAimTutorialOverlay.ComparePowerAlongDirection(
-            anchor,
-            direction,
-            playerEnd,
-            shotTarget);
-
-        if (OnboardingAimTutorialOverlay.IsEndpointNearTarget(
-                playerEnd,
-                shotTarget,
-                _stageSixTargetMatchRadius)
-            || powerDelta >= 0f)
-        {
-            _powerOkForCurrentAim = true;
-            SetActiveGuideText(_releaseNowMessage);
-            SetExplanationBackground(_positiveExplanationColor);
-            return;
-        }
-
-        _powerOkForCurrentAim = false;
-        SetActiveGuideText(_increasePowerMessage);
-        SetExplanationBackground(_misalignExplanationColor);
-    }
-
-    void HandleStage13PreAlignDrag(bool isAiming, CoinDragController dragController)
-    {
-        if (isAiming && dragController != null)
-        {
-            EnterStage14GateAlignPower(dragController);
-        }
-    }
-
-    void HandleStage14GateAlignPower(bool isAiming, CoinDragController dragController)
-    {
-        if (!isAiming || dragController == null)
-        {
-            return;
-        }
-
-        UpdateFixedDirectionPowerShotPresentation(dragController, GetStageFourteenShotTarget());
-    }
-
-    void HandleStage15(bool isAiming, CoinDragController dragController)
-    {
-        if (!isAiming || dragController == null)
-        {
-            return;
-        }
-
-        TryEnterReleaseToShotFromDrag(dragController, EnterStage16PowerShot);
-    }
-
-    void HandleStage16PowerShot(bool isAiming, CoinDragController dragController)
-    {
-        if (!isAiming || dragController == null)
-        {
-            return;
-        }
-
-        UpdateFixedDirectionPowerShotPresentation(dragController, GetStageSixteenShotTarget());
-    }
-
-    void HandleStage17(bool isAiming, CoinDragController dragController)
-    {
-        if (!isAiming || dragController == null)
-        {
-            return;
-        }
-
-        Transform guidedCoin = GetGuidedCoinTransform();
-        if (guidedCoin == null || dragController.transform != guidedCoin)
-        {
-            return;
-        }
-
-        TryEnterReleaseToShotFromDrag(dragController, EnterStage17ReleaseToShot);
-    }
-
-    void HandleStage17ReleaseToShot(bool isAiming, CoinDragController dragController)
-    {
-        if (!isAiming || dragController == null)
-        {
-            return;
-        }
-
-        TryUpdateStageSeventeenAimLock(dragController);
-        UpdateReleaseToShotPresentation(isAiming, dragController);
-    }
-
-    void HandleStage18PowerShot(bool isAiming, CoinDragController dragController)
-    {
-        if (_stage18AwaitingP3Drag)
-        {
-            if (!isAiming || dragController == null || dragController.transform != _sideCoinRight)
-            {
-                return;
-            }
-
-            TryEnterReleaseToShotFromDrag(dragController, EnterStage18PowerShot);
-            return;
-        }
-
-        if (!isAiming || dragController == null)
-        {
-            return;
-        }
-
-        UpdateFixedDirectionPowerShotPresentation(dragController, GetStageSixGoalTarget());
-    }
-
-    void UpdateFixedDirectionPowerShotPresentation(CoinDragController dragController, Vector3 shotTarget)
-    {
-        HideCoinGuideElementOnly();
-        EnsurePullGuidePresentation();
-        EnsureTutorialOverlay();
-
-        Vector3 anchor = dragController.transform.position;
-        Vector3 direction = OnboardingAimTutorialOverlay.GetMidAngleDirection(anchor, shotTarget);
-
-        var ghostPath = new CoinAimIndicator.PathVisual(anchor, shotTarget, false, shotTarget);
-        _tutorialOverlay.ShowPowerGuide(ghostPath, _ghostTargetRingRadius);
-        SetPullGuideAnchors(shotTarget);
-
-        if (!dragController.TryGetActiveAimTarget(out Vector3 playerEnd, out _))
-        {
-            _powerOkForCurrentAim = false;
-            SetActiveGuideText(_increasePowerMessage);
-            SetExplanationBackground(_misalignExplanationColor);
-            return;
-        }
-
-        float powerDelta = OnboardingAimTutorialOverlay.ComparePowerAlongDirection(
-            anchor,
-            direction,
-            playerEnd,
-            shotTarget);
-
-        if (OnboardingAimTutorialOverlay.IsEndpointNearTarget(
-                playerEnd,
-                shotTarget,
-                _stageSixTargetMatchRadius)
-            || powerDelta >= 0f)
-        {
-            _powerOkForCurrentAim = true;
-            SetActiveGuideText(_releaseNowMessage);
-            SetExplanationBackground(_positiveExplanationColor);
-            return;
-        }
-
-        _powerOkForCurrentAim = false;
-        SetActiveGuideText(_increasePowerMessage);
-        SetExplanationBackground(_misalignExplanationColor);
     }
 
     void UpdateReleaseToShotPresentation(bool isAiming, CoinDragController dragController)
@@ -865,46 +902,24 @@ public class OnboardingGuideController : MonoBehaviour
             return;
         }
 
-        if (_phase == GuidePhase.Stage11_ReleaseToShot)
-        {
-            ShowStageTenAngleGuides(dragController.transform.position);
-        }
-        else
-        {
-            _tutorialOverlay.HideAngleGuides();
-        }
-
+        _tutorialOverlay.HideAngleGuides();
         HideCoinGuideElementOnly();
         EnsurePullGuidePresentation();
 
-        if (_phase == GuidePhase.Stage11_ReleaseToShot)
-        {
-            SetPullGuideAnchors(ResolveStageElevenShotTarget());
-        }
-        else if (_phase == GuidePhase.Stage17_ReleaseToShot)
-        {
-            SetPullGuideAnchors(ResolveStageSeventeenShotTarget());
-        }
-        else if (TryGetFixedPowerAimLineEnd(dragController, out Vector3 aimEnd))
+        if (TryGetFixedPowerAimLineEnd(dragController, out Vector3 aimEnd))
         {
             SetPullGuideAnchors(aimEnd);
         }
 
-        SetActiveGuideText(_phase switch
-        {
-            GuidePhase.Stage11_ReleaseToShot => _passBetweenCoinsMessage,
-            GuidePhase.Stage17_ReleaseToShot => _releaseToShotMessage,
-            _ => _releaseToShotMessage
-        });
+        SetActiveGuideText(_phase == GuidePhase.Stage4_AlignShot
+            ? _stage4ReleaseMessage
+            : _stage2ReleaseMessage);
         SetExplanationBackground(_positiveExplanationColor);
     }
 
     void HandleStage3(bool isAiming)
     {
-        if (isAiming)
-        {
-            EnterStage4();
-        }
+        // Aşama 3 → 4 geçişi PrepareOnboardingAimLockBeforeAimUpdate içinde (Update, UpdateAim'den önce).
     }
 
     void HandleStage4(bool isAiming, CoinDragController dragController)
@@ -914,86 +929,147 @@ public class OnboardingGuideController : MonoBehaviour
             return;
         }
 
-        UpdateAngleAlignPresentation(dragController, _nowReleaseMessage, anchorAtAlignedShotLanding: true);
+        TryUpdateStageFourAimLock(dragController);
+        UpdateReleaseToShotPresentation(isAiming, dragController);
     }
 
-    void UpdateAngleAlignPresentation(
-        CoinDragController dragController,
-        string alignedMessage,
-        bool anchorAtAlignedShotLanding)
+    void HandleStage5(bool isAiming, CoinDragController dragController)
     {
-        if (dragController == null || _enemyGoal == null)
+        EnsureStageSixGateVisible();
+        // Yuvarlak maske yok; GateIndicator açık. Oyuncu çekmeye başlayınca Aşama 6.
+        if (isAiming)
+        {
+            EnterStage6();
+        }
+    }
+
+    void HandleStage7(bool isAiming, CoinDragController dragController)
+    {
+        UpdateStageSevenPresentation(isAiming);
+        _ = dragController;
+    }
+
+    void HandleStage8(bool isAiming, CoinDragController dragController)
+    {
+        // Aşama 1 gibi: yuvarlak maske + OK/Pull. Çekmeye başlayınca Aşama 9.
+        if (isAiming)
+        {
+            EnterStage9(dragController);
+        }
+    }
+
+    void HandleStage9(bool isAiming, CoinDragController dragController)
+    {
+        if (isAiming)
+        {
+            EnsureStageNineGateVisible(dragController);
+            return;
+        }
+
+        GateIndicator.Instance?.Hide();
+    }
+
+    void HandleStage10(bool isAiming, CoinDragController dragController)
+    {
+        // Yuvarlak maske yok; Explanation + OK. Çekmeye başlayınca Aşama 11.
+        if (isAiming)
+        {
+            EnterStage11(dragController);
+        }
+    }
+
+    void HandleStage11(bool isAiming, CoinDragController dragController)
+    {
+        if (isAiming)
+        {
+            EnsureStageElevenGateVisible(dragController);
+            HideCoinGuideElementOnly();
+            return;
+        }
+
+        GateIndicator.Instance?.Hide();
+    }
+
+    void UpdateStageSevenPresentation(bool isAiming)
+    {
+        EnsureStageSevenGateVisible();
+        ShowStageSevenGuideLines();
+        UpdateStageSevenWedgeSpotlight();
+
+        if (isAiming)
+        {
+            HideCoinGuideElementOnly();
+        }
+    }
+
+    void HandleStage6(bool isAiming, CoinDragController dragController)
+    {
+        if (isAiming && dragController != null)
+        {
+            UpdateStageSixPowerPresentation(dragController);
+            return;
+        }
+
+        GateIndicator.Instance?.Hide();
+        SetCoinGuideAnchors();
+
+        if (_guideElement != null && !_guideElement.gameObject.activeSelf)
+        {
+            ShowCoinGuideVisuals();
+            SetActiveGuideText(_stage6DragMessage);
+            SetExplanationBackground(_positiveExplanationColor);
+        }
+    }
+
+    void UpdateStageSixPowerPresentation(CoinDragController dragController)
+    {
+        if (dragController == null || !dragController.IsAiming)
         {
             return;
         }
 
+        TryUpdateStageSixAimLock(dragController);
+        EnsureStageSixGateVisible();
         HideCoinGuideElementOnly();
-        EnsurePullGuidePresentation();
 
-        Vector3 coinPosition = dragController.transform.position;
-        Vector3 goalCenter = GetEnemyGoalCenter();
-
-        if (anchorAtAlignedShotLanding)
+        if (!dragController.TryGetActiveAimTarget(out Vector3 aimEnd, out float power01)
+            || power01 < _stage6MinPullPower01)
         {
-            SetPullGuideAnchors(GetStageFourLandingPosition(dragController));
-        }
-
-        if (!dragController.TryGetActiveLaunchDirection(out Vector3 aimDirection))
-        {
-            _alignedForCurrentAim = false;
-            _tutorialOverlay.ShowAngleGuides(coinPosition, goalCenter, _alignHalfAngleDegrees);
-            SetActiveGuideText(_alignShotMessage);
-            SetExplanationBackground(_misalignExplanationColor);
+            // Dokunuş / çok hafif çekmede explanation gösterme.
+            HidePullGuideVisuals();
             return;
         }
 
-        Vector3 centerDirection = OnboardingAimTutorialOverlay.GetMidAngleDirection(
-            coinPosition,
-            goalCenter);
-        _alignedForCurrentAim = OnboardingAimTutorialOverlay.IsDirectionWithinAngleRange(
-            aimDirection,
-            centerDirection,
-            _alignHalfAngleDegrees);
+        EnsurePullGuidePresentation();
+        SetPullGuideAnchors(aimEnd);
+        UpdateActiveGuideElementPosition();
 
-        Color angleGuideColor = _alignedForCurrentAim ? _alignedAngleGuideColor : Color.white;
-        _tutorialOverlay.ShowAngleGuides(
-            coinPosition,
-            goalCenter,
-            _alignHalfAngleDegrees,
-            angleGuideColor);
-
-        if (!anchorAtAlignedShotLanding)
+        bool passesGate = DoesAimPassStageSixGate(dragController.transform.position, aimEnd);
+        if (passesGate)
         {
-            SetPullGuideAnchors(OnboardingAimTutorialOverlay.GetAngleGuideArrowAnchor(
-                coinPosition,
-                goalCenter,
-                _alignHalfAngleDegrees,
-                _angleArrowDistanceFromCoin));
+            SetActiveGuideText(_stage6ReleaseMessage);
+            SetExplanationBackground(_positiveExplanationColor);
         }
-
-        SetActiveGuideText(_alignedForCurrentAim ? alignedMessage : _alignShotMessage);
-        SetExplanationBackground(
-            _alignedForCurrentAim ? _positiveExplanationColor : _misalignExplanationColor);
+        else
+        {
+            SetActiveGuideText(_stage6IncreasePowerMessage);
+            SetExplanationBackground(_negativeExplanationColor);
+        }
     }
 
-    Vector3 GetStageFourLandingPosition(CoinDragController dragController)
+    bool DoesAimPassStageSixGate(Vector3 coinPosition, Vector3 aimTip)
     {
-        Vector3 coinPosition = dragController != null
-            ? dragController.transform.position
-            : GetCenterCoinPosition();
-
-        if (dragController == null || _enemyGoal == null)
+        if (!TryResolveStageSixGateEndpoints(out Vector3 gateStart, out Vector3 gateEnd))
         {
-            return coinPosition;
+            return false;
         }
 
-        Vector3 direction = OnboardingAimTutorialOverlay.GetMidAngleDirection(
+        return PassBetweenValidator.DidPassBetween(
             coinPosition,
-            GetEnemyGoalCenter());
-        return dragController.GetPathEndForDirectionAndPower(
-            coinPosition,
-            direction,
-            _stageFourShotPower01);
+            aimTip,
+            gateStart,
+            gateEnd,
+            _stage6GateMargin);
     }
 
     bool TryGetFixedPowerAimLineEnd(CoinDragController dragController, out Vector3 aimEnd)
@@ -1004,15 +1080,8 @@ public class OnboardingGuideController : MonoBehaviour
             return false;
         }
 
-        if (_phase == GuidePhase.Stage16_PowerShot || _phase == GuidePhase.Stage18_PowerShot)
-        {
-            return false;
-        }
-
         if (_phase == GuidePhase.Stage2_ReleaseToShot
-            || _phase == GuidePhase.Stage9_ReleaseToShot
-            || _phase == GuidePhase.Stage11_ReleaseToShot
-            || _phase == GuidePhase.Stage17_ReleaseToShot)
+            || _phase == GuidePhase.Stage4_AlignShot)
         {
             return TryGetReleaseToShotAimEnd(dragController, out aimEnd);
         }
@@ -1022,11 +1091,7 @@ public class OnboardingGuideController : MonoBehaviour
             return true;
         }
 
-        if (_phase != GuidePhase.Stage2_ReleaseToShot
-            && _phase != GuidePhase.Stage9_ReleaseToShot
-            && _phase != GuidePhase.Stage11_ReleaseToShot
-            && _phase != GuidePhase.Stage17_ReleaseToShot
-            && _enemyGoal == null)
+        if (_enemyGoal == null)
         {
             return false;
         }
@@ -1048,70 +1113,12 @@ public class OnboardingGuideController : MonoBehaviour
             return false;
         }
 
-        if (_phase == GuidePhase.Stage11_ReleaseToShot)
-        {
-            aimEnd = ResolveStageElevenShotTarget();
-            return true;
-        }
-
-        if (_phase == GuidePhase.Stage17_ReleaseToShot)
-        {
-            aimEnd = ResolveStageSeventeenShotTarget();
-            return true;
-        }
-
         Vector3 coinPosition = dragController.transform.position;
         Vector3 direction = GetReleaseToShotLaunchDirection(_phase, coinPosition);
         aimEnd = dragController.GetPathEndForDirectionAndPower(
             coinPosition,
             direction,
             FixedTutorialAimPower01);
-        return true;
-    }
-
-    void UpdateStageElevenAimPower(CoinDragController dragController)
-    {
-        if (dragController == null || !dragController.IsAiming)
-        {
-            return;
-        }
-
-        Vector3 coinPosition = dragController.transform.position;
-        Vector3 target = ResolveStageElevenShotTarget();
-        Vector3 direction = GetStageElevenLaunchDirection(coinPosition);
-
-        if (dragController.TryGetPower01ForWorldTarget(coinPosition, direction, target, out float power01))
-        {
-            _stageElevenResolvedPower01 = power01;
-        }
-        else
-        {
-            _stageElevenResolvedPower01 = _stageOneShotPower01;
-        }
-    }
-
-    bool TryUpdateStageSeventeenAimLock(CoinDragController dragController)
-    {
-        if (dragController == null || !dragController.IsAiming)
-        {
-            return false;
-        }
-
-        Vector3 coinPosition = dragController.transform.position;
-        Vector3 target = ResolveStageSeventeenShotTarget();
-        Vector3 direction = GetStageSeventeenLaunchDirection(coinPosition);
-        dragController.LockAimDirection(direction);
-
-        if (dragController.TryGetPower01ForWorldTarget(coinPosition, direction, target, out float power01))
-        {
-            _stageSeventeenResolvedPower01 = power01;
-        }
-        else
-        {
-            _stageSeventeenResolvedPower01 = _stageOneShotPower01;
-        }
-
-        dragController.SetAimPullForPower01(_stageSeventeenResolvedPower01);
         return true;
     }
 
@@ -1122,21 +1129,52 @@ public class OnboardingGuideController : MonoBehaviour
             return;
         }
 
-        if (phase == GuidePhase.Stage11_ReleaseToShot)
+        if (phase == GuidePhase.Stage2_ReleaseToShot)
         {
-            UpdateStageElevenAimPower(dragController);
+            TryUpdateStageTwoAimLock(dragController);
             return;
         }
 
-        if (phase == GuidePhase.Stage17_ReleaseToShot)
+        if (phase == GuidePhase.Stage4_AlignShot)
         {
-            TryUpdateStageSeventeenAimLock(dragController);
+            TryUpdateStageFourAimLock(dragController);
+        }
+    }
+
+    void TryUpdateStageTwoAimLock(CoinDragController dragController)
+    {
+        if (dragController == null || !dragController.IsAiming)
+        {
             return;
         }
 
         Vector3 coinPosition = dragController.transform.position;
-        Vector3 direction = GetReleaseToShotLaunchDirection(phase, coinPosition);
+        Vector3 direction = GetStageTwoLaunchDirection(coinPosition);
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
+
         dragController.LockAimDirection(direction);
+        dragController.SetAimPullForPower01(_stageOneShotPower01);
+    }
+
+    void TryUpdateStageFourAimLock(CoinDragController dragController)
+    {
+        if (dragController == null || !dragController.IsAiming)
+        {
+            return;
+        }
+
+        Vector3 coinPosition = dragController.transform.position;
+        Vector3 direction = GetStageFourLaunchDirection(coinPosition);
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
+
+        dragController.LockAimDirection(direction);
+        dragController.SetAimPullForPower01(_stageFourShotPower01);
     }
 
     Vector3 ResolveStageTwoShotTarget()
@@ -1149,65 +1187,28 @@ public class OnboardingGuideController : MonoBehaviour
         return _stageTwoShotTargetPosition;
     }
 
-    Vector3 ResolveStageNineShotTarget()
+    Vector3 ResolveStageFourShotTarget()
     {
-        if (_stageNineShotTarget != null)
+        if (_stageFourShotTarget != null)
         {
-            return _stageNineShotTarget.position;
+            return _stageFourShotTarget.position;
         }
 
-        return _stageNineShotTargetPosition;
+        return _stageFourShotTargetPosition;
     }
 
-    Vector3 ResolveReleaseToShotTarget(GuidePhase phase)
+    Vector3 GetStageFourLaunchDirection(Vector3 coinPosition)
     {
-        return phase switch
-        {
-            GuidePhase.Stage11_ReleaseToShot => ResolveStageElevenShotTarget(),
-            GuidePhase.Stage17_ReleaseToShot => ResolveStageSeventeenShotTarget(),
-            GuidePhase.Stage9_ReleaseToShot => ResolveStageNineShotTarget(),
-            _ => ResolveStageTwoShotTarget()
-        };
+        Vector3 toTarget = ResolveStageFourShotTarget() - coinPosition;
+        toTarget.y = 0f;
+        return toTarget.sqrMagnitude < 0.0001f ? Vector3.forward : toTarget.normalized;
     }
 
     Vector3 GetReleaseToShotLaunchDirection(GuidePhase phase, Vector3 coinPosition)
     {
-        return phase switch
-        {
-            GuidePhase.Stage11_ReleaseToShot => GetStageElevenLaunchDirection(coinPosition),
-            GuidePhase.Stage17_ReleaseToShot => GetStageSeventeenLaunchDirection(coinPosition),
-            GuidePhase.Stage9_ReleaseToShot => GetStageNineLaunchDirection(coinPosition),
-            _ => GetStageTwoLaunchDirection(coinPosition)
-        };
-    }
-
-    Vector3 ResolveStageElevenShotTarget()
-    {
-        Transform target = ResolveStageElevenShotTargetTransform();
-        return target != null ? target.position : _stageElevenShotTargetPosition;
-    }
-
-    Transform ResolveStageElevenShotTargetTransform()
-    {
-        if (_stageElevenShotTarget != null)
-        {
-            return _stageElevenShotTarget;
-        }
-
-        GameObject targetObject = GameObject.Find("Stage11GoalTarget");
-        return targetObject != null ? targetObject.transform : null;
-    }
-
-    bool TryGetStageElevenGateMidpoint(out Vector3 gateMidpoint)
-    {
-        gateMidpoint = default;
-        if (_openingCoin == null || _sideCoinRight == null)
-        {
-            return false;
-        }
-
-        gateMidpoint = (_openingCoin.position + _sideCoinRight.position) * 0.5f;
-        return true;
+        return phase == GuidePhase.Stage4_AlignShot
+            ? GetStageFourLaunchDirection(coinPosition)
+            : GetStageTwoLaunchDirection(coinPosition);
     }
 
     Vector3 GetStageTwoLaunchDirection(Vector3 coinPosition)
@@ -1217,166 +1218,14 @@ public class OnboardingGuideController : MonoBehaviour
         return toTarget.sqrMagnitude < 0.0001f ? Vector3.forward : toTarget.normalized;
     }
 
-    Vector3 GetStageNineLaunchDirection(Vector3 coinPosition)
-    {
-        Vector3 toTarget = ResolveStageNineShotTarget() - coinPosition;
-        toTarget.y = 0f;
-        return toTarget.sqrMagnitude < 0.0001f ? Vector3.forward : toTarget.normalized;
-    }
-
-    Vector3 GetStageElevenLaunchDirection(Vector3 coinPosition)
-    {
-        Vector3 toTarget = ResolveStageElevenShotTarget() - coinPosition;
-        toTarget.y = 0f;
-        return toTarget.sqrMagnitude < 0.0001f ? Vector3.right : toTarget.normalized;
-    }
-
-    Vector3 ResolveStageSeventeenShotTarget()
-    {
-        Transform target = ResolveStageSeventeenShotTargetTransform();
-        return target != null ? target.position : _stageSeventeenShotTargetPosition;
-    }
-
-    Transform ResolveStageSeventeenShotTargetTransform()
-    {
-        if (_stageSeventeenShotTarget != null)
-        {
-            return _stageSeventeenShotTarget;
-        }
-
-        GameObject targetObject = GameObject.Find("Stage17GoalTarget");
-        return targetObject != null ? targetObject.transform : null;
-    }
-
-    Vector3 GetStageSeventeenLaunchDirection(Vector3 coinPosition)
-    {
-        Vector3 toTarget = ResolveStageSeventeenShotTarget() - coinPosition;
-        toTarget.y = 0f;
-        return toTarget.sqrMagnitude < 0.0001f ? Vector3.right : toTarget.normalized;
-    }
-
-    bool TryGetSideCoinRightGateMidpoint(out Vector3 gateMidpoint)
-    {
-        gateMidpoint = default;
-        if (_sideCoinLeft == null || _openingCoin == null)
-        {
-            return false;
-        }
-
-        gateMidpoint = (_sideCoinLeft.position + _openingCoin.position) * 0.5f;
-        return true;
-    }
-
-    Vector3 GetStageFourteenShotTarget()
-    {
-        if (_stageFourteenShotTarget != null)
-        {
-            return _stageFourteenShotTarget.position;
-        }
-
-        return _stageFourteenShotTargetPosition;
-    }
-
-    Vector3 GetStageSixteenShotTarget()
-    {
-        Transform target = ResolveStageSixteenShotTargetTransform();
-        return target != null ? target.position : _stageSixteenShotTargetPosition;
-    }
-
-    Transform ResolveStageSixteenShotTargetTransform()
-    {
-        if (_stageSixteenShotTarget != null)
-        {
-            return _stageSixteenShotTarget;
-        }
-
-        GameObject targetObject = GameObject.Find("Stage16GoalTarget");
-        return targetObject != null ? targetObject.transform : null;
-    }
-
-    void HandleStage5(bool isAiming)
-    {
-        if (isAiming)
-        {
-            EnterStage6();
-        }
-    }
-
-    void HandleStage6(bool isAiming, CoinDragController dragController)
-    {
-        if (!isAiming || dragController == null || _enemyGoal == null)
-        {
-            return;
-        }
-
-        HideCoinGuideElementOnly();
-        EnsurePullGuidePresentation();
-
-        Vector3 anchor = dragController.transform.position;
-        Vector3 goalTarget = GetStageSixGoalTarget();
-        Vector3 direction = OnboardingAimTutorialOverlay.GetMidAngleDirection(anchor, goalTarget);
-
-        var ghostPath = new CoinAimIndicator.PathVisual(anchor, goalTarget, false, goalTarget);
-        _tutorialOverlay.ShowPowerGuide(ghostPath, _ghostTargetRingRadius);
-        SetPullGuideAnchors(goalTarget);
-
-        if (!dragController.TryGetActiveAimTarget(out Vector3 playerEnd, out _))
-        {
-            _powerOkForCurrentAim = false;
-            SetActiveGuideText(_increasePowerMessage);
-            SetExplanationBackground(_powerLowExplanationColor);
-            return;
-        }
-
-        float powerDelta = OnboardingAimTutorialOverlay.ComparePowerAlongDirection(
-            anchor,
-            direction,
-            playerEnd,
-            goalTarget);
-
-        if (OnboardingAimTutorialOverlay.IsEndpointNearTarget(
-                playerEnd,
-                goalTarget,
-                _stageSixTargetMatchRadius)
-            || powerDelta >= 0f)
-        {
-            _powerOkForCurrentAim = true;
-            SetActiveGuideText(_nowReleaseMessage);
-            SetExplanationBackground(_positiveExplanationColor);
-            return;
-        }
-
-        _powerOkForCurrentAim = false;
-        SetActiveGuideText(_increasePowerMessage);
-        SetExplanationBackground(_powerLowExplanationColor);
-    }
-
     void OnAimReleased(CoinDragController dragController)
     {
         switch (_phase)
         {
             case GuidePhase.Stage2_ReleaseToShot:
-            case GuidePhase.Stage9_ReleaseToShot:
-            case GuidePhase.Stage11_ReleaseToShot:
-            case GuidePhase.Stage17_ReleaseToShot:
-                BeginWaitingForCoinStop();
-                break;
-            case GuidePhase.Stage4_AlignShot when _alignedForCurrentAim:
-                BeginWaitingForCoinStop();
-                break;
-            case GuidePhase.Stage6_Power when _powerOkForCurrentAim:
-                BeginWaitingForCoinStop();
-                break;
-            case GuidePhase.Stage12_PowerShot when _powerOkForCurrentAim:
-                BeginWaitingForCoinStop();
-                break;
-            case GuidePhase.Stage14_GateAlignPower when _powerOkForCurrentAim:
-                BeginWaitingForCoinStop();
-                break;
-            case GuidePhase.Stage16_PowerShot when _powerOkForCurrentAim:
-                BeginWaitingForCoinStop();
-                break;
-            case GuidePhase.Stage18_PowerShot when _powerOkForCurrentAim:
+            case GuidePhase.Stage4_AlignShot:
+            case GuidePhase.Stage6_PowerAim:
+            case GuidePhase.Stage7_Drag:
                 BeginWaitingForCoinStop();
                 break;
         }
@@ -1394,14 +1243,6 @@ public class OnboardingGuideController : MonoBehaviour
             return;
         }
 
-        if (_phase == GuidePhase.Stage6_Power)
-        {
-            _waitingForCoinStop = false;
-            _awaitingFinalGoalCelebration = true;
-            HideGuideVisuals();
-            return;
-        }
-
         _waitingForCoinStop = false;
 
         switch (_phase)
@@ -1410,119 +1251,1537 @@ public class OnboardingGuideController : MonoBehaviour
                 EnterStage3();
                 break;
             case GuidePhase.Stage4_AlignShot:
-                EnterStage5();
-                break;
-            case GuidePhase.Stage9_ReleaseToShot:
-                EnterStage10();
-                break;
-            case GuidePhase.Stage11_ReleaseToShot:
+                if (_stageFourPostShotSequenceActive)
+                {
+                    break;
+                }
+
+                _stageFourPostShotSequenceActive = true;
+                HideGuideVisuals();
                 if (_flowRoutine != null)
                 {
                     StopCoroutine(_flowRoutine);
                 }
 
-                _flowRoutine = StartCoroutine(AdvanceAfterNormalRulesShotResolved(
-                    () => EnterStage12(),
-                    BeginStageElevenInvalidShotRecovery));
+                _flowRoutine = StartCoroutine(ReturnCenterCoinHomeThenComplete());
                 break;
-            case GuidePhase.Stage17_ReleaseToShot:
-                if (_flowRoutine != null)
-                {
-                    StopCoroutine(_flowRoutine);
-                }
-
-                _flowRoutine = StartCoroutine(AdvanceAfterNormalRulesShotResolved(
-                    BeginStage18OnP3,
-                    EnterStage17AfterInvalidShot));
+            case GuidePhase.Stage6_PowerAim:
+                HandleStageSixShotResolved();
                 break;
-            case GuidePhase.Stage12_PowerShot:
-                EnterStage13PreAlignDrag();
-                break;
-            case GuidePhase.Stage14_GateAlignPower:
-                if (_flowRoutine != null)
-                {
-                    StopCoroutine(_flowRoutine);
-                }
-
-                _flowRoutine = StartCoroutine(AdvanceAfterNormalRulesShotResolved(
-                    () => EnterStage15(),
-                    () => EnterStage13PreAlignDrag()));
-                break;
-            case GuidePhase.Stage16_PowerShot:
-                if (_flowRoutine != null)
-                {
-                    StopCoroutine(_flowRoutine);
-                }
-
-                _flowRoutine = StartCoroutine(AdvanceAfterNormalRulesShotResolved(() => EnterStage17(), EnterStage15AfterInvalidShot));
-                break;
-            case GuidePhase.Stage18_PowerShot:
-                if (_flowRoutine != null)
-                {
-                    StopCoroutine(_flowRoutine);
-                }
-
-                _flowRoutine = StartCoroutine(AdvanceAfterNormalRulesShotResolved(() => EnterCompleted(), EnterStage17AfterInvalidShot));
+            case GuidePhase.Stage7_Drag:
+                HandleStageSevenShotResolved();
                 break;
         }
     }
 
-    IEnumerator AdvanceAfterNormalRulesShotResolved(Action onValidShot, Action onInvalidShot)
+    void HandleStageSixShotResolved()
     {
-        GameRulesManager rules = GameRulesManager.Instance;
-        bool? shotValid = null;
+        GateIndicator.Instance?.Hide();
 
-        void OnResolved(CoinIdentity _, bool valid)
+        if (DidStageSixShotPassGate())
         {
-            shotValid = valid;
-        }
-
-        if (rules != null)
-        {
-            rules.PlayerShotResolved += OnResolved;
-        }
-
-        try
-        {
-            while (rules != null && rules.IsMatchLockedForInput)
+            _stage6ConsecutiveFails = 0;
+            if (_flowRoutine != null)
             {
-                yield return null;
+                StopCoroutine(_flowRoutine);
             }
 
-            const float resolveTimeoutSeconds = 2f;
-            float elapsed = 0f;
-            while (shotValid == null && elapsed < resolveTimeoutSeconds)
-            {
-                elapsed += Time.deltaTime;
-                yield return null;
-            }
-        }
-        finally
-        {
-            if (rules != null)
-            {
-                rules.PlayerShotResolved -= OnResolved;
-            }
+            _flowRoutine = StartCoroutine(StageSixSuccessThenStage7Routine());
+            return;
         }
 
-        _flowRoutine = null;
-
-        if (shotValid == true)
+        _stage6ConsecutiveFails++;
+        if (_flowRoutine != null)
         {
-            onValidShot?.Invoke();
+            StopCoroutine(_flowRoutine);
+        }
+
+        if (_stage6ConsecutiveFails >= 2)
+        {
+            _flowRoutine = StartCoroutine(StageSixShowAlertRoutine());
         }
         else
         {
-            onInvalidShot?.Invoke();
+            _flowRoutine = StartCoroutine(StageSixMissRetryRoutine());
+        }
+    }
+
+    bool DidStageSixShotPassGate()
+    {
+        if (!TryResolveStageSixGateEndpoints(out Vector3 gateStart, out Vector3 gateEnd))
+        {
+            return false;
+        }
+
+        _stage6ShotPathSamples.Clear();
+        CoinDragController dragController = GetCenterCoinDragController();
+        if (dragController != null)
+        {
+            dragController.CopySlidePathTo(_stage6ShotPathSamples);
+        }
+
+        if (_stage6ShotPathSamples.Count < 2)
+        {
+            return false;
+        }
+
+        return PassBetweenValidator.DidPassBetweenAlongPath(
+            _stage6ShotPathSamples,
+            gateStart,
+            gateEnd,
+            _stage6GateMargin);
+    }
+
+    IEnumerator StageSixMissRetryRoutine()
+    {
+        _stage6PostShotSequenceActive = true;
+        HideGuideVisuals();
+        GateIndicator.Instance?.Hide();
+        yield return ReturnCenterCoinHome();
+        _stage6PostShotSequenceActive = false;
+        EnterStage6();
+        _flowRoutine = null;
+    }
+
+    IEnumerator StageSixSuccessThenStage7Routine()
+    {
+        _stage6PostShotSequenceActive = true;
+        HideGuideVisuals();
+        GateIndicator.Instance?.Hide();
+        yield return ShowSuccessBriefly();
+        yield return ReturnCenterCoinHome();
+        _stage6PostShotSequenceActive = false;
+        EnterStage7();
+        _flowRoutine = null;
+    }
+
+    IEnumerator StageSixShowAlertRoutine()
+    {
+        _stage6PostShotSequenceActive = true;
+        HideGuideVisuals();
+        GateIndicator.Instance?.Hide();
+        ShowStageSixAlert();
+        _flowRoutine = null;
+        yield break;
+    }
+
+    IEnumerator StageSixAlertDismissRoutine()
+    {
+        HideStageSixAlert();
+        _stage6PostShotSequenceActive = true;
+        yield return ReturnCenterCoinHome();
+        _stage6ConsecutiveFails = 0;
+        _stage6PostShotSequenceActive = false;
+        EnterStage6();
+        _flowRoutine = null;
+    }
+
+    void HandleStageSevenShotResolved()
+    {
+        GateIndicator.Instance?.Hide();
+        HideTutorialOverlay();
+
+        if (DidStageSevenShotPassGate())
+        {
+            _stage7ConsecutiveFails = 0;
+            if (_flowRoutine != null)
+            {
+                StopCoroutine(_flowRoutine);
+            }
+
+            _flowRoutine = StartCoroutine(StageSevenSuccessThenStage8Routine());
+            return;
+        }
+
+        _stage7ConsecutiveFails++;
+        if (_flowRoutine != null)
+        {
+            StopCoroutine(_flowRoutine);
+        }
+
+        if (_stage7ConsecutiveFails >= 2)
+        {
+            _flowRoutine = StartCoroutine(StageSevenShowAlertRoutine());
+        }
+        else
+        {
+            _flowRoutine = StartCoroutine(StageSevenMissRetryRoutine());
+        }
+    }
+
+    bool DidStageSevenShotPassGate()
+    {
+        if (!TryResolveStageSevenGateEndpoints(out Vector3 gateStart, out Vector3 gateEnd))
+        {
+            return false;
+        }
+
+        _stage7ShotPathSamples.Clear();
+        CoinDragController dragController = GetCenterCoinDragController();
+        if (dragController != null)
+        {
+            dragController.CopySlidePathTo(_stage7ShotPathSamples);
+        }
+
+        if (_stage7ShotPathSamples.Count < 2)
+        {
+            return false;
+        }
+
+        return PassBetweenValidator.DidPassBetweenAlongPath(
+            _stage7ShotPathSamples,
+            gateStart,
+            gateEnd,
+            _stage7GateMargin);
+    }
+
+    IEnumerator StageSevenMissRetryRoutine()
+    {
+        _stage7PostShotSequenceActive = true;
+        HideGuideVisuals();
+        HideTutorialOverlay();
+        GateIndicator.Instance?.Hide();
+        yield return ReturnCenterCoinHome();
+        _stage7PostShotSequenceActive = false;
+        EnterStage7();
+        _flowRoutine = null;
+    }
+
+    IEnumerator StageSevenSuccessThenStage8Routine()
+    {
+        _stage7PostShotSequenceActive = true;
+        HideGuideVisuals();
+        HideTutorialOverlay();
+        GateIndicator.Instance?.Hide();
+        yield return ShowSuccessBriefly();
+        yield return ReturnCenterCoinHome();
+        yield return RevealSideCoinsToGameUiPositions();
+        _stage7PostShotSequenceActive = false;
+        EnterStage8();
+        _flowRoutine = null;
+    }
+
+    IEnumerator RevealSideCoinsToGameUiPositions()
+    {
+        Transform leftCoin = ResolveSideCoinTransform("Coin_P1", OnboardingSceneBootstrap.LeftCoinTransform);
+        Transform rightCoin = ResolveSideCoinTransform("Coin_P3", OnboardingSceneBootstrap.RightCoinTransform);
+        if (leftCoin == null && rightCoin == null)
+        {
+            Debug.LogWarning("Onboarding: Coin_P1 / Coin_P3 bulunamadı; Aşama 8 yan coin reveal atlandı.");
+            yield break;
+        }
+
+        OnboardingSceneBootstrap.CacheSideCoinReferences(leftCoin, rightCoin);
+
+        if (leftCoin != null)
+        {
+            leftCoin.gameObject.SetActive(true);
+            leftCoin.GetComponent<CoinIdentity>()?.SetPassive(true);
+        }
+
+        if (rightCoin != null)
+        {
+            rightCoin.gameObject.SetActive(true);
+            rightCoin.GetComponent<CoinIdentity>()?.SetPassive(true);
+        }
+
+        Vector3 leftStart = leftCoin != null ? leftCoin.position : default;
+        Quaternion leftRot = leftCoin != null ? leftCoin.rotation : Quaternion.identity;
+        Vector3 rightStart = rightCoin != null ? rightCoin.position : default;
+        Quaternion rightRot = rightCoin != null ? rightCoin.rotation : Quaternion.identity;
+
+        if (!TryResolveStageEightSideCoinTargetPositions(out Vector3 leftTarget, out Vector3 rightTarget))
+        {
+            Debug.LogWarning("Onboarding: Stg8-Coin1 / Stg8-Coin2 hedefi eksik; yan coin reveal atlandı.");
+            yield break;
+        }
+
+        Rigidbody leftBody = leftCoin != null ? leftCoin.GetComponent<Rigidbody>() : null;
+        Rigidbody rightBody = rightCoin != null ? rightCoin.GetComponent<Rigidbody>() : null;
+        CoinDragController leftDrag = leftCoin != null ? leftCoin.GetComponent<CoinDragController>() : null;
+        CoinDragController rightDrag = rightCoin != null ? rightCoin.GetComponent<CoinDragController>() : null;
+
+        leftDrag?.CancelAim();
+        rightDrag?.CancelAim();
+        if (leftBody != null)
+        {
+            leftBody.linearVelocity = Vector3.zero;
+            leftBody.angularVelocity = Vector3.zero;
+            leftBody.isKinematic = true;
+        }
+
+        if (rightBody != null)
+        {
+            rightBody.linearVelocity = Vector3.zero;
+            rightBody.angularVelocity = Vector3.zero;
+            rightBody.isKinematic = true;
+        }
+
+        float duration = _sideCoinRevealDuration > 0.01f ? _sideCoinRevealDuration : 1f;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+
+            if (leftCoin != null)
+            {
+                Vector3 nextPos = Vector3.Lerp(leftStart, leftTarget, t);
+                leftCoin.SetPositionAndRotation(nextPos, leftRot);
+                if (leftBody != null)
+                {
+                    leftBody.position = nextPos;
+                    leftBody.rotation = leftRot;
+                }
+            }
+
+            if (rightCoin != null)
+            {
+                Vector3 nextPos = Vector3.Lerp(rightStart, rightTarget, t);
+                rightCoin.SetPositionAndRotation(nextPos, rightRot);
+                if (rightBody != null)
+                {
+                    rightBody.position = nextPos;
+                    rightBody.rotation = rightRot;
+                }
+            }
+
+            yield return null;
+        }
+
+        if (leftCoin != null)
+        {
+            ApplyCoinPose(leftCoin, leftBody, leftDrag, leftTarget, leftRot);
+            leftCoin.GetComponent<CoinIdentity>()?.SetPassive(true);
+        }
+
+        if (rightCoin != null)
+        {
+            ApplyCoinPose(rightCoin, rightBody, rightDrag, rightTarget, rightRot);
+            rightCoin.GetComponent<CoinIdentity>()?.SetPassive(true);
+        }
+
+        if (GameRulesManager.Instance != null)
+        {
+            EnsureOpeningCoinResolved();
+            CoinIdentity centerIdentity = _openingCoin != null
+                ? _openingCoin.GetComponent<CoinIdentity>()
+                : null;
+            GameRulesManager.Instance.PrepareForPostTutorialOpeningShot(centerIdentity);
+            leftCoin?.GetComponent<CoinIdentity>()?.SetPassive(true);
+            rightCoin?.GetComponent<CoinIdentity>()?.SetPassive(true);
+            centerIdentity?.SetPassive(false);
+        }
+    }
+
+    static Transform ResolveSideCoinTransform(string objectName, Transform cached)
+    {
+        if (cached != null)
+        {
+            return cached;
+        }
+
+        Transform[] transforms = Object.FindObjectsByType<Transform>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            Transform candidate = transforms[i];
+            if (candidate == null || candidate.name != objectName)
+            {
+                continue;
+            }
+
+            if (!candidate.gameObject.scene.IsValid())
+            {
+                continue;
+            }
+
+            return candidate;
+        }
+
+        return null;
+    }
+
+    bool TryResolveStageEightSideCoinTargetPositions(out Vector3 leftTarget, out Vector3 rightTarget)
+    {
+        leftTarget = default;
+        rightTarget = default;
+
+        Transform coin1 = _stage8Coin1Target;
+        Transform coin2 = _stage8Coin2Target;
+        if (coin1 == null || coin2 == null)
+        {
+            ResolveStageEightTargetMarkersIfNeeded(ref coin1, ref coin2);
+        }
+
+        if (coin1 == null || coin2 == null)
+        {
+            return false;
+        }
+
+        _stage8Coin1Target = coin1;
+        _stage8Coin2Target = coin2;
+        leftTarget = coin1.position;
+        rightTarget = coin2.position;
+        return true;
+    }
+
+    static void ResolveStageEightTargetMarkersIfNeeded(ref Transform coin1, ref Transform coin2)
+    {
+        if (coin1 != null && coin2 != null)
+        {
+            return;
+        }
+
+        Transform[] transforms = Object.FindObjectsByType<Transform>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            Transform candidate = transforms[i];
+            if (candidate == null || !candidate.gameObject.scene.IsValid())
+            {
+                continue;
+            }
+
+            if (coin1 == null && candidate.name == "Stg8-Coin1")
+            {
+                coin1 = candidate;
+            }
+            else if (coin2 == null && candidate.name == "Stg8-Coin2")
+            {
+                coin2 = candidate;
+            }
+
+            if (coin1 != null && coin2 != null)
+            {
+                return;
+            }
+        }
+    }
+
+    IEnumerator StageSevenShowAlertRoutine()
+    {
+        _stage7PostShotSequenceActive = true;
+        HideGuideVisuals();
+        HideTutorialOverlay();
+        GateIndicator.Instance?.Hide();
+        ShowStageSevenAlert();
+        _flowRoutine = null;
+        yield break;
+    }
+
+    IEnumerator StageSevenAlertDismissRoutine()
+    {
+        HideStageSevenAlert();
+        _stage7PostShotSequenceActive = true;
+        yield return ReturnCenterCoinHome();
+        _stage7ConsecutiveFails = 0;
+        _stage7PostShotSequenceActive = false;
+        EnterStage7();
+        _flowRoutine = null;
+    }
+
+    void BindStageSixAlertButton()
+    {
+        if (_stage6Alert == null)
+        {
+            return;
+        }
+
+        _stage6AlertButton = _stage6Alert.GetComponentInChildren<Button>(true);
+        if (_stage6AlertButton == null)
+        {
+            return;
+        }
+
+        _stage6AlertButton.onClick.RemoveListener(OnStageSixAlertButtonClicked);
+        _stage6AlertButton.onClick.AddListener(OnStageSixAlertButtonClicked);
+    }
+
+    void UnbindStageSixAlertButton()
+    {
+        if (_stage6AlertButton == null)
+        {
+            return;
+        }
+
+        _stage6AlertButton.onClick.RemoveListener(OnStageSixAlertButtonClicked);
+        _stage6AlertButton = null;
+    }
+
+    void OnStageSixAlertButtonClicked()
+    {
+        if (!IsStageSixAlertVisible())
+        {
+            return;
+        }
+
+        if (_flowRoutine != null)
+        {
+            StopCoroutine(_flowRoutine);
+        }
+
+        _flowRoutine = StartCoroutine(StageSixAlertDismissRoutine());
+    }
+
+    void ShowStageSixAlert()
+    {
+        if (_stage6Alert == null)
+        {
+            return;
+        }
+
+        _stage6Alert.SetActive(true);
+    }
+
+    void HideStageSixAlert()
+    {
+        if (_stage6Alert != null)
+        {
+            _stage6Alert.SetActive(false);
+        }
+    }
+
+    bool IsStageSixAlertVisible()
+    {
+        return _stage6Alert != null && _stage6Alert.activeSelf;
+    }
+
+    void BindStageSevenAlertButton()
+    {
+        if (_stage7Alert == null)
+        {
+            return;
+        }
+
+        _stage7AlertButton = _stage7Alert.GetComponentInChildren<Button>(true);
+        if (_stage7AlertButton == null)
+        {
+            return;
+        }
+
+        _stage7AlertButton.onClick.RemoveListener(OnStageSevenAlertButtonClicked);
+        _stage7AlertButton.onClick.AddListener(OnStageSevenAlertButtonClicked);
+    }
+
+    void UnbindStageSevenAlertButton()
+    {
+        if (_stage7AlertButton == null)
+        {
+            return;
+        }
+
+        _stage7AlertButton.onClick.RemoveListener(OnStageSevenAlertButtonClicked);
+        _stage7AlertButton = null;
+    }
+
+    void OnStageSevenAlertButtonClicked()
+    {
+        if (!IsStageSevenAlertVisible())
+        {
+            return;
+        }
+
+        if (_flowRoutine != null)
+        {
+            StopCoroutine(_flowRoutine);
+        }
+
+        _flowRoutine = StartCoroutine(StageSevenAlertDismissRoutine());
+    }
+
+    void ShowStageSevenAlert()
+    {
+        if (_stage7Alert == null)
+        {
+            return;
+        }
+
+        _stage7Alert.SetActive(true);
+    }
+
+    void HideStageSevenAlert()
+    {
+        if (_stage7Alert != null)
+        {
+            _stage7Alert.SetActive(false);
+        }
+    }
+
+    bool IsStageSevenAlertVisible()
+    {
+        return _stage7Alert != null && _stage7Alert.activeSelf;
+    }
+
+    void BindStageNineAlertButton()
+    {
+        if (_stage9Alert == null)
+        {
+            return;
+        }
+
+        _stage9AlertButton = _stage9Alert.GetComponentInChildren<Button>(true);
+        if (_stage9AlertButton == null)
+        {
+            return;
+        }
+
+        _stage9AlertButton.onClick.RemoveListener(OnStageNineAlertButtonClicked);
+        _stage9AlertButton.onClick.AddListener(OnStageNineAlertButtonClicked);
+    }
+
+    void UnbindStageNineAlertButton()
+    {
+        if (_stage9AlertButton == null)
+        {
+            return;
+        }
+
+        _stage9AlertButton.onClick.RemoveListener(OnStageNineAlertButtonClicked);
+        _stage9AlertButton = null;
+    }
+
+    void OnStageNineAlertButtonClicked()
+    {
+        if (!IsStageNineAlertVisible())
+        {
+            return;
+        }
+
+        HideStageNineAlert();
+        _stage9AlertPending = false;
+
+        if (_phase == GuidePhase.Stage11_PassAndGoal)
+        {
+            if (_flowRoutine != null)
+            {
+                StopCoroutine(_flowRoutine);
+            }
+
+            _flowRoutine = StartCoroutine(StageElevenAlertDismissRoutine());
+            return;
+        }
+
+        if (_phase == GuidePhase.Stage9_PassBetween)
+        {
+            if (_flowRoutine != null)
+            {
+                StopCoroutine(_flowRoutine);
+            }
+
+            _flowRoutine = StartCoroutine(StageNineAlertDismissRoutine());
+            return;
+        }
+
+        _stage9ConsecutiveFails = 0;
+    }
+
+    void ShowStageNineAlert()
+    {
+        if (_stage9Alert == null)
+        {
+            return;
+        }
+
+        _stage9Alert.SetActive(true);
+    }
+
+    void HideStageNineAlert()
+    {
+        if (_stage9Alert != null)
+        {
+            _stage9Alert.SetActive(false);
+        }
+    }
+
+    bool IsStageNineAlertVisible()
+    {
+        return _stage9Alert != null && _stage9Alert.activeSelf;
+    }
+
+    void BindStageTenAlertButton()
+    {
+        if (_stage10Alert == null)
+        {
+            return;
+        }
+
+        _stage10AlertButton = _stage10Alert.GetComponentInChildren<Button>(true);
+        if (_stage10AlertButton == null)
+        {
+            return;
+        }
+
+        _stage10AlertButton.onClick.RemoveListener(OnStageTenAlertButtonClicked);
+        _stage10AlertButton.onClick.AddListener(OnStageTenAlertButtonClicked);
+    }
+
+    void UnbindStageTenAlertButton()
+    {
+        if (_stage10AlertButton == null)
+        {
+            return;
+        }
+
+        _stage10AlertButton.onClick.RemoveListener(OnStageTenAlertButtonClicked);
+        _stage10AlertButton = null;
+    }
+
+    void OnStageTenAlertButtonClicked()
+    {
+        if (!IsStageTenAlertVisible())
+        {
+            return;
+        }
+
+        HideStageTenAlert();
+        if (_phase != GuidePhase.Stage11_PassAndGoal)
+        {
+            return;
+        }
+
+        if (_flowRoutine != null)
+        {
+            StopCoroutine(_flowRoutine);
+        }
+
+        _flowRoutine = StartCoroutine(StageElevenAlertDismissRoutine());
+    }
+
+    void ShowStageTenAlert()
+    {
+        if (_stage10Alert == null)
+        {
+            return;
+        }
+
+        _stage10Alert.SetActive(true);
+    }
+
+    void HideStageTenAlert()
+    {
+        if (_stage10Alert != null)
+        {
+            _stage10Alert.SetActive(false);
+        }
+    }
+
+    bool IsStageTenAlertVisible()
+    {
+        return _stage10Alert != null && _stage10Alert.activeSelf;
+    }
+
+    IEnumerator ShowSuccessBriefly()
+    {
+        ShowSuccessPanel();
+        float duration = _successDisplayDuration > 0.01f ? _successDisplayDuration : 1f;
+        yield return new WaitForSecondsRealtime(duration);
+        HideSuccessPanel();
+    }
+
+    void ShowSuccessPanel()
+    {
+        EnsureSuccessPanelResolved();
+        if (_successPanel != null)
+        {
+            _successPanel.SetActive(true);
+        }
+
+        PlaySuccessSound();
+    }
+
+    void PlaySuccessSound()
+    {
+        GameFeedbackSettingsService.EnsureLoaded();
+        if (!GameFeedbackSettingsService.SoundEffectsEnabled)
+        {
+            return;
+        }
+
+        if (_successSound == null)
+        {
+            return;
+        }
+
+        EnsureSuccessAudioSource();
+        if (_successAudioSource == null)
+        {
+            return;
+        }
+
+        _successAudioSource.PlayOneShot(_successSound);
+    }
+
+    void EnsureSuccessAudioSource()
+    {
+        if (_successAudioSource != null)
+        {
+            return;
+        }
+
+        _successAudioSource = gameObject.GetComponent<AudioSource>();
+        if (_successAudioSource == null)
+        {
+            _successAudioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        _successAudioSource.playOnAwake = false;
+        _successAudioSource.spatialBlend = 0f;
+    }
+
+    void HideSuccessPanel()
+    {
+        EnsureSuccessPanelResolved();
+        if (_successPanel != null)
+        {
+            _successPanel.SetActive(false);
+        }
+    }
+
+    bool IsSuccessPanelVisible()
+    {
+        return _successPanel != null && _successPanel.activeSelf;
+    }
+
+    void EnsureSuccessPanelResolved()
+    {
+        if (_successPanel != null || _canvasRect == null)
+        {
+            return;
+        }
+
+        Transform success = _canvasRect.Find("Success");
+        if (success != null)
+        {
+            _successPanel = success.gameObject;
+        }
+    }
+
+    void SubscribeGameRulesEvents()
+    {
+        StartCoroutine(SubscribeGameRulesEventsWhenReady());
+    }
+
+    IEnumerator SubscribeGameRulesEventsWhenReady()
+    {
+        while (GameRulesManager.Instance == null)
+        {
+            yield return null;
+        }
+
+        UnsubscribeGameRulesEvents();
+        GameRulesManager.Instance.InvalidMoveRollbackFinished += OnInvalidMoveRollbackFinished;
+        GameRulesManager.Instance.ValidShotCommitted += OnValidShotCommitted;
+        GameRulesManager.Instance.PlayerShotResolved += OnPlayerShotResolved;
+    }
+
+    void UnsubscribeGameRulesEvents()
+    {
+        if (GameRulesManager.Instance == null)
+        {
+            return;
+        }
+
+        GameRulesManager.Instance.InvalidMoveRollbackFinished -= OnInvalidMoveRollbackFinished;
+        GameRulesManager.Instance.ValidShotCommitted -= OnValidShotCommitted;
+        GameRulesManager.Instance.PlayerShotResolved -= OnPlayerShotResolved;
+    }
+
+    void OnValidShotCommitted(CoinTeam team)
+    {
+        if (team != CoinTeam.Player)
+        {
+            return;
+        }
+
+        if (_phase == GuidePhase.Stage9_PassBetween)
+        {
+            _stage9ConsecutiveFails = 0;
+            BeginStageNineSuccessToStageTen();
+            return;
+        }
+
+        if (_phase == GuidePhase.Stage11_PassAndGoal)
+        {
+            HandleStageElevenGatePassNoGoal();
+        }
+    }
+
+    void HandleStageElevenGatePassNoGoal()
+    {
+        if (_stage11PostShotSequenceActive || IsStageTenAlertVisible())
+        {
+            return;
+        }
+
+        _stage11ConsecutiveFails = 0;
+        _stage11NoGoalFails++;
+        GateIndicator.Instance?.Hide();
+        HideGuideVisuals();
+
+        if (_flowRoutine != null)
+        {
+            StopCoroutine(_flowRoutine);
+        }
+
+        if (_stage11NoGoalFails >= 2)
+        {
+            ShowStageTenAlert();
+            return;
+        }
+
+        _flowRoutine = StartCoroutine(StageElevenNoGoalResetRoutine());
+    }
+
+    void OnPlayerShotResolved(CoinIdentity coin, bool shotValid)
+    {
+        _ = coin;
+        if (_phase != GuidePhase.Stage9_PassBetween || !shotValid)
+        {
+            return;
+        }
+
+        _stage9ConsecutiveFails = 0;
+        BeginStageNineSuccessToStageTen();
+    }
+
+    void BeginStageNineSuccessToStageTen()
+    {
+        if (_stage9PostShotSequenceActive || _phase != GuidePhase.Stage9_PassBetween)
+        {
+            return;
+        }
+
+        _stage9PostShotSequenceActive = true;
+        if (_flowRoutine != null)
+        {
+            StopCoroutine(_flowRoutine);
+        }
+
+        _flowRoutine = StartCoroutine(StageNineSuccessThenStage10Routine());
+    }
+
+    IEnumerator StageNineSuccessThenStage10Routine()
+    {
+        GateIndicator.Instance?.Hide();
+        HideGuideVisuals();
+        HideStageNineAlert();
+        yield return ShowSuccessBriefly();
+        yield return AnimateCoinsToStageTenPositions();
+        _stage9PostShotSequenceActive = false;
+        EnterStage10();
+        _flowRoutine = null;
+    }
+
+    IEnumerator AnimateCoinsToStageTenPositions()
+    {
+        EnsureOpeningCoinResolved();
+        Transform centerCoin = _openingCoin;
+        Transform leftCoin = ResolveSideCoinTransform("Coin_P1", OnboardingSceneBootstrap.LeftCoinTransform);
+        Transform rightCoin = ResolveSideCoinTransform("Coin_P3", OnboardingSceneBootstrap.RightCoinTransform);
+
+        if (!TryResolveStageTenTargetPositions(out Vector3 leftTarget, out Vector3 rightTarget, out Vector3 hitTarget))
+        {
+            Debug.LogWarning("Onboarding: Stg10-Coin1 / Stg10-Coin2 / Stg10-CoinHit hedefi eksik; Aşama 10 coin animasyonu atlandı.");
+            yield break;
+        }
+
+        if (leftCoin != null)
+        {
+            leftCoin.gameObject.SetActive(true);
+            leftCoin.GetComponent<CoinIdentity>()?.SetPassive(true);
+        }
+
+        if (rightCoin != null)
+        {
+            rightCoin.gameObject.SetActive(true);
+            rightCoin.GetComponent<CoinIdentity>()?.SetPassive(true);
+        }
+
+        centerCoin?.GetComponent<CoinIdentity>()?.SetPassive(false);
+
+        Vector3 leftStart = leftCoin != null ? leftCoin.position : default;
+        Quaternion leftRot = leftCoin != null ? leftCoin.rotation : Quaternion.identity;
+        Vector3 rightStart = rightCoin != null ? rightCoin.position : default;
+        Quaternion rightRot = rightCoin != null ? rightCoin.rotation : Quaternion.identity;
+        Vector3 centerStart = centerCoin != null ? centerCoin.position : default;
+        Quaternion centerRot = centerCoin != null ? centerCoin.rotation : Quaternion.identity;
+
+        Rigidbody leftBody = leftCoin != null ? leftCoin.GetComponent<Rigidbody>() : null;
+        Rigidbody rightBody = rightCoin != null ? rightCoin.GetComponent<Rigidbody>() : null;
+        Rigidbody centerBody = centerCoin != null ? centerCoin.GetComponent<Rigidbody>() : null;
+        CoinDragController leftDrag = leftCoin != null ? leftCoin.GetComponent<CoinDragController>() : null;
+        CoinDragController rightDrag = rightCoin != null ? rightCoin.GetComponent<CoinDragController>() : null;
+        CoinDragController centerDrag = centerCoin != null ? centerCoin.GetComponent<CoinDragController>() : null;
+
+        leftDrag?.CancelAim();
+        rightDrag?.CancelAim();
+        centerDrag?.CancelAim();
+
+        if (leftBody != null)
+        {
+            leftBody.linearVelocity = Vector3.zero;
+            leftBody.angularVelocity = Vector3.zero;
+            leftBody.isKinematic = true;
+        }
+
+        if (rightBody != null)
+        {
+            rightBody.linearVelocity = Vector3.zero;
+            rightBody.angularVelocity = Vector3.zero;
+            rightBody.isKinematic = true;
+        }
+
+        if (centerBody != null)
+        {
+            centerBody.linearVelocity = Vector3.zero;
+            centerBody.angularVelocity = Vector3.zero;
+            centerBody.isKinematic = true;
+        }
+
+        float duration = _stage10CoinMoveDuration > 0.01f ? _stage10CoinMoveDuration : 1f;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+
+            if (leftCoin != null)
+            {
+                Vector3 nextPos = Vector3.Lerp(leftStart, leftTarget, t);
+                leftCoin.SetPositionAndRotation(nextPos, leftRot);
+                if (leftBody != null)
+                {
+                    leftBody.position = nextPos;
+                    leftBody.rotation = leftRot;
+                }
+            }
+
+            if (rightCoin != null)
+            {
+                Vector3 nextPos = Vector3.Lerp(rightStart, rightTarget, t);
+                rightCoin.SetPositionAndRotation(nextPos, rightRot);
+                if (rightBody != null)
+                {
+                    rightBody.position = nextPos;
+                    rightBody.rotation = rightRot;
+                }
+            }
+
+            if (centerCoin != null)
+            {
+                Vector3 nextPos = Vector3.Lerp(centerStart, hitTarget, t);
+                centerCoin.SetPositionAndRotation(nextPos, centerRot);
+                if (centerBody != null)
+                {
+                    centerBody.position = nextPos;
+                    centerBody.rotation = centerRot;
+                }
+            }
+
+            yield return null;
+        }
+
+        if (leftCoin != null)
+        {
+            ApplyCoinPose(leftCoin, leftBody, leftDrag, leftTarget, leftRot);
+            leftCoin.GetComponent<CoinIdentity>()?.SetPassive(true);
+        }
+
+        if (rightCoin != null)
+        {
+            ApplyCoinPose(rightCoin, rightBody, rightDrag, rightTarget, rightRot);
+            rightCoin.GetComponent<CoinIdentity>()?.SetPassive(true);
+        }
+
+        if (centerCoin != null)
+        {
+            ApplyCoinPose(centerCoin, centerBody, centerDrag, hitTarget, centerRot);
+            centerCoin.GetComponent<CoinIdentity>()?.SetPassive(false);
+            centerDrag?.UnfreezeAfterGoal();
+        }
+    }
+
+    bool TryResolveStageTenTargetPositions(out Vector3 leftTarget, out Vector3 rightTarget, out Vector3 hitTarget)
+    {
+        leftTarget = default;
+        rightTarget = default;
+        hitTarget = default;
+
+        Transform coin1 = _stage10Coin1Target;
+        Transform coin2 = _stage10Coin2Target;
+        Transform coinHit = _stage10CoinHitTarget;
+        if (coin1 == null || coin2 == null || coinHit == null)
+        {
+            ResolveStageTenTargetMarkersIfNeeded(ref coin1, ref coin2, ref coinHit);
+        }
+
+        if (coin1 == null || coin2 == null || coinHit == null)
+        {
+            return false;
+        }
+
+        _stage10Coin1Target = coin1;
+        _stage10Coin2Target = coin2;
+        _stage10CoinHitTarget = coinHit;
+        leftTarget = coin1.position;
+        rightTarget = coin2.position;
+        hitTarget = coinHit.position;
+        return true;
+    }
+
+    static void ResolveStageTenTargetMarkersIfNeeded(ref Transform coin1, ref Transform coin2, ref Transform coinHit)
+    {
+        if (coin1 != null && coin2 != null && coinHit != null)
+        {
+            return;
+        }
+
+        Transform[] transforms = Object.FindObjectsByType<Transform>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            Transform candidate = transforms[i];
+            if (candidate == null || !candidate.gameObject.scene.IsValid())
+            {
+                continue;
+            }
+
+            if (coin1 == null && candidate.name == "Stg10-Coin1")
+            {
+                coin1 = candidate;
+            }
+            else if (coin2 == null && candidate.name == "Stg10-Coin2")
+            {
+                coin2 = candidate;
+            }
+            else if (coinHit == null && candidate.name == "Stg10-CoinHit")
+            {
+                coinHit = candidate;
+            }
+
+            if (coin1 != null && coin2 != null && coinHit != null)
+            {
+                return;
+            }
+        }
+    }
+
+    void OnInvalidMoveRollbackFinished(CoinTeam team)
+    {
+        if (team != CoinTeam.Player)
+        {
+            return;
+        }
+
+        if (_phase == GuidePhase.Stage9_PassBetween)
+        {
+            _stage9ConsecutiveFails++;
+            GateIndicator.Instance?.Hide();
+            HideGuideVisuals();
+
+            if (_flowRoutine != null)
+            {
+                StopCoroutine(_flowRoutine);
+            }
+
+            _flowRoutine = StartCoroutine(StageNineInvalidMoveResetRoutine());
+            return;
+        }
+
+        if (_phase != GuidePhase.Stage11_PassAndGoal)
+        {
+            return;
+        }
+
+        _stage11NoGoalFails = 0;
+        _stage11ConsecutiveFails++;
+        GateIndicator.Instance?.Hide();
+        HideGuideVisuals();
+
+        if (_flowRoutine != null)
+        {
+            StopCoroutine(_flowRoutine);
+        }
+
+            _flowRoutine = StartCoroutine(StageElevenInvalidMoveResetRoutine());
+    }
+
+    IEnumerator StageNineInvalidMoveResetRoutine()
+    {
+        _stage9PostShotSequenceActive = true;
+        GateIndicator.Instance?.Hide();
+        HideGuideVisuals();
+        HideStageNineAlert();
+        yield return RestoreStageEightCoinPositions();
+        _stage9PostShotSequenceActive = false;
+
+        if (_stage9ConsecutiveFails >= 2)
+        {
+            _stage9AlertPending = true;
+            ShowStageNineAlert();
+            _stage9AlertPending = false;
+        }
+        else
+        {
+            EnterStage9(resetFailCounts: false);
+        }
+
+        _flowRoutine = null;
+    }
+
+    IEnumerator StageNineAlertDismissRoutine()
+    {
+        _stage9PostShotSequenceActive = true;
+        GateIndicator.Instance?.Hide();
+        HideGuideVisuals();
+        HideStageNineAlert();
+        yield return RestoreStageEightCoinPositions();
+        _stage9ConsecutiveFails = 0;
+        _stage9PostShotSequenceActive = false;
+        EnterStage9(resetFailCounts: false);
+        _flowRoutine = null;
+    }
+
+    IEnumerator StageElevenInvalidMoveResetRoutine()
+    {
+        _stage11PostShotSequenceActive = true;
+        GateIndicator.Instance?.Hide();
+        HideGuideVisuals();
+        HideStageNineAlert();
+        HideStageTenAlert();
+        yield return RestoreStageElevenCoinPositions();
+        _stage11PostShotSequenceActive = false;
+
+        if (_stage11ConsecutiveFails >= 2)
+        {
+            _stage9AlertPending = true;
+            ShowStageNineAlert();
+            _stage9AlertPending = false;
+        }
+        else
+        {
+            EnterStage11(resetFailCounts: false);
+        }
+
+        _flowRoutine = null;
+    }
+
+    IEnumerator StageElevenNoGoalResetRoutine()
+    {
+        _stage11PostShotSequenceActive = true;
+        GateIndicator.Instance?.Hide();
+        HideGuideVisuals();
+        HideStageTenAlert();
+        yield return RestoreStageElevenCoinPositions();
+        _stage11PostShotSequenceActive = false;
+        EnterStage11(resetFailCounts: false);
+        _flowRoutine = null;
+    }
+
+    IEnumerator StageElevenAlertDismissRoutine()
+    {
+        _stage11PostShotSequenceActive = true;
+        GateIndicator.Instance?.Hide();
+        HideGuideVisuals();
+        HideStageNineAlert();
+        HideStageTenAlert();
+        yield return RestoreStageElevenCoinPositions();
+        _stage11ConsecutiveFails = 0;
+        _stage11NoGoalFails = 0;
+        _stage11PostShotSequenceActive = false;
+        EnterStage11(resetFailCounts: false);
+        _flowRoutine = null;
+    }
+
+    IEnumerator RestoreStageElevenCoinPositions()
+    {
+        if (!_hasStage11StartPoses)
+        {
+            CacheStageElevenCoinPositions();
+        }
+
+        EnsureOpeningCoinResolved();
+        Transform centerCoin = _openingCoin;
+        Transform leftCoin = ResolveSideCoinTransform("Coin_P1", OnboardingSceneBootstrap.LeftCoinTransform);
+        Transform rightCoin = ResolveSideCoinTransform("Coin_P3", OnboardingSceneBootstrap.RightCoinTransform);
+
+        Rigidbody centerBody = centerCoin != null ? centerCoin.GetComponent<Rigidbody>() : null;
+        Rigidbody leftBody = leftCoin != null ? leftCoin.GetComponent<Rigidbody>() : null;
+        Rigidbody rightBody = rightCoin != null ? rightCoin.GetComponent<Rigidbody>() : null;
+        CoinDragController centerDrag = centerCoin != null ? centerCoin.GetComponent<CoinDragController>() : null;
+        CoinDragController leftDrag = leftCoin != null ? leftCoin.GetComponent<CoinDragController>() : null;
+        CoinDragController rightDrag = rightCoin != null ? rightCoin.GetComponent<CoinDragController>() : null;
+
+        centerDrag?.CancelAim();
+        leftDrag?.CancelAim();
+        rightDrag?.CancelAim();
+
+        Vector3 centerStart = centerCoin != null ? centerCoin.position : default;
+        Quaternion centerRotStart = centerCoin != null ? centerCoin.rotation : Quaternion.identity;
+        Vector3 leftStart = leftCoin != null ? leftCoin.position : default;
+        Quaternion leftRotStart = leftCoin != null ? leftCoin.rotation : Quaternion.identity;
+        Vector3 rightStart = rightCoin != null ? rightCoin.position : default;
+        Quaternion rightRotStart = rightCoin != null ? rightCoin.rotation : Quaternion.identity;
+
+        void PrepBody(Rigidbody body)
+        {
+            if (body == null)
+            {
+                return;
+            }
+
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            body.isKinematic = true;
+        }
+
+        PrepBody(centerBody);
+        PrepBody(leftBody);
+        PrepBody(rightBody);
+
+        float duration = _stage11CoinResetDuration > 0.01f ? _stage11CoinResetDuration : 0.75f;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+
+            if (centerCoin != null)
+            {
+                Vector3 nextPos = Vector3.Lerp(centerStart, _stage11CenterStartPosition, t);
+                Quaternion nextRot = Quaternion.Slerp(centerRotStart, _stage11CenterStartRotation, t);
+                centerCoin.SetPositionAndRotation(nextPos, nextRot);
+                if (centerBody != null)
+                {
+                    centerBody.position = nextPos;
+                    centerBody.rotation = nextRot;
+                }
+            }
+
+            if (leftCoin != null)
+            {
+                Vector3 nextPos = Vector3.Lerp(leftStart, _stage11LeftStartPosition, t);
+                Quaternion nextRot = Quaternion.Slerp(leftRotStart, _stage11LeftStartRotation, t);
+                leftCoin.SetPositionAndRotation(nextPos, nextRot);
+                if (leftBody != null)
+                {
+                    leftBody.position = nextPos;
+                    leftBody.rotation = nextRot;
+                }
+            }
+
+            if (rightCoin != null)
+            {
+                Vector3 nextPos = Vector3.Lerp(rightStart, _stage11RightStartPosition, t);
+                Quaternion nextRot = Quaternion.Slerp(rightRotStart, _stage11RightStartRotation, t);
+                rightCoin.SetPositionAndRotation(nextPos, nextRot);
+                if (rightBody != null)
+                {
+                    rightBody.position = nextPos;
+                    rightBody.rotation = nextRot;
+                }
+            }
+
+            yield return null;
+        }
+
+        if (centerCoin != null)
+        {
+            ApplyCoinPose(centerCoin, centerBody, centerDrag, _stage11CenterStartPosition, _stage11CenterStartRotation);
+            centerCoin.GetComponent<CoinIdentity>()?.SetPassive(false);
+            centerDrag?.UnfreezeAfterGoal();
+        }
+
+        if (leftCoin != null)
+        {
+            ApplyCoinPose(leftCoin, leftBody, leftDrag, _stage11LeftStartPosition, _stage11LeftStartRotation);
+            leftCoin.GetComponent<CoinIdentity>()?.SetPassive(true);
+        }
+
+        if (rightCoin != null)
+        {
+            ApplyCoinPose(rightCoin, rightBody, rightDrag, _stage11RightStartPosition, _stage11RightStartRotation);
+            rightCoin.GetComponent<CoinIdentity>()?.SetPassive(true);
+        }
+    }
+
+    void CacheStageElevenCoinPositions()
+    {
+        EnsureOpeningCoinResolved();
+        Transform centerCoin = _openingCoin;
+        Transform leftCoin = ResolveSideCoinTransform("Coin_P1", OnboardingSceneBootstrap.LeftCoinTransform);
+        Transform rightCoin = ResolveSideCoinTransform("Coin_P3", OnboardingSceneBootstrap.RightCoinTransform);
+
+        if (centerCoin != null)
+        {
+            _stage11CenterStartPosition = centerCoin.position;
+            _stage11CenterStartRotation = centerCoin.rotation;
+        }
+
+        if (leftCoin != null)
+        {
+            _stage11LeftStartPosition = leftCoin.position;
+            _stage11LeftStartRotation = leftCoin.rotation;
+        }
+
+        if (rightCoin != null)
+        {
+            _stage11RightStartPosition = rightCoin.position;
+            _stage11RightStartRotation = rightCoin.rotation;
+        }
+
+        _hasStage11StartPoses = centerCoin != null;
+    }
+
+    void CacheStageEightCoinPositions()
+    {
+        EnsureOpeningCoinResolved();
+        Transform centerCoin = _openingCoin;
+        Transform leftCoin = ResolveSideCoinTransform("Coin_P1", OnboardingSceneBootstrap.LeftCoinTransform);
+        Transform rightCoin = ResolveSideCoinTransform("Coin_P3", OnboardingSceneBootstrap.RightCoinTransform);
+
+        if (centerCoin != null)
+        {
+            _stage8CenterStartPosition = centerCoin.position;
+            _stage8CenterStartRotation = centerCoin.rotation;
+        }
+
+        if (leftCoin != null)
+        {
+            _stage8LeftStartPosition = leftCoin.position;
+            _stage8LeftStartRotation = leftCoin.rotation;
+        }
+
+        if (rightCoin != null)
+        {
+            _stage8RightStartPosition = rightCoin.position;
+            _stage8RightStartRotation = rightCoin.rotation;
+        }
+
+        _hasStage8StartPoses = centerCoin != null;
+    }
+
+    IEnumerator RestoreStageEightCoinPositions()
+    {
+        if (!_hasStage8StartPoses)
+        {
+            CacheStageEightCoinPositions();
+        }
+
+        EnsureOpeningCoinResolved();
+        Transform centerCoin = _openingCoin;
+        Transform leftCoin = ResolveSideCoinTransform("Coin_P1", OnboardingSceneBootstrap.LeftCoinTransform);
+        Transform rightCoin = ResolveSideCoinTransform("Coin_P3", OnboardingSceneBootstrap.RightCoinTransform);
+
+        Rigidbody centerBody = centerCoin != null ? centerCoin.GetComponent<Rigidbody>() : null;
+        Rigidbody leftBody = leftCoin != null ? leftCoin.GetComponent<Rigidbody>() : null;
+        Rigidbody rightBody = rightCoin != null ? rightCoin.GetComponent<Rigidbody>() : null;
+        CoinDragController centerDrag = centerCoin != null ? centerCoin.GetComponent<CoinDragController>() : null;
+        CoinDragController leftDrag = leftCoin != null ? leftCoin.GetComponent<CoinDragController>() : null;
+        CoinDragController rightDrag = rightCoin != null ? rightCoin.GetComponent<CoinDragController>() : null;
+
+        centerDrag?.CancelAim();
+        leftDrag?.CancelAim();
+        rightDrag?.CancelAim();
+
+        Vector3 centerStart = centerCoin != null ? centerCoin.position : default;
+        Quaternion centerRotStart = centerCoin != null ? centerCoin.rotation : Quaternion.identity;
+        Vector3 leftStart = leftCoin != null ? leftCoin.position : default;
+        Quaternion leftRotStart = leftCoin != null ? leftCoin.rotation : Quaternion.identity;
+        Vector3 rightStart = rightCoin != null ? rightCoin.position : default;
+        Quaternion rightRotStart = rightCoin != null ? rightCoin.rotation : Quaternion.identity;
+
+        void PrepBody(Rigidbody body)
+        {
+            if (body == null)
+            {
+                return;
+            }
+
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            body.isKinematic = true;
+        }
+
+        PrepBody(centerBody);
+        PrepBody(leftBody);
+        PrepBody(rightBody);
+
+        float duration = _stage9CoinResetDuration > 0.01f ? _stage9CoinResetDuration : 0.75f;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
+
+            if (centerCoin != null)
+            {
+                Vector3 nextPos = Vector3.Lerp(centerStart, _stage8CenterStartPosition, t);
+                Quaternion nextRot = Quaternion.Slerp(centerRotStart, _stage8CenterStartRotation, t);
+                centerCoin.SetPositionAndRotation(nextPos, nextRot);
+                if (centerBody != null)
+                {
+                    centerBody.position = nextPos;
+                    centerBody.rotation = nextRot;
+                }
+            }
+
+            if (leftCoin != null)
+            {
+                Vector3 nextPos = Vector3.Lerp(leftStart, _stage8LeftStartPosition, t);
+                Quaternion nextRot = Quaternion.Slerp(leftRotStart, _stage8LeftStartRotation, t);
+                leftCoin.SetPositionAndRotation(nextPos, nextRot);
+                if (leftBody != null)
+                {
+                    leftBody.position = nextPos;
+                    leftBody.rotation = nextRot;
+                }
+            }
+
+            if (rightCoin != null)
+            {
+                Vector3 nextPos = Vector3.Lerp(rightStart, _stage8RightStartPosition, t);
+                Quaternion nextRot = Quaternion.Slerp(rightRotStart, _stage8RightStartRotation, t);
+                rightCoin.SetPositionAndRotation(nextPos, nextRot);
+                if (rightBody != null)
+                {
+                    rightBody.position = nextPos;
+                    rightBody.rotation = nextRot;
+                }
+            }
+
+            yield return null;
+        }
+
+        if (centerCoin != null)
+        {
+            ApplyCoinPose(centerCoin, centerBody, centerDrag, _stage8CenterStartPosition, _stage8CenterStartRotation);
+            centerCoin.GetComponent<CoinIdentity>()?.SetPassive(false);
+            centerDrag?.UnfreezeAfterGoal();
+        }
+
+        if (leftCoin != null)
+        {
+            ApplyCoinPose(leftCoin, leftBody, leftDrag, _stage8LeftStartPosition, _stage8LeftStartRotation);
+            leftCoin.GetComponent<CoinIdentity>()?.SetPassive(true);
+        }
+
+        if (rightCoin != null)
+        {
+            ApplyCoinPose(rightCoin, rightBody, rightDrag, _stage8RightStartPosition, _stage8RightStartRotation);
+            rightCoin.GetComponent<CoinIdentity>()?.SetPassive(true);
         }
     }
 
     void BeginWaitingForCoinStop()
     {
         _waitingForCoinStop = true;
-        HideCoinGuideVisuals();
-        HidePullGuideVisuals();
-        HideTutorialOverlay();
+        _coinStopAdvanceTriggered = false;
+        HideGuideVisuals();
     }
 
     void EnterStage2(CoinDragController dragController)
@@ -1530,395 +2789,22 @@ public class OnboardingGuideController : MonoBehaviour
         EnterReleaseToShotStage(dragController, GuidePhase.Stage2_ReleaseToShot);
     }
 
-    void EnterStage8()
-    {
-        _sceneInteractionBlockedUntilStageEight = false;
-        GameRulesManager.Instance?.PrepareForPostTutorialOpeningShot();
-
-        SetPhase(GuidePhase.Stage8_Drag);
-        SetCoinGuideAnchors();
-        ShowCoinGuideVisuals();
-        SetActiveGuideText(_dragMessage);
-        SetExplanationBackground(_positiveExplanationColor);
-    }
-
-    void EnterStage9(CoinDragController dragController)
-    {
-        EnterReleaseToShotStage(dragController, GuidePhase.Stage9_ReleaseToShot);
-    }
-
-    void EnterStage10()
-    {
-        GameRulesManager.Instance?.PrepareForStageTenElevenGuidedShot(GetSideCoinLeftIdentity());
-
-        SetPhase(GuidePhase.Stage10_Drag);
-        ShowStageTenAngleGuides(GetSideCoinLeftPosition());
-        SetCoinGuideAnchors();
-        ShowCoinGuideVisuals();
-        SetActiveGuideText(_dragMessage);
-        SetExplanationBackground(_positiveExplanationColor);
-    }
-
-    void EnterStage11(CoinDragController dragController)
-    {
-        EnterReleaseToShotStage(dragController, GuidePhase.Stage11_ReleaseToShot);
-    }
-
-    void BeginStageElevenInvalidShotRecovery()
-    {
-        if (_flowRoutine != null)
-        {
-            StopCoroutine(_flowRoutine);
-        }
-
-        _flowRoutine = StartCoroutine(StageElevenInvalidShotRecoveryRoutine());
-    }
-
-    IEnumerator StageElevenInvalidShotRecoveryRoutine()
-    {
-        HideGuideVisuals();
-
-        if (GameRulesManager.Instance != null)
-        {
-            yield return GameRulesManager.Instance.ResetAllCoinPositionsRoutine();
-        }
-
-        _flowRoutine = null;
-
-        if (!TryShowStageElevenAlert())
-        {
-            EnterStage10();
-        }
-    }
-
-    bool TryShowStageElevenAlert()
-    {
-        ResolveAlertReferences();
-        if (_alertObject == null)
-        {
-            return false;
-        }
-
-        _stageElevenAlertVisible = true;
-        _alertObject.SetActive(true);
-        _alertObject.transform.SetAsLastSibling();
-
-        if (_alertOkButton != null)
-        {
-            _alertOkButton.onClick.RemoveListener(OnStageElevenAlertOkClicked);
-            _alertOkButton.onClick.AddListener(OnStageElevenAlertOkClicked);
-        }
-
-        return true;
-    }
-
-    void OnStageElevenAlertOkClicked()
-    {
-        _stageElevenAlertVisible = false;
-
-        if (_alertObject != null)
-        {
-            _alertObject.SetActive(false);
-        }
-
-        EnterStage10();
-    }
-
-    void HideAlertOnStart()
-    {
-        ResolveAlertReferences();
-        if (_alertObject != null)
-        {
-            _alertObject.SetActive(false);
-        }
-    }
-
-    void ResolveAlertReferences()
-    {
-        if (_alertObject == null)
-        {
-            _alertObject = FindCanvasChildByName("Alert");
-        }
-
-        if (_alertObject != null && _alertOkButton == null)
-        {
-            Transform okTransform = FindChildByName(_alertObject.transform, "Btn_Ok");
-            _alertOkButton = okTransform != null
-                ? okTransform.GetComponent<Button>()
-                : _alertObject.GetComponentInChildren<Button>(true);
-        }
-    }
-
-    GameObject FindCanvasChildByName(string objectName)
-    {
-        if (_onboardingCanvas != null)
-        {
-            Transform match = FindChildByName(_onboardingCanvas.transform, objectName);
-            if (match != null)
-            {
-                return match.gameObject;
-            }
-        }
-
-        Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        for (int i = 0; i < canvases.Length; i++)
-        {
-            if (canvases[i] == _onboardingCanvas)
-            {
-                continue;
-            }
-
-            Transform match = FindChildByName(canvases[i].transform, objectName);
-            if (match != null)
-            {
-                return match.gameObject;
-            }
-        }
-
-        return null;
-    }
-
-    static Transform FindChildByName(Transform root, string childName)
-    {
-        Transform[] children = root.GetComponentsInChildren<Transform>(true);
-        for (int i = 0; i < children.Length; i++)
-        {
-            if (children[i] != root && children[i].name == childName)
-            {
-                return children[i];
-            }
-        }
-
-        return null;
-    }
-
-    void EnterStage17ReleaseToShot(CoinDragController dragController)
-    {
-        EnterReleaseToShotStage(dragController, GuidePhase.Stage17_ReleaseToShot);
-    }
-
-    void EnterStage12(bool afterInvalidShot = false)
-    {
-        GameRulesManager.Instance?.PrepareForGuidedCoinShot(GetSideCoinRightIdentity());
-
-        HideTutorialOverlay();
-
-        SetPhase(GuidePhase.Stage12_Drag);
-        SetCoinGuideAnchors();
-        ShowCoinGuideVisuals();
-        SetActiveGuideText(afterInvalidShot ? _tryAgainMessage : _dragMessage);
-        SetExplanationBackground(_positiveExplanationColor);
-    }
-
-    void EnterStage12PowerShot(CoinDragController dragController)
-    {
-        SetPhase(GuidePhase.Stage12_PowerShot);
-        _powerOkForCurrentAim = false;
-        HideTutorialOverlay();
-        _tutorialOverlay.HideAngleGuides();
-
-        Vector3 shotTarget = GetStageTwelveShotTarget();
-        if (dragController != null)
-        {
-            Vector3 direction = OnboardingAimTutorialOverlay.GetMidAngleDirection(
-                dragController.transform.position,
-                shotTarget);
-            dragController.LockAimDirection(direction);
-        }
-
-        SetPullGuideAnchors(shotTarget);
-        HideCoinGuideVisuals();
-        HidePullGuideVisuals();
-        ShowPullGuideVisuals();
-        SetActiveGuideText(_increasePowerMessage);
-        SetExplanationBackground(_misalignExplanationColor);
-    }
-
-    void EnterStage13PreAlignDrag()
-    {
-        SetPhase(GuidePhase.Stage13_PreAlignDrag);
-        HideTutorialOverlay();
-        HidePullGuideVisuals();
-        SetCoinGuideAnchors();
-        ShowCoinGuideVisuals();
-        SetActiveGuideText(_tryAgainMessage);
-        SetExplanationBackground(_positiveExplanationColor);
-    }
-
-    void EnterStage14GateAlignPower(CoinDragController dragController)
-    {
-        SetPhase(GuidePhase.Stage14_GateAlignPower);
-        _powerOkForCurrentAim = false;
-        HideTutorialOverlay();
-        _tutorialOverlay.HideAngleGuides();
-
-        Vector3 shotTarget = GetStageFourteenShotTarget();
-        if (dragController != null)
-        {
-            Vector3 direction = OnboardingAimTutorialOverlay.GetMidAngleDirection(
-                dragController.transform.position,
-                shotTarget);
-            dragController.LockAimDirection(direction);
-        }
-
-        SetPullGuideAnchors(shotTarget);
-        HideCoinGuideVisuals();
-        HidePullGuideVisuals();
-        ShowPullGuideVisuals();
-        SetActiveGuideText(_increasePowerMessage);
-        SetExplanationBackground(_misalignExplanationColor);
-    }
-
-    void EnterStage15(bool afterInvalidShot = false)
-    {
-        GameRulesManager.Instance?.PrepareForGuidedCoinShot(GetCenterCoinIdentity());
-
-        SetPhase(GuidePhase.Stage15_Drag);
-        SetCoinGuideAnchors();
-        ShowCoinGuideVisuals();
-        SetActiveGuideText(afterInvalidShot ? _tryAgainMessage : _dragMessage);
-        SetExplanationBackground(_positiveExplanationColor);
-    }
-
-    void EnterStage15AfterInvalidShot()
-    {
-        EnterStage15(afterInvalidShot: true);
-    }
-
-    void EnterStage16PowerShot(CoinDragController dragController)
-    {
-        SetPhase(GuidePhase.Stage16_PowerShot);
-        _powerOkForCurrentAim = false;
-        HideTutorialOverlay();
-        _tutorialOverlay.HideAngleGuides();
-
-        Vector3 shotTarget = GetStageSixteenShotTarget();
-        if (dragController != null)
-        {
-            Vector3 direction = OnboardingAimTutorialOverlay.GetMidAngleDirection(
-                dragController.transform.position,
-                shotTarget);
-            dragController.LockAimDirection(direction);
-        }
-
-        SetPullGuideAnchors(shotTarget);
-        HideCoinGuideVisuals();
-        HidePullGuideVisuals();
-        ShowPullGuideVisuals();
-        SetActiveGuideText(_increasePowerMessage);
-        SetExplanationBackground(_misalignExplanationColor);
-    }
-
-    void EnterStage17(bool afterInvalidShot = false)
-    {
-        _stage18AwaitingP3Drag = false;
-        EnsureSideCoinLeftActive();
-        GameRulesManager.Instance?.PrepareForGuidedCoinShot(GetSideCoinLeftIdentity());
-
-        HideTutorialOverlay();
-
-        SetPhase(GuidePhase.Stage17_Drag);
-        SetCoinGuideAnchors();
-        ShowCoinGuideVisuals();
-        SetActiveGuideText(afterInvalidShot ? _tryAgainMessage : _dragMessage);
-        SetExplanationBackground(_positiveExplanationColor);
-    }
-
-    void EnsureSideCoinLeftActive()
-    {
-        if (_sideCoinLeft != null)
-        {
-            _sideCoinLeft.gameObject.SetActive(true);
-        }
-    }
-
-    void BeginStage18OnP3()
-    {
-        _stage18AwaitingP3Drag = true;
-        GameRulesManager.Instance?.PrepareForGuidedCoinShot(GetSideCoinRightIdentity());
-
-        if (_sideCoinRight != null)
-        {
-            _sideCoinRight.gameObject.SetActive(true);
-        }
-
-        HideTutorialOverlay();
-        SetPhase(GuidePhase.Stage18_PowerShot);
-        SetCoinGuideAnchors();
-        ShowCoinGuideVisuals();
-        SetActiveGuideText(_dragMessage);
-        SetExplanationBackground(_positiveExplanationColor);
-    }
-
-    void EnterStage17AfterInvalidShot()
-    {
-        EnterStage17(afterInvalidShot: true);
-    }
-
-    void EnterStage18PowerShot(CoinDragController dragController)
-    {
-        if (dragController != null
-            && _sideCoinLeft != null
-            && dragController.transform == _sideCoinLeft)
-        {
-            dragController.CancelAim();
-            BeginStage18OnP3();
-            return;
-        }
-
-        if (dragController != null
-            && _sideCoinRight != null
-            && dragController.transform != _sideCoinRight)
-        {
-            return;
-        }
-
-        _stage18AwaitingP3Drag = false;
-        SetPhase(GuidePhase.Stage18_PowerShot);
-        _powerOkForCurrentAim = false;
-        HideTutorialOverlay();
-        _tutorialOverlay.HideAngleGuides();
-
-        Vector3 shotTarget = GetStageSixGoalTarget();
-        if (dragController != null)
-        {
-            Vector3 direction = OnboardingAimTutorialOverlay.GetMidAngleDirection(
-                dragController.transform.position,
-                shotTarget);
-            dragController.LockAimDirection(direction);
-        }
-
-        SetPullGuideAnchors(shotTarget);
-        HideCoinGuideVisuals();
-        HidePullGuideVisuals();
-        ShowPullGuideVisuals();
-        SetActiveGuideText(_increasePowerMessage);
-        SetExplanationBackground(_misalignExplanationColor);
-    }
-
     void EnterReleaseToShotStage(CoinDragController dragController, GuidePhase phase)
     {
+        if (phase == GuidePhase.Stage2_ReleaseToShot)
+        {
+            TryUpdateStageTwoAimLock(dragController);
+        }
+        else if (phase == GuidePhase.Stage4_AlignShot)
+        {
+            TryUpdateStageFourAimLock(dragController);
+        }
+
         SetPhase(phase);
-
-        if (phase == GuidePhase.Stage11_ReleaseToShot && dragController != null)
-        {
-            ShowStageTenAngleGuides(dragController.transform.position);
-        }
-        else
-        {
-            _tutorialOverlay.HideAngleGuides();
-        }
-
-        bool usesExactShotTargetAnchor = phase == GuidePhase.Stage11_ReleaseToShot
-            || phase == GuidePhase.Stage17_ReleaseToShot;
-        Vector3 shotTarget = ResolveReleaseToShotTarget(phase);
+        _tutorialOverlay.HideAngleGuides();
         LockReleaseToShotAim(dragController, phase);
 
-        if (usesExactShotTargetAnchor)
-        {
-            SetPullGuideAnchors(shotTarget);
-        }
-        else if (TryGetFixedPowerAimLineEnd(dragController, out Vector3 aimEnd))
+        if (TryGetFixedPowerAimLineEnd(dragController, out Vector3 aimEnd))
         {
             SetPullGuideAnchors(aimEnd);
         }
@@ -1929,18 +2815,15 @@ public class OnboardingGuideController : MonoBehaviour
             aimEnd = dragController.GetPathEndForDirectionAndPower(
                 coinPosition,
                 direction,
-                _stageOneShotPower01);
+                FixedTutorialAimPower01);
             SetPullGuideAnchors(aimEnd);
         }
 
         HideCoinGuideVisuals();
         ShowPullGuideVisuals();
-        SetActiveGuideText(phase switch
-        {
-            GuidePhase.Stage11_ReleaseToShot => _passBetweenCoinsMessage,
-            GuidePhase.Stage17_ReleaseToShot => _releaseToShotMessage,
-            _ => _releaseToShotMessage
-        });
+        SetActiveGuideText(phase == GuidePhase.Stage4_AlignShot
+            ? _stage4ReleaseMessage
+            : _stage2ReleaseMessage);
         SetExplanationBackground(_positiveExplanationColor);
     }
 
@@ -2024,83 +2907,538 @@ public class OnboardingGuideController : MonoBehaviour
         SetPhase(GuidePhase.Stage3_DragAgain);
         SetCoinGuideAnchors();
         ShowCoinGuideVisuals();
-        SetActiveGuideText(_dragAgainMessage);
+        SetActiveGuideText(_stage3DragMessage);
     }
 
-    void EnterStage4()
+    void EnterStage4(CoinDragController dragController)
     {
-        SetPhase(GuidePhase.Stage4_AlignShot);
-        _alignedForCurrentAim = false;
-
-        Vector3 coinPosition = GetCenterCoinPosition();
-        Vector3 goalCenter = GetEnemyGoalCenter();
-        _tutorialOverlay.ShowAngleGuides(coinPosition, goalCenter, _alignHalfAngleDegrees);
-
-        CoinDragController dragController = GetCenterCoinDragController();
-        SetPullGuideAnchors(GetStageFourLandingPosition(dragController));
-
-        HideCoinGuideVisuals();
-        ShowPullGuideVisuals();
-        SetActiveGuideText(_alignShotMessage);
-        SetExplanationBackground(_misalignExplanationColor);
+        EnterReleaseToShotStage(dragController, GuidePhase.Stage4_AlignShot);
     }
 
     void EnterStage5()
     {
         SetPhase(GuidePhase.Stage5_Drag);
-        // Aşama 4 esnek açılı atışından sonra coin'in gerçek duruşuna bağla.
+        if (_overlayRect != null)
+        {
+            _overlayRect.gameObject.SetActive(false);
+        }
+
+        EnsureStageSixGateVisible();
         SetCoinGuideAnchors();
         ShowCoinGuideVisuals();
-        SetActiveGuideText(_dragMessage);
+        SetActiveGuideText(_stage5DragMessage);
         SetExplanationBackground(_positiveExplanationColor);
         UpdateActiveGuideElementPosition();
     }
 
+    void EnterStage7()
+    {
+        SetPhase(GuidePhase.Stage7_Drag);
+        EnsureStageSevenGateVisible();
+        ShowStageSevenGuideLines();
+        UpdateStageSevenWedgeSpotlight();
+        SetCoinGuideAnchors();
+        ShowCoinGuideVisuals();
+        SetGuideExplanationVisible(false);
+        UpdateActiveGuideElementPosition();
+        UpdateStageSevenWedgeSpotlight();
+    }
+
+    void EnterStage8()
+    {
+        SetPhase(GuidePhase.Stage8_Drag);
+        GateIndicator.Instance?.Hide();
+        HideTutorialOverlay();
+        HideStageSevenAlert();
+
+        EnsureOpeningCoinResolved();
+        CoinIdentity centerIdentity = _openingCoin != null
+            ? _openingCoin.GetComponent<CoinIdentity>()
+            : null;
+        if (GameRulesManager.Instance != null)
+        {
+            GameRulesManager.Instance.PrepareForPostTutorialOpeningShot(centerIdentity);
+        }
+
+        OnboardingSceneBootstrap.LeftCoinTransform?.GetComponent<CoinIdentity>()?.SetPassive(true);
+        OnboardingSceneBootstrap.RightCoinTransform?.GetComponent<CoinIdentity>()?.SetPassive(true);
+        centerIdentity?.SetPassive(false);
+
+        SetCoinGuideAnchors();
+        ShowCoinGuideVisuals();
+        SetGuideExplanationVisible(true);
+        SetActiveGuideText(_stage8DragMessage);
+        SetExplanationBackground(_positiveExplanationColor);
+        UpdateActiveGuideElementPosition();
+        CacheStageEightCoinPositions();
+    }
+
+    void EnsureOpeningCoinResolved()
+    {
+        if (_openingCoin != null)
+        {
+            return;
+        }
+
+        _openingCoin = OnboardingSceneBootstrap.CenterCoinTransform;
+        if (_openingCoin != null)
+        {
+            return;
+        }
+
+        Transform[] transforms = Object.FindObjectsByType<Transform>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            Transform candidate = transforms[i];
+            if (candidate != null
+                && candidate.name == "Coin_P2"
+                && candidate.gameObject.scene.IsValid())
+            {
+                _openingCoin = candidate;
+                return;
+            }
+        }
+    }
+
+    void EnterStage9(CoinDragController aimingCoin = null, bool resetFailCounts = true)
+    {
+        if (_phase == GuidePhase.Stage9_PassBetween
+            && aimingCoin != null
+            && aimingCoin.IsAiming)
+        {
+            EnsureStageNineGateVisible(aimingCoin);
+            return;
+        }
+
+        if (aimingCoin != null)
+        {
+            _openingCoin = aimingCoin.transform;
+        }
+        else if (_openingCoin == null)
+        {
+            _openingCoin = OnboardingSceneBootstrap.CenterCoinTransform;
+            if (_openingCoin == null)
+            {
+                GameObject openingCoinObject = GameObject.Find("Coin_P2");
+                if (openingCoinObject != null)
+                {
+                    _openingCoin = openingCoinObject.transform;
+                }
+            }
+        }
+
+        SetPhase(GuidePhase.Stage9_PassBetween);
+        if (resetFailCounts)
+        {
+            _stage9ConsecutiveFails = 0;
+        }
+
+        HideTutorialOverlay();
+        HideGuideVisuals();
+        HideStageNineAlert();
+        if (_overlayRect != null)
+        {
+            _overlayRect.gameObject.SetActive(false);
+        }
+
+        if (!_hasStage8StartPoses)
+        {
+            CacheStageEightCoinPositions();
+        }
+
+        CoinIdentity centerIdentity = _openingCoin != null
+            ? _openingCoin.GetComponent<CoinIdentity>()
+            : aimingCoin != null ? aimingCoin.GetComponent<CoinIdentity>() : null;
+
+        if (GameRulesManager.Instance != null)
+        {
+            if (centerIdentity != null)
+            {
+                GameRulesManager.Instance.PrepareForGuidedCoinShot(centerIdentity);
+            }
+            else
+            {
+                // Gate doğrulaması için açılış atışı muafiyetini kaldır.
+                GameRulesManager.Instance.PrepareForGuidedCoinShot(
+                    aimingCoin != null ? aimingCoin.GetComponent<CoinIdentity>() : null);
+            }
+        }
+
+        OnboardingSceneBootstrap.LeftCoinTransform?.GetComponent<CoinIdentity>()?.SetPassive(true);
+        OnboardingSceneBootstrap.RightCoinTransform?.GetComponent<CoinIdentity>()?.SetPassive(true);
+        centerIdentity?.SetPassive(false);
+
+        EnsureStageNineGateVisible(aimingCoin);
+    }
+
+    void EnterStage10()
+    {
+        SetPhase(GuidePhase.Stage10_PullAndGoal);
+        GateIndicator.Instance?.Hide();
+        HideTutorialOverlay();
+        HideStageNineAlert();
+        HideStageTenAlert();
+
+        EnsureOpeningCoinResolved();
+        CoinIdentity centerIdentity = _openingCoin != null
+            ? _openingCoin.GetComponent<CoinIdentity>()
+            : null;
+
+        // Aşama 10: gate/InvalidMove kapalı; yalnızca P2 oynanır.
+        if (GameRulesManager.Instance != null)
+        {
+            GameRulesManager.Instance.PrepareForPostTutorialOpeningShot(centerIdentity);
+        }
+
+        OnboardingSceneBootstrap.LeftCoinTransform?.GetComponent<CoinIdentity>()?.SetPassive(true);
+        OnboardingSceneBootstrap.RightCoinTransform?.GetComponent<CoinIdentity>()?.SetPassive(true);
+        centerIdentity?.SetPassive(false);
+
+        SetCoinGuideAnchors();
+        ShowCoinGuideVisuals();
+        SetGuideExplanationVisible(true);
+        SetActiveGuideText(_stage10DragMessage);
+        SetExplanationBackground(_positiveExplanationColor);
+        UpdateActiveGuideElementPosition();
+        CacheStageElevenCoinPositions();
+    }
+
+    void EnterStage11(CoinDragController aimingCoin = null, bool resetFailCounts = true)
+    {
+        // Aim sırasında tekrarlı çağrı: sadece gate'i tazele.
+        if (_phase == GuidePhase.Stage11_PassAndGoal
+            && aimingCoin != null
+            && aimingCoin.IsAiming)
+        {
+            EnsureStageElevenGateVisible(aimingCoin);
+            return;
+        }
+
+        if (aimingCoin != null)
+        {
+            _openingCoin = aimingCoin.transform;
+        }
+
+        EnsureOpeningCoinResolved();
+        SetPhase(GuidePhase.Stage11_PassAndGoal);
+        if (resetFailCounts)
+        {
+            _stage11ConsecutiveFails = 0;
+            _stage11NoGoalFails = 0;
+        }
+
+        HideTutorialOverlay();
+        HideGuideVisuals();
+        HideStageNineAlert();
+        HideStageTenAlert();
+        if (_overlayRect != null)
+        {
+            _overlayRect.gameObject.SetActive(false);
+        }
+
+        if (!_hasStage11StartPoses)
+        {
+            CacheStageElevenCoinPositions();
+        }
+
+        CoinIdentity centerIdentity = _openingCoin != null
+            ? _openingCoin.GetComponent<CoinIdentity>()
+            : aimingCoin != null ? aimingCoin.GetComponent<CoinIdentity>() : null;
+
+        if (GameRulesManager.Instance != null)
+        {
+            GameRulesManager.Instance.PrepareForGuidedCoinShot(centerIdentity);
+        }
+
+        OnboardingSceneBootstrap.LeftCoinTransform?.GetComponent<CoinIdentity>()?.SetPassive(true);
+        OnboardingSceneBootstrap.RightCoinTransform?.GetComponent<CoinIdentity>()?.SetPassive(true);
+        centerIdentity?.SetPassive(false);
+
+        EnsureStageElevenGateVisible(aimingCoin);
+    }
+
+    void EnsureStageElevenGateVisible(CoinDragController aimingCoin = null)
+    {
+        if (_phase != GuidePhase.Stage11_PassAndGoal)
+        {
+            return;
+        }
+
+        GateIndicator indicator = GateIndicator.Instance;
+        if (indicator == null)
+        {
+            return;
+        }
+
+        if (indicator.IsVisible)
+        {
+            return;
+        }
+
+        Component settingsSource = aimingCoin != null
+            ? aimingCoin
+            : (Component)_openingCoin;
+        CoinGateIndicatorSettings settings = settingsSource != null
+            ? CoinGateIndicatorSettings.Resolve(settingsSource)
+            : null;
+
+        GameRulesManager rules = GameRulesManager.Instance;
+        CoinIdentity shooter = aimingCoin != null
+            ? aimingCoin.GetComponent<CoinIdentity>()
+            : _openingCoin != null ? _openingCoin.GetComponent<CoinIdentity>() : null;
+
+        if (rules != null
+            && shooter != null
+            && rules.TryGetGateCoins(shooter, out CoinIdentity gateA, out CoinIdentity gateB))
+        {
+            indicator.Show(gateA, gateB, settings, animate: true);
+            return;
+        }
+
+        Transform left = OnboardingSceneBootstrap.LeftCoinTransform;
+        Transform right = OnboardingSceneBootstrap.RightCoinTransform;
+        if (left == null || right == null)
+        {
+            return;
+        }
+
+        indicator.ShowWorldGate(left.position, right.position, settings, animate: true);
+    }
+
+    void EnsureStageNineGateVisible(CoinDragController aimingCoin = null)
+    {
+        if (_phase != GuidePhase.Stage9_PassBetween)
+        {
+            return;
+        }
+
+        GateIndicator indicator = GateIndicator.Instance;
+        if (indicator == null)
+        {
+            return;
+        }
+
+        if (indicator.IsVisible)
+        {
+            return;
+        }
+
+        Component settingsSource = aimingCoin != null
+            ? aimingCoin
+            : (Component)_openingCoin;
+        CoinGateIndicatorSettings settings = settingsSource != null
+            ? CoinGateIndicatorSettings.Resolve(settingsSource)
+            : null;
+
+        GameRulesManager rules = GameRulesManager.Instance;
+        CoinIdentity shooter = aimingCoin != null
+            ? aimingCoin.GetComponent<CoinIdentity>()
+            : _openingCoin != null ? _openingCoin.GetComponent<CoinIdentity>() : null;
+
+        if (rules != null
+            && shooter != null
+            && rules.TryGetGateCoins(shooter, out CoinIdentity gateA, out CoinIdentity gateB))
+        {
+            indicator.Show(gateA, gateB, settings, animate: true);
+            return;
+        }
+
+        // Fallback: yan coin world pozisyonları (TryGetGateCoins henüz 3 coin görmüyorsa).
+        Transform left = OnboardingSceneBootstrap.LeftCoinTransform;
+        Transform right = OnboardingSceneBootstrap.RightCoinTransform;
+        if (left == null || right == null)
+        {
+            return;
+        }
+
+        indicator.ShowWorldGate(left.position, right.position, settings, animate: true);
+    }
+
     void EnterStage6()
     {
-        SetPhase(GuidePhase.Stage6_Power);
-        _powerOkForCurrentAim = false;
-
-        _tutorialOverlay.HideAngleGuides();
+        SetPhase(GuidePhase.Stage6_PowerAim);
+        if (_overlayRect != null)
+        {
+            _overlayRect.gameObject.SetActive(false);
+        }
 
         CoinDragController dragController = GetCenterCoinDragController();
-        Vector3 goalTarget = GetStageSixGoalTarget();
-        if (dragController != null && _enemyGoal != null)
+        if (dragController != null && dragController.IsAiming)
         {
-            Vector3 direction = OnboardingAimTutorialOverlay.GetMidAngleDirection(
-                dragController.transform.position,
-                goalTarget);
-            dragController.LockAimDirection(direction);
+            UpdateStageSixPowerPresentation(dragController);
+            return;
         }
 
-        SetPullGuideAnchors(goalTarget);
-
-        HideCoinGuideVisuals();
-        ShowPullGuideVisuals();
-        SetActiveGuideText(_increasePowerMessage);
-        SetExplanationBackground(_powerLowExplanationColor);
+        GateIndicator.Instance?.Hide();
+        SetCoinGuideAnchors();
+        ShowCoinGuideVisuals();
+        SetActiveGuideText(_stage6DragMessage);
+        SetExplanationBackground(_positiveExplanationColor);
+        UpdateActiveGuideElementPosition();
     }
 
-    void EnterPostTutorialReset()
+    void EnsureStageSixGateVisible()
     {
-        SetPhase(GuidePhase.Stage7_ResetCoins);
+        if (_phase != GuidePhase.Stage5_Drag && _phase != GuidePhase.Stage6_PowerAim)
+        {
+            return;
+        }
+
+        GateIndicator indicator = GateIndicator.Instance;
+        // ShowWorldGate offset'leri sıfırlar; her karede çağrılırsa dash animasyonu donar.
+        if (indicator == null)
+        {
+            return;
+        }
+
+        if (indicator.IsVisible)
+        {
+            indicator.SetAnimationSpeedScale(1f);
+            return;
+        }
+
+        if (!TryResolveStageSixGateEndpoints(out Vector3 gateStart, out Vector3 gateEnd))
+        {
+            return;
+        }
+
+        CoinGateIndicatorSettings settings = _openingCoin != null
+            ? CoinGateIndicatorSettings.Resolve(_openingCoin)
+            : null;
+        indicator.ShowWorldGate(gateStart, gateEnd, settings, animate: true);
+        indicator.SetAnimationSpeedScale(1f);
+    }
+
+    void EnsureStageSevenGateVisible()
+    {
+        if (_phase != GuidePhase.Stage7_Drag)
+        {
+            return;
+        }
+
+        GateIndicator indicator = GateIndicator.Instance;
+        if (indicator == null)
+        {
+            return;
+        }
+
+        float speedScale = _stage7GateAnimationSpeedScale > 0.01f
+            ? _stage7GateAnimationSpeedScale
+            : 0.5f;
+
+        if (indicator.IsVisible)
+        {
+            indicator.SetAnimationSpeedScale(speedScale);
+            return;
+        }
+
+        if (!TryResolveStageSevenGateEndpoints(out Vector3 gateStart, out Vector3 gateEnd))
+        {
+            return;
+        }
+
+        CoinGateIndicatorSettings settings = _openingCoin != null
+            ? CoinGateIndicatorSettings.Resolve(_openingCoin)
+            : null;
+        indicator.ShowWorldGate(gateStart, gateEnd, settings, animate: true);
+        indicator.SetAnimationSpeedScale(speedScale);
+    }
+
+    void ShowStageSevenGuideLines()
+    {
+        if (_phase != GuidePhase.Stage7_Drag)
+        {
+            return;
+        }
+
+        if (!TryResolveStageSevenGateEndpoints(out Vector3 gateStart, out Vector3 gateEnd))
+        {
+            return;
+        }
+
+        EnsureTutorialOverlay();
+        Vector3 coinPosition = GetGuidedCoinWorldPosition();
+        _tutorialOverlay.ShowGuideLinesToEndpoints(
+            coinPosition,
+            gateStart,
+            gateEnd,
+            _stage7GuideLineColor);
+    }
+
+    bool TryResolveStageSixGateEndpoints(out Vector3 gateStart, out Vector3 gateEnd)
+    {
+        gateStart = default;
+        gateEnd = default;
+        if (_stage6GateCoin1 == null || _stage6GateCoin2 == null)
+        {
+            return false;
+        }
+
+        gateStart = _stage6GateCoin1.position;
+        gateEnd = _stage6GateCoin2.position;
+        return true;
+    }
+
+    bool TryResolveStageSevenGateEndpoints(out Vector3 gateStart, out Vector3 gateEnd)
+    {
+        gateStart = default;
+        gateEnd = default;
+        if (_stage7GateCoin1 == null || _stage7GateCoin2 == null)
+        {
+            return false;
+        }
+
+        gateStart = _stage7GateCoin1.position;
+        gateEnd = _stage7GateCoin2.position;
+        return true;
+    }
+
+    bool TryGetStageSevenGateMidpoint(out Vector3 midpoint)
+    {
+        midpoint = default;
+        if (!TryResolveStageSevenGateEndpoints(out Vector3 gateStart, out Vector3 gateEnd))
+        {
+            return false;
+        }
+
+        midpoint = (gateStart + gateEnd) * 0.5f;
+        return true;
+    }
+
+    void TryUpdateStageSixAimLock(CoinDragController dragController)
+    {
+        if (dragController == null || !dragController.IsAiming)
+        {
+            return;
+        }
+
+        Vector3 coinPosition = dragController.transform.position;
+        Vector3 direction = GetStageSixLaunchDirection(coinPosition);
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
+
+        // Yön kilitli, güç serbest (_isAimPullLocked = false).
+        dragController.LockAimDirection(direction);
+    }
+
+    Vector3 GetStageSixLaunchDirection(Vector3 coinPosition)
+    {
+        Vector3 toGoal = GetEnemyGoalCenter() - coinPosition;
+        toGoal.y = 0f;
+        return toGoal.sqrMagnitude < 0.0001f ? Vector3.forward : toGoal.normalized;
+    }
+
+    IEnumerator ReturnCenterCoinHomeThenComplete()
+    {
         HideGuideVisuals();
-
-        if (_flowRoutine != null)
-        {
-            StopCoroutine(_flowRoutine);
-        }
-
-        _flowRoutine = StartCoroutine(ResetCoinsThenComplete());
-    }
-
-    IEnumerator ResetCoinsThenComplete()
-    {
+        yield return ShowSuccessBriefly();
         yield return ReturnCenterCoinHome();
-        yield return new WaitForSeconds(_sideCoinEnterDelay);
-        yield return SlideSideCoinsIntoPlace();
-
-        EnterStage8();
+        _stageFourPostShotSequenceActive = false;
+        EnterStage5();
         _flowRoutine = null;
     }
 
@@ -2150,127 +3488,6 @@ public class OnboardingGuideController : MonoBehaviour
         dragController?.UnfreezeAfterGoal();
     }
 
-    IEnumerator SlideSideCoinsIntoPlace()
-    {
-        int pendingSlides = 0;
-        if (_sideCoinLeft != null)
-        {
-            pendingSlides++;
-        }
-
-        if (_sideCoinRight != null)
-        {
-            pendingSlides++;
-        }
-
-        if (pendingSlides == 0)
-        {
-            yield break;
-        }
-
-        int completedSlides = 0;
-        if (_sideCoinLeft != null)
-        {
-            StartCoroutine(SlideSideCoinIntoPlace(
-                _sideCoinLeft,
-                _sideCoinLeftSpawnPosition,
-                _sideCoinLeftSpawnRotation,
-                fromLeft: true,
-                () => completedSlides++));
-        }
-
-        if (_sideCoinRight != null)
-        {
-            StartCoroutine(SlideSideCoinIntoPlace(
-                _sideCoinRight,
-                _sideCoinRightSpawnPosition,
-                _sideCoinRightSpawnRotation,
-                fromLeft: false,
-                () => completedSlides++));
-        }
-
-        while (completedSlides < pendingSlides)
-        {
-            yield return null;
-        }
-    }
-
-    IEnumerator SlideSideCoinIntoPlace(
-        Transform coinTransform,
-        Vector3 targetPosition,
-        Quaternion targetRotation,
-        bool fromLeft,
-        Action onComplete)
-    {
-        if (coinTransform == null)
-        {
-            onComplete?.Invoke();
-            yield break;
-        }
-
-        CoinDragController dragController = coinTransform.GetComponent<CoinDragController>();
-        Rigidbody rigidbody = coinTransform.GetComponent<Rigidbody>();
-
-        coinTransform.gameObject.SetActive(true);
-        dragController?.CancelAim();
-        dragController?.ForceStopSliding();
-        dragController?.ResetVisualRotation();
-
-        if (rigidbody != null)
-        {
-            rigidbody.isKinematic = true;
-            rigidbody.linearVelocity = Vector3.zero;
-            rigidbody.angularVelocity = Vector3.zero;
-        }
-
-        Vector3 startPosition = ResolveSideCoinSlideStart(targetPosition, fromLeft);
-        ApplyCoinPose(coinTransform, rigidbody, dragController, startPosition, targetRotation);
-
-        float elapsed = 0f;
-        while (elapsed < _sideCoinEnterDuration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / _sideCoinEnterDuration));
-            Vector3 nextPosition = Vector3.Lerp(startPosition, targetPosition, t);
-            ApplyCoinPose(coinTransform, rigidbody, dragController, nextPosition, targetRotation);
-            yield return null;
-        }
-
-        ApplyCoinPose(coinTransform, rigidbody, dragController, targetPosition, targetRotation);
-        dragController?.UnfreezeAfterGoal();
-        onComplete?.Invoke();
-    }
-
-    Vector3 ResolveSideCoinSlideStart(Vector3 targetPosition, bool fromLeft)
-    {
-        Camera worldCamera = ResolveWorldCamera();
-        if (worldCamera != null)
-        {
-            float screenX = fromLeft
-                ? -_sideCoinSlideScreenPadding
-                : 1f + _sideCoinSlideScreenPadding;
-            Ray ray = worldCamera.ScreenPointToRay(
-                new Vector3(screenX * Screen.width, Screen.height * 0.5f, 0f));
-            var tablePlane = new Plane(Vector3.up, new Vector3(0f, targetPosition.y, 0f));
-            if (tablePlane.Raycast(ray, out float distance))
-            {
-                return ray.GetPoint(distance);
-            }
-
-            Vector3 cameraRight = worldCamera.transform.right;
-            cameraRight.y = 0f;
-            if (cameraRight.sqrMagnitude > 0.0001f)
-            {
-                cameraRight.Normalize();
-                float direction = fromLeft ? -1f : 1f;
-                return targetPosition + cameraRight * (_sideCoinSlideFallbackOffset * direction);
-            }
-        }
-
-        float fallbackX = fromLeft ? -_sideCoinSlideFallbackOffset : _sideCoinSlideFallbackOffset;
-        return targetPosition + new Vector3(fallbackX, 0f, 0f);
-    }
-
     static void ApplyCoinPose(
         Transform coinTransform,
         Rigidbody rigidbody,
@@ -2301,13 +3518,9 @@ public class OnboardingGuideController : MonoBehaviour
         if (_phase == GuidePhase.Stage1_Drag
             || _phase == GuidePhase.Stage3_DragAgain
             || _phase == GuidePhase.Stage5_Drag
+            || _phase == GuidePhase.Stage7_Drag
             || _phase == GuidePhase.Stage8_Drag
-            || _phase == GuidePhase.Stage10_Drag
-            || _phase == GuidePhase.Stage12_Drag
-            || _phase == GuidePhase.Stage13_PreAlignDrag
-            || _phase == GuidePhase.Stage15_Drag
-            || _phase == GuidePhase.Stage17_Drag
-            || (_phase == GuidePhase.Stage18_PowerShot && _stage18AwaitingP3Drag))
+            || _phase == GuidePhase.Stage10_PullAndGoal)
         {
             SetCoinGuideAnchors();
             if (_guideElement != null && _guideElement.gameObject.activeSelf)
@@ -2316,44 +3529,50 @@ public class OnboardingGuideController : MonoBehaviour
             }
         }
         else if (_phase == GuidePhase.Stage2_ReleaseToShot
-                 || _phase == GuidePhase.Stage4_AlignShot
-                 || _phase == GuidePhase.Stage6_Power
-                 || _phase == GuidePhase.Stage9_ReleaseToShot
-                 || _phase == GuidePhase.Stage11_ReleaseToShot
-                 || _phase == GuidePhase.Stage17_ReleaseToShot
-                 || _phase == GuidePhase.Stage12_PowerShot
-                 || _phase == GuidePhase.Stage14_GateAlignPower
-                 || _phase == GuidePhase.Stage16_PowerShot
-                 || (_phase == GuidePhase.Stage18_PowerShot && !_stage18AwaitingP3Drag))
+                 || _phase == GuidePhase.Stage4_AlignShot)
         {
             if (_pullGuideElement != null && _pullGuideElement.gameObject.activeSelf)
             {
                 EnsureArrowAnimationRunning();
             }
         }
+        else if (_phase == GuidePhase.Stage6_PowerAim)
+        {
+            CoinDragController stageSixDrag = GetCenterCoinDragController();
+            if (stageSixDrag != null && stageSixDrag.IsAiming)
+            {
+                // Aim sırasında explanation Aim ucunda; LateUpdate günceller.
+            }
+            else
+            {
+                SetCoinGuideAnchors();
+                if (_guideElement != null && _guideElement.gameObject.activeSelf)
+                {
+                    EnsureArrowAnimationRunning();
+                }
+            }
+        }
 
         if ((_phase == GuidePhase.Stage1_Drag
-             || _phase == GuidePhase.Stage8_Drag
-             || _phase == GuidePhase.Stage10_Drag
-             || _phase == GuidePhase.Stage12_Drag
-             || _phase == GuidePhase.Stage13_PreAlignDrag
-             || _phase == GuidePhase.Stage15_Drag
-            || _phase == GuidePhase.Stage17_Drag
-            || (_phase == GuidePhase.Stage18_PowerShot && _stage18AwaitingP3Drag))
+                || _phase == GuidePhase.Stage5_Drag
+                || _phase == GuidePhase.Stage7_Drag
+                || _phase == GuidePhase.Stage8_Drag
+                || _phase == GuidePhase.Stage10_PullAndGoal)
             && IsCenterCoinAimLineVisible())
         {
             HideCoinGuideElementOnly();
         }
         else if (_phase == GuidePhase.Stage1_Drag
+                 || _phase == GuidePhase.Stage5_Drag
+                 || _phase == GuidePhase.Stage7_Drag
                  || _phase == GuidePhase.Stage8_Drag
-                 || _phase == GuidePhase.Stage10_Drag
-                 || _phase == GuidePhase.Stage12_Drag
-                 || _phase == GuidePhase.Stage13_PreAlignDrag
-                 || _phase == GuidePhase.Stage15_Drag
-                 || _phase == GuidePhase.Stage17_Drag
-                 || (_phase == GuidePhase.Stage18_PowerShot && _stage18AwaitingP3Drag))
+                 || _phase == GuidePhase.Stage10_PullAndGoal)
         {
             RestoreCoinGuideElementIfNeeded();
+            if (_phase == GuidePhase.Stage7_Drag)
+            {
+                SetGuideExplanationVisible(false);
+            }
         }
     }
 
@@ -2365,7 +3584,7 @@ public class OnboardingGuideController : MonoBehaviour
     }
 
     /// <summary>
-    /// Gate/InvalidMove kuralları Aşama 10'dan önce kapalı; sonrasında normal oyun kuralları geçerli.
+    /// Guide çalışırken (Aşama 1–8, 10) InvalidMove kuralları kapalı. Aşama 9/11 açık.
     /// </summary>
     bool IsSingleCoinTutorialPhase()
     {
@@ -2379,15 +3598,10 @@ public class OnboardingGuideController : MonoBehaviour
             or GuidePhase.Stage3_DragAgain
             or GuidePhase.Stage4_AlignShot
             or GuidePhase.Stage5_Drag
-            or GuidePhase.Stage6_Power
-            or GuidePhase.Stage7_ResetCoins
+            or GuidePhase.Stage6_PowerAim
+            or GuidePhase.Stage7_Drag
             or GuidePhase.Stage8_Drag
-            or GuidePhase.Stage9_ReleaseToShot;
-    }
-
-    bool IsStageTwelvePracticePhase()
-    {
-        return _phase == GuidePhase.Stage12_Drag || _phase == GuidePhase.Stage12_PowerShot;
+            or GuidePhase.Stage10_PullAndGoal;
     }
 
     void SetPhase(GuidePhase phase)
@@ -2398,13 +3612,36 @@ public class OnboardingGuideController : MonoBehaviour
 
     void SyncInvalidMovePresenterObject()
     {
-        GameObject invalidMove = GameObject.Find("InvalidMove");
-        if (invalidMove == null)
+        // InvalidMove yalnızca InvalidMoveFeedbackPresenter tarafından gösterilmeli.
+        // Kurallar kapalıyken zorla gizle; kurallar açıkken Find ile görünür yapma.
+        if (!ShouldSuppressInvalidMoveRules)
         {
             return;
         }
 
-        invalidMove.SetActive(!ShouldSuppressInvalidMoveRules);
+        GameObject invalidMove = GameObject.Find("InvalidMove");
+        if (invalidMove == null)
+        {
+            Transform[] transforms = Object.FindObjectsByType<Transform>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                Transform candidate = transforms[i];
+                if (candidate != null
+                    && candidate.name == "InvalidMove"
+                    && candidate.gameObject.scene.IsValid())
+                {
+                    invalidMove = candidate.gameObject;
+                    break;
+                }
+            }
+        }
+
+        if (invalidMove != null)
+        {
+            invalidMove.SetActive(false);
+        }
     }
 
     void OnIntroFlythroughFinished()
@@ -2424,10 +3661,6 @@ public class OnboardingGuideController : MonoBehaviour
     {
         _centerCoinSpawnPosition = OnboardingSceneBootstrap.CenterCoinSpawnPosition;
         _centerCoinSpawnRotation = OnboardingSceneBootstrap.CenterCoinSpawnRotation;
-        _sideCoinLeftSpawnPosition = OnboardingSceneBootstrap.SideCoinLeftSpawnPosition;
-        _sideCoinLeftSpawnRotation = OnboardingSceneBootstrap.SideCoinLeftSpawnRotation;
-        _sideCoinRightSpawnPosition = OnboardingSceneBootstrap.SideCoinRightSpawnPosition;
-        _sideCoinRightSpawnRotation = OnboardingSceneBootstrap.SideCoinRightSpawnRotation;
 
         if (_openingCoin != null)
         {
@@ -2439,32 +3672,6 @@ public class OnboardingGuideController : MonoBehaviour
             if (_centerCoinSpawnRotation == Quaternion.identity)
             {
                 _centerCoinSpawnRotation = _openingCoin.rotation;
-            }
-        }
-
-        if (_sideCoinLeft != null)
-        {
-            if (_sideCoinLeftSpawnPosition == Vector3.zero)
-            {
-                _sideCoinLeftSpawnPosition = _sideCoinLeft.position;
-            }
-
-            if (_sideCoinLeftSpawnRotation == Quaternion.identity)
-            {
-                _sideCoinLeftSpawnRotation = _sideCoinLeft.rotation;
-            }
-        }
-
-        if (_sideCoinRight != null)
-        {
-            if (_sideCoinRightSpawnPosition == Vector3.zero)
-            {
-                _sideCoinRightSpawnPosition = _sideCoinRight.position;
-            }
-
-            if (_sideCoinRightSpawnRotation == Quaternion.identity)
-            {
-                _sideCoinRightSpawnRotation = _sideCoinRight.rotation;
             }
         }
     }
@@ -2492,101 +3699,14 @@ public class OnboardingGuideController : MonoBehaviour
         return _openingCoin != null ? _openingCoin.GetComponent<CoinDragController>() : null;
     }
 
-    CoinDragController GetSideCoinLeftDragController()
-    {
-        return _sideCoinLeft != null ? _sideCoinLeft.GetComponent<CoinDragController>() : null;
-    }
-
-    CoinIdentity GetCenterCoinIdentity()
-    {
-        return _openingCoin != null ? _openingCoin.GetComponent<CoinIdentity>() : null;
-    }
-
-    CoinIdentity GetSideCoinLeftIdentity()
-    {
-        return _sideCoinLeft != null ? _sideCoinLeft.GetComponent<CoinIdentity>() : null;
-    }
-
-    CoinDragController GetSideCoinRightDragController()
-    {
-        return _sideCoinRight != null ? _sideCoinRight.GetComponent<CoinDragController>() : null;
-    }
-
-    CoinIdentity GetSideCoinRightIdentity()
-    {
-        return _sideCoinRight != null ? _sideCoinRight.GetComponent<CoinIdentity>() : null;
-    }
-
-    bool UsesSideCoinLeftGuidedCoin()
-    {
-        return _phase == GuidePhase.Stage10_Drag
-               || _phase == GuidePhase.Stage11_ReleaseToShot
-               || _phase == GuidePhase.Stage17_Drag
-               || _phase == GuidePhase.Stage17_ReleaseToShot;
-    }
-
-    bool UsesCenterCoinGuidedCoin()
-    {
-        return _phase == GuidePhase.Stage15_Drag || _phase == GuidePhase.Stage16_PowerShot;
-    }
-
-    bool UsesSideCoinRightGuidedCoin()
-    {
-        return _phase == GuidePhase.Stage12_Drag
-               || _phase == GuidePhase.Stage12_PowerShot
-               || _phase == GuidePhase.Stage13_PreAlignDrag
-               || _phase == GuidePhase.Stage14_GateAlignPower
-               || _phase == GuidePhase.Stage18_PowerShot;
-    }
-
     Transform GetGuidedCoinTransform()
     {
-        if (UsesSideCoinLeftGuidedCoin())
-        {
-            return _sideCoinLeft;
-        }
-
-        if (UsesSideCoinRightGuidedCoin())
-        {
-            return _sideCoinRight;
-        }
-
-        if (UsesCenterCoinGuidedCoin())
-        {
-            return _openingCoin;
-        }
-
         return _openingCoin;
     }
 
     CoinDragController GetGuidedCoinDragController()
     {
-        if (UsesSideCoinLeftGuidedCoin())
-        {
-            return GetSideCoinLeftDragController();
-        }
-
-        if (UsesSideCoinRightGuidedCoin())
-        {
-            return GetSideCoinRightDragController();
-        }
-
-        if (UsesCenterCoinGuidedCoin())
-        {
-            return GetCenterCoinDragController();
-        }
-
         return GetCenterCoinDragController();
-    }
-
-    Vector3 GetSideCoinLeftPosition()
-    {
-        return _sideCoinLeft != null ? _sideCoinLeft.position : Vector3.zero;
-    }
-
-    Vector3 GetSideCoinRightPosition()
-    {
-        return _sideCoinRight != null ? _sideCoinRight.position : Vector3.zero;
     }
 
     bool IsCenterCoinAimLineVisible()
@@ -2600,11 +3720,6 @@ public class OnboardingGuideController : MonoBehaviour
     Vector3 GetEnemyGoalCenter()
     {
         return OnboardingGoalCenter.ResolveEnemyGoalCenter(_enemyGoal);
-    }
-
-    Vector3 GetCenterCoinPosition()
-    {
-        return _openingCoin != null ? _openingCoin.position : Vector3.zero;
     }
 
     void SetCoinGuideAnchors()
@@ -2632,38 +3747,6 @@ public class OnboardingGuideController : MonoBehaviour
         _spotlightWorldAnchor = worldTarget;
         _guidePointerWorldAnchor = worldTarget;
         _guideAnchorMode = GuideAnchorMode.PullTarget;
-    }
-
-    Vector3 GetStageSixGoalTarget()
-    {
-        if (_stageSixGoalTarget != null)
-        {
-            return _stageSixGoalTarget.position;
-        }
-
-        Vector3 coinPosition = GetCenterCoinPosition();
-        if (OnboardingGoalCenter.TryGetEnemyGoalInteriorPoint(
-                _enemyGoal,
-                coinPosition,
-                _stageSixGoalTargetInset,
-                out Vector3 interiorPoint))
-        {
-            return interiorPoint;
-        }
-
-        Vector3 goalCenter = GetEnemyGoalCenter();
-        Vector3 towardGoal = OnboardingAimTutorialOverlay.GetMidAngleDirection(coinPosition, goalCenter);
-        return goalCenter + towardGoal * _stageSixGoalTargetInset;
-    }
-
-    Vector3 GetStageTwelveShotTarget()
-    {
-        if (_stageTwelveShotTarget != null)
-        {
-            return _stageTwelveShotTarget.position;
-        }
-
-        return _stageTwelveShotTargetPosition;
     }
 
     float ResolveGuideVerticalOffset()
@@ -2704,11 +3787,6 @@ public class OnboardingGuideController : MonoBehaviour
         explanation.anchoredPosition = new Vector2(0f, arrowHeight + _coinGuideExplanationGap);
     }
 
-    bool UsesGateLineArrowAnimation()
-    {
-        return _phase == GuidePhase.Stage11_ReleaseToShot;
-    }
-
     void StartArrowAnimation()
     {
         if (_arrowRoutine != null)
@@ -2723,26 +3801,27 @@ public class OnboardingGuideController : MonoBehaviour
             return;
         }
 
-        _arrowRoutine = StartCoroutine(
-            UsesGateLineArrowAnimation() ? AnimateArrowAlongGateLoop() : AnimateArrowLoop());
+        _arrowRoutine = StartCoroutine(AnimateArrowLoop());
+    }
+
+    bool UsesTextOnlyExplanationLayout(RectTransform guideElement)
+    {
+        return !UsesPullGuideMaskAndArrow()
+            && guideElement == _pullGuideElement
+            && (_phase == GuidePhase.Stage2_ReleaseToShot
+                || _phase == GuidePhase.Stage4_AlignShot
+                || _phase == GuidePhase.Stage6_PowerAim);
     }
 
     bool UsesHandDragAnimation()
     {
-        if (_phase == GuidePhase.Stage18_PowerShot)
-        {
-            return _stage18AwaitingP3Drag;
-        }
-
         return _phase is GuidePhase.Stage1_Drag
             or GuidePhase.Stage3_DragAgain
             or GuidePhase.Stage5_Drag
+            or GuidePhase.Stage6_PowerAim
+            or GuidePhase.Stage7_Drag
             or GuidePhase.Stage8_Drag
-            or GuidePhase.Stage10_Drag
-            or GuidePhase.Stage12_Drag
-            or GuidePhase.Stage13_PreAlignDrag
-            or GuidePhase.Stage15_Drag
-            or GuidePhase.Stage17_Drag;
+            or GuidePhase.Stage10_PullAndGoal;
     }
 
     Vector2 GetActiveHandScreenOffset()
@@ -2751,14 +3830,67 @@ public class OnboardingGuideController : MonoBehaviour
         {
             GuidePhase.Stage3_DragAgain => _stage3HandScreenOffset,
             GuidePhase.Stage5_Drag => _stage5HandScreenOffset,
+            GuidePhase.Stage6_PowerAim => _stage6HandScreenOffset,
+            GuidePhase.Stage7_Drag => _stage7HandScreenOffset,
             GuidePhase.Stage8_Drag => _stage8HandScreenOffset,
-            GuidePhase.Stage10_Drag => _stage10HandScreenOffset,
-            GuidePhase.Stage12_Drag => _stage12HandScreenOffset,
-            GuidePhase.Stage13_PreAlignDrag => _stage13HandScreenOffset,
-            GuidePhase.Stage15_Drag => _stage15HandScreenOffset,
-            GuidePhase.Stage17_Drag => _stage17HandScreenOffset,
-            GuidePhase.Stage18_PowerShot => _stage18HandScreenOffset,
+            GuidePhase.Stage10_PullAndGoal => _stage10HandScreenOffset,
             _ => _stage1HandScreenOffset
+        };
+    }
+
+    float GetActiveHandDragWorldDistance()
+    {
+        return _phase switch
+        {
+            GuidePhase.Stage3_DragAgain => _stage3HandDragWorldDistance,
+            GuidePhase.Stage5_Drag => _stage5HandDragWorldDistance,
+            GuidePhase.Stage6_PowerAim => _stage6HandDragWorldDistance,
+            GuidePhase.Stage7_Drag => _stage7HandDragWorldDistance,
+            GuidePhase.Stage8_Drag => _stage8HandDragWorldDistance,
+            GuidePhase.Stage10_PullAndGoal => _stage10HandDragWorldDistance,
+            _ => _stageOneHandDragWorldDistance
+        };
+    }
+
+    float GetActiveHandMoveDuration()
+    {
+        return _phase switch
+        {
+            GuidePhase.Stage3_DragAgain => _stage3HandMoveDuration,
+            GuidePhase.Stage5_Drag => _stage5HandMoveDuration,
+            GuidePhase.Stage6_PowerAim => _stage6HandMoveDuration,
+            GuidePhase.Stage7_Drag => _stage7HandMoveDuration,
+            GuidePhase.Stage8_Drag => _stage8HandMoveDuration,
+            GuidePhase.Stage10_PullAndGoal => _stage10HandMoveDuration,
+            _ => _stageOneHandMoveDuration
+        };
+    }
+
+    float GetActiveHandPressHold()
+    {
+        return _phase switch
+        {
+            GuidePhase.Stage3_DragAgain => _stage3HandPressHold,
+            GuidePhase.Stage5_Drag => _stage5HandPressHold,
+            GuidePhase.Stage6_PowerAim => _stage6HandPressHold,
+            GuidePhase.Stage7_Drag => _stage7HandPressHold,
+            GuidePhase.Stage8_Drag => _stage8HandPressHold,
+            GuidePhase.Stage10_PullAndGoal => _stage10HandPressHold,
+            _ => _stageOneHandPressHold
+        };
+    }
+
+    float GetActiveHandPause()
+    {
+        return _phase switch
+        {
+            GuidePhase.Stage3_DragAgain => _stage3HandPause,
+            GuidePhase.Stage5_Drag => _stage5HandPause,
+            GuidePhase.Stage6_PowerAim => _stage6HandPause,
+            GuidePhase.Stage7_Drag => _stage7HandPause,
+            GuidePhase.Stage8_Drag => _stage8HandPause,
+            GuidePhase.Stage10_PullAndGoal => _stage10HandPause,
+            _ => _stageOneHandPause
         };
     }
 
@@ -2766,15 +3898,14 @@ public class OnboardingGuideController : MonoBehaviour
     {
         return _phase switch
         {
+            GuidePhase.Stage2_ReleaseToShot => _stage2ExplanationScreenOffset,
+            GuidePhase.Stage4_AlignShot => _stage4ExplanationScreenOffset,
             GuidePhase.Stage3_DragAgain => _stage3ExplanationScreenOffset,
             GuidePhase.Stage5_Drag => _stage5ExplanationScreenOffset,
+            GuidePhase.Stage6_PowerAim => _stage6ExplanationScreenOffset,
+            GuidePhase.Stage7_Drag => _stage7ExplanationScreenOffset,
             GuidePhase.Stage8_Drag => _stage8ExplanationScreenOffset,
-            GuidePhase.Stage10_Drag => _stage10ExplanationScreenOffset,
-            GuidePhase.Stage12_Drag => _stage12ExplanationScreenOffset,
-            GuidePhase.Stage13_PreAlignDrag => _stage13ExplanationScreenOffset,
-            GuidePhase.Stage15_Drag => _stage15ExplanationScreenOffset,
-            GuidePhase.Stage17_Drag => _stage17ExplanationScreenOffset,
-            GuidePhase.Stage18_PowerShot => _stage18ExplanationScreenOffset,
+            GuidePhase.Stage10_PullAndGoal => _stage10ExplanationScreenOffset,
             _ => _stage1ExplanationScreenOffset
         };
     }
@@ -2808,9 +3939,77 @@ public class OnboardingGuideController : MonoBehaviour
         StartArrowAnimation();
     }
 
+    bool UsesPullGuideMaskAndArrow()
+    {
+        return _phase != GuidePhase.Stage2_ReleaseToShot
+            && _phase != GuidePhase.Stage4_AlignShot
+            && _phase != GuidePhase.Stage5_Drag
+            && _phase != GuidePhase.Stage6_PowerAim
+            && _phase != GuidePhase.Stage7_Drag
+            && _phase != GuidePhase.Stage9_PassBetween
+            && _phase != GuidePhase.Stage10_PullAndGoal
+            && _phase != GuidePhase.Stage11_PassAndGoal;
+    }
+
+    void HidePullGuideMaskAndArrow()
+    {
+        if (_overlayRect != null)
+        {
+            _overlayRect.gameObject.SetActive(false);
+        }
+
+        if (_activeArrow == _pullArrow || _activeArrow == _arrow)
+        {
+            StopArrowAnimation();
+        }
+
+        if (_pullArrow != null)
+        {
+            _pullArrow.gameObject.SetActive(false);
+        }
+
+        HidePullGuideVisuals();
+    }
+
+    void ShowGuideTextOnlyPresentation()
+    {
+        HidePullGuideMaskAndArrow();
+        HideCoinGuideVisuals();
+
+        _activeGuideElement = _pullGuideElement != null ? _pullGuideElement : _guideElement;
+        _activeGuideText = _pullGuideText != null ? _pullGuideText : _guideText;
+        _activeExplanationImage = GetExplanationImage(_activeGuideElement);
+        _activeArrow = null;
+
+        if (_activeGuideElement == null)
+        {
+            return;
+        }
+
+        _activeGuideElement.gameObject.SetActive(true);
+        SyncGuideElementLayout(_activeGuideElement);
+        UpdateActiveGuideElementPosition();
+    }
+
     void EnsurePullGuidePresentation()
     {
         HideCoinGuideElementOnly();
+        if (!UsesPullGuideMaskAndArrow())
+        {
+            if (_activeGuideElement == null
+                || !_activeGuideElement.gameObject.activeSelf
+                || _activeArrow != null)
+            {
+                ShowGuideTextOnlyPresentation();
+            }
+            else
+            {
+                UpdateActiveGuideElementPosition();
+            }
+
+            return;
+        }
+
         if (_pullGuideElement == null)
         {
             return;
@@ -2891,32 +4090,6 @@ public class OnboardingGuideController : MonoBehaviour
             }
         }
 
-        if (_sideCoinLeft == null)
-        {
-            _sideCoinLeft = OnboardingSceneBootstrap.SideCoinLeftTransform;
-            if (_sideCoinLeft == null)
-            {
-                GameObject leftCoin = GameObject.Find("Coin_P1");
-                if (leftCoin != null)
-                {
-                    _sideCoinLeft = leftCoin.transform;
-                }
-            }
-        }
-
-        if (_sideCoinRight == null)
-        {
-            _sideCoinRight = OnboardingSceneBootstrap.SideCoinRightTransform;
-            if (_sideCoinRight == null)
-            {
-                GameObject rightCoin = GameObject.Find("Coin_P3");
-                if (rightCoin != null)
-                {
-                    _sideCoinRight = rightCoin.transform;
-                }
-            }
-        }
-
         if (_enemyGoal == null)
         {
             GameObject goalObject = GameObject.Find("Kale_E");
@@ -2926,32 +4099,43 @@ public class OnboardingGuideController : MonoBehaviour
             }
         }
 
-        if (_stageElevenShotTarget == null)
+        if (_stage6Alert == null && _canvasRect != null)
         {
-            GameObject stageElevenTarget = GameObject.Find("Stage11GoalTarget");
-            if (stageElevenTarget != null)
+            Transform alert = _canvasRect.Find("Alert-6");
+            if (alert != null)
             {
-                _stageElevenShotTarget = stageElevenTarget.transform;
+                _stage6Alert = alert.gameObject;
             }
         }
 
-        if (_stageSixteenShotTarget == null)
+        if (_stage7Alert == null && _canvasRect != null)
         {
-            GameObject stageSixteenTarget = GameObject.Find("Stage16GoalTarget");
-            if (stageSixteenTarget != null)
+            Transform alert7 = _canvasRect.Find("Alert-7");
+            if (alert7 != null)
             {
-                _stageSixteenShotTarget = stageSixteenTarget.transform;
+                _stage7Alert = alert7.gameObject;
             }
         }
 
-        if (_stageSeventeenShotTarget == null)
+        if (_stage9Alert == null && _canvasRect != null)
         {
-            GameObject stageSeventeenTarget = GameObject.Find("Stage17GoalTarget");
-            if (stageSeventeenTarget != null)
+            Transform alert9 = _canvasRect.Find("Alert-9");
+            if (alert9 != null)
             {
-                _stageSeventeenShotTarget = stageSeventeenTarget.transform;
+                _stage9Alert = alert9.gameObject;
             }
         }
+
+        if (_stage10Alert == null && _canvasRect != null)
+        {
+            Transform alert10 = _canvasRect.Find("Alert-10");
+            if (alert10 != null)
+            {
+                _stage10Alert = alert10.gameObject;
+            }
+        }
+
+        EnsureSuccessPanelResolved();
 
         if (_worldCamera == null)
         {
@@ -3074,6 +4258,9 @@ public class OnboardingGuideController : MonoBehaviour
             _overlayMaterial.SetColor(ColorId, _overlayColor);
             _overlayMaterial.SetFloat(HoleRadiusId, _holeRadiusUv);
             _overlayMaterial.SetFloat(HoleSoftnessId, _holeSoftnessUv);
+            _overlayMaterial.SetFloat(WedgeEnabledId, 0f);
+            _overlayMaterial.SetFloat(HalfPlaneEnabledId, 0f);
+            _overlayMaterial.SetFloat(GateEnabledId, 0f);
             _overlayImage.material = _overlayMaterial;
         }
         else
@@ -3204,52 +4391,81 @@ public class OnboardingGuideController : MonoBehaviour
 
         bool compactCoinLayout = UsesCompactCoinGuideLayout(guideElement);
         bool stageOneHand = UsesHandDragAnimation() && arrow == _arrow;
+        bool textOnlyExplanation = UsesTextOnlyExplanationLayout(guideElement);
+        bool hideExplanation = _phase == GuidePhase.Stage7_Drag;
+
+        if (hideExplanation)
+        {
+            explanation.gameObject.SetActive(false);
+        }
+        else if (!explanation.gameObject.activeSelf)
+        {
+            explanation.gameObject.SetActive(true);
+        }
 
         if (stageOneHand)
         {
             PrepareStageOneHandVisual();
         }
-        else
+        else if (!textOnlyExplanation)
         {
             arrow.localScale = Vector3.one * (compactCoinLayout ? _coinGuideArrowScale : _pullGuideArrowScale);
             ConfigureArrowLayout(arrow, resetAnchoredPosition: compactCoinLayout);
         }
+        else
+        {
+            arrow.gameObject.SetActive(false);
+        }
 
         GuideExplanationAutoWidth autoWidth = explanation.GetComponent<GuideExplanationAutoWidth>();
-        autoWidth?.Refresh();
+        if (!hideExplanation)
+        {
+            autoWidth?.Refresh();
+        }
 
         Canvas.ForceUpdateCanvases();
-        LayoutRebuilder.ForceRebuildLayoutImmediate(explanation);
-        LayoutRebuilder.ForceRebuildLayoutImmediate(arrow);
+        if (!hideExplanation)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(explanation);
+        }
 
-        float arrowHeight = MeasureGuideChildHeight(arrow);
-        float explanationHeight = MeasureGuideChildHeight(explanation);
-        float arrowWidth = MeasureGuideChildWidth(arrow);
-        float explanationWidth = MeasureGuideChildWidth(explanation);
+        if (!textOnlyExplanation)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(arrow);
+        }
+
+        float arrowHeight = textOnlyExplanation ? 0f : MeasureGuideChildHeight(arrow);
+        float explanationHeight = hideExplanation ? 0f : MeasureGuideChildHeight(explanation);
+        float arrowWidth = textOnlyExplanation ? 0f : MeasureGuideChildWidth(arrow);
+        float explanationWidth = hideExplanation ? 0f : MeasureGuideChildWidth(explanation);
 
         float explanationGap = compactCoinLayout ? _coinGuideExplanationGap : _explanationArrowGap;
-        if (stageOneHand)
+        if (!hideExplanation && (stageOneHand || textOnlyExplanation))
         {
-            // Hand drag aşamalarında explanation Inspector offset'i ile konumlanır.
+            // El / metin-only pull aşamalarında explanation Inspector offset'i ile konumlanır.
             explanation.anchorMin = new Vector2(0.5f, 0.5f);
             explanation.anchorMax = new Vector2(0.5f, 0.5f);
             explanation.pivot = new Vector2(0.5f, 0.5f);
             explanation.anchoredPosition = GetActiveHandExplanationScreenOffset();
         }
-        else if (compactCoinLayout)
+        else if (!hideExplanation && compactCoinLayout)
         {
             ApplyCompactCoinArrowLayout(arrow, arrowHeight);
             ApplyCompactCoinExplanationLayout(explanation, arrowHeight);
         }
 
         float width = Mathf.Max(arrowWidth, explanationWidth, _guideElementMinWidth);
-        float height = stageOneHand
+        float height = hideExplanation
+            ? (textOnlyExplanation ? 0f : arrowHeight)
+            : textOnlyExplanation
+            ? explanationHeight
+            : stageOneHand
             ? arrowHeight * 0.5f + explanationGap + explanationHeight + arrowHeight * 0.5f
             : arrowHeight + explanationGap + explanationHeight;
         guideElement.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
         guideElement.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
 
-        if (!stageOneHand && compactCoinLayout)
+        if (!hideExplanation && !stageOneHand && !textOnlyExplanation && compactCoinLayout)
         {
             ApplyCompactCoinArrowLayout(arrow, arrowHeight);
             ApplyCompactCoinExplanationLayout(explanation, arrowHeight);
@@ -3334,6 +4550,7 @@ public class OnboardingGuideController : MonoBehaviour
         HideCoinGuideVisuals();
         HidePullGuideVisuals();
         _tutorialOverlay?.HideAll();
+        GateIndicator.Instance?.Hide();
         SetExplanationBackground(_positiveExplanationColor);
     }
 
@@ -3416,6 +4633,32 @@ public class OnboardingGuideController : MonoBehaviour
         _activeExplanationImage = GetExplanationImage(_guideElement);
         PrepareCoinGuideArrow();
         ShowActiveGuideVisuals();
+        SetGuideExplanationVisible(_phase != GuidePhase.Stage7_Drag);
+    }
+
+    void SetGuideExplanationVisible(bool visible)
+    {
+        if (_guideElement == null)
+        {
+            return;
+        }
+
+        Transform explanation = _guideElement.Find("Explanation");
+        if (explanation != null)
+        {
+            explanation.gameObject.SetActive(visible);
+        }
+
+        if (_pullGuideElement == null)
+        {
+            return;
+        }
+
+        Transform pullExplanation = _pullGuideElement.Find("Explanation");
+        if (pullExplanation != null && _phase == GuidePhase.Stage7_Drag)
+        {
+            pullExplanation.gameObject.SetActive(false);
+        }
     }
 
     void PrepareCoinGuideArrow()
@@ -3571,6 +4814,12 @@ public class OnboardingGuideController : MonoBehaviour
 
     void ShowPullGuideVisuals()
     {
+        if (!UsesPullGuideMaskAndArrow())
+        {
+            ShowGuideTextOnlyPresentation();
+            return;
+        }
+
         _activeGuideElement = _pullGuideElement;
         _activeArrow = _pullArrow;
         _activeGuideText = _pullGuideText;
@@ -3587,12 +4836,7 @@ public class OnboardingGuideController : MonoBehaviour
             return;
         }
 
-        if (UsesGateLineArrowAnimation())
-        {
-            _arrowBaseLocalPosition = _pullArrow.anchoredPosition;
-            return;
-        }
-
+        _pullArrow.gameObject.SetActive(true);
         ConfigureArrowLayout(_pullArrow, resetAnchoredPosition: true);
         if (_pullGuideElement != null)
         {
@@ -3606,7 +4850,7 @@ public class OnboardingGuideController : MonoBehaviour
     {
         if (_overlayRect != null)
         {
-            _overlayRect.gameObject.SetActive(true);
+            _overlayRect.gameObject.SetActive(UsesPullGuideMaskAndArrow());
         }
 
         if (_activeGuideElement != null)
@@ -3712,46 +4956,21 @@ public class OnboardingGuideController : MonoBehaviour
             GuidePhase.Stage3_DragAgain => 3,
             GuidePhase.Stage4_AlignShot => 4,
             GuidePhase.Stage5_Drag => 5,
-            GuidePhase.Stage6_Power => 6,
-            GuidePhase.Stage7_ResetCoins => 7,
+            GuidePhase.Stage6_PowerAim => 6,
+            GuidePhase.Stage7_Drag => 7,
             GuidePhase.Stage8_Drag => 8,
-            GuidePhase.Stage9_ReleaseToShot => 9,
-            GuidePhase.Stage10_Drag => 10,
-            GuidePhase.Stage11_ReleaseToShot => 11,
-            GuidePhase.Stage12_Drag => 12,
-            GuidePhase.Stage12_PowerShot => 12,
-            GuidePhase.Stage13_PreAlignDrag => 13,
-            GuidePhase.Stage14_GateAlignPower => 14,
-            GuidePhase.Stage15_Drag => 15,
-            GuidePhase.Stage16_PowerShot => 16,
-            GuidePhase.Stage17_Drag => 17,
-            GuidePhase.Stage17_ReleaseToShot => 17,
-            GuidePhase.Stage18_PowerShot => 18,
+            // GateIndicator denemesi oyuncu için Aşama 8'in devamı.
+            GuidePhase.Stage9_PassBetween => 8,
+            GuidePhase.Stage10_PullAndGoal => 9,
+            GuidePhase.Stage11_PassAndGoal => 10,
             _ => 0
         };
 
         return stageNumber > 0;
     }
 
-    bool TryResolveStageElevenSpotlightAnchor(out Vector3 worldPosition)
-    {
-        if (TryGetGateArrowEndpoints(out Vector3 gateStart, out Vector3 gateEnd))
-        {
-            worldPosition = (gateStart + gateEnd) * 0.5f;
-            return true;
-        }
-
-        return TryGetStageElevenGateMidpoint(out worldPosition);
-    }
-
     bool TryGetSpotlightWorldPosition(out Vector3 worldPosition)
     {
-        if (_phase == GuidePhase.Stage11_ReleaseToShot
-            && TryResolveStageElevenSpotlightAnchor(out worldPosition))
-        {
-            return _guideAnchorMode == GuideAnchorMode.PullTarget || _openingCoin != null;
-        }
-
         worldPosition = _spotlightWorldAnchor;
         return _guideAnchorMode == GuideAnchorMode.PullTarget || _openingCoin != null;
     }
@@ -3764,6 +4983,22 @@ public class OnboardingGuideController : MonoBehaviour
 
     void UpdateSpotlightHole()
     {
+        if (_phase == GuidePhase.Stage7_Drag)
+        {
+            UpdateStageSevenWedgeSpotlight();
+            return;
+        }
+
+        if (!UsesPullGuideMaskAndArrow())
+        {
+            if (_overlayRect != null)
+            {
+                _overlayRect.gameObject.SetActive(false);
+            }
+
+            return;
+        }
+
         Camera worldCamera = ResolveWorldCamera();
         if (_overlayMaterial == null || _overlayRect == null || worldCamera == null)
         {
@@ -3781,13 +5016,9 @@ public class OnboardingGuideController : MonoBehaviour
 
         float aspect = overlayRect.width / overlayRect.height;
         _overlayMaterial.SetFloat(HoleAspectId, aspect);
-
-        if (TryUpdateWedgeSpotlight(worldCamera, overlayRect))
-        {
-            return;
-        }
-
         _overlayMaterial.SetFloat(WedgeEnabledId, 0f);
+        _overlayMaterial.SetFloat(HalfPlaneEnabledId, 0f);
+        _overlayMaterial.SetFloat(GateEnabledId, 0f);
 
         if (!TryGetSpotlightWorldPosition(out Vector3 worldPosition))
         {
@@ -3799,57 +5030,59 @@ public class OnboardingGuideController : MonoBehaviour
             return;
         }
 
+        if (_overlayRect != null && !_overlayRect.gameObject.activeSelf)
+        {
+            _overlayRect.gameObject.SetActive(true);
+        }
+
         _overlayMaterial.SetVector(HoleCenterId, new Vector4(holeCenter.x, holeCenter.y, 0f, 0f));
     }
 
-    /// <summary>
-    /// Aşama 10-11: Yuvarlak spot yerine yeşil rehber çizgileri arasındaki kama
-    /// biçimindeki atış koridorunu aydınlatır.
-    /// </summary>
-    bool TryUpdateWedgeSpotlight(Camera worldCamera, Rect overlayRect)
+    void UpdateStageSevenWedgeSpotlight()
     {
-        bool usesWedgePhase = _phase == GuidePhase.Stage10_Drag
-            || _phase == GuidePhase.Stage11_ReleaseToShot;
-        if (!usesWedgePhase || _sideCoinLeft == null || _openingCoin == null || _sideCoinRight == null)
+        Camera worldCamera = ResolveWorldCamera();
+        if (_overlayMaterial == null || _overlayRect == null || worldCamera == null)
         {
-            return false;
-        }
-
-        if (!TryGetOverlayUv(worldCamera, overlayRect, _sideCoinLeft.position, out Vector2 apexUv)
-            || !TryGetOverlayUv(worldCamera, overlayRect, _openingCoin.position, out Vector2 leftUv)
-            || !TryGetOverlayUv(worldCamera, overlayRect, _sideCoinRight.position, out Vector2 rightUv))
-        {
-            return false;
-        }
-
-        _overlayMaterial.SetFloat(WedgeEnabledId, 1f);
-        _overlayMaterial.SetFloat(WedgeSoftnessId, _wedgeSoftnessUv);
-        _overlayMaterial.SetVector(WedgeApexId, new Vector4(apexUv.x, apexUv.y, 0f, 0f));
-        _overlayMaterial.SetVector(WedgePointLeftId, new Vector4(leftUv.x, leftUv.y, 0f, 0f));
-        _overlayMaterial.SetVector(WedgePointRightId, new Vector4(rightUv.x, rightUv.y, 0f, 0f));
-        UpdateNearGateMask(worldCamera, overlayRect);
-        return true;
-    }
-
-    /// <summary>
-    /// Aşama 11: Koridor içinde, coin ile GateIndicator çizgisi arasında kalan
-    /// bölgeyi kırmızı maskeyle işaretler.
-    /// </summary>
-    void UpdateNearGateMask(Camera worldCamera, Rect overlayRect)
-    {
-        if (_phase == GuidePhase.Stage11_ReleaseToShot
-            && TryGetGateArrowEndpoints(out Vector3 gateStart, out Vector3 gateEnd)
-            && TryGetOverlayUv(worldCamera, overlayRect, gateStart, out Vector2 gateAUv)
-            && TryGetOverlayUv(worldCamera, overlayRect, gateEnd, out Vector2 gateBUv))
-        {
-            _overlayMaterial.SetFloat(GateEnabledId, 1f);
-            _overlayMaterial.SetColor(WedgeNearColorId, _stageElevenNearGateColor);
-            _overlayMaterial.SetVector(GatePointAId, new Vector4(gateAUv.x, gateAUv.y, 0f, 0f));
-            _overlayMaterial.SetVector(GatePointBId, new Vector4(gateBUv.x, gateBUv.y, 0f, 0f));
             return;
         }
 
+        if (!TryResolveStageSevenGateEndpoints(out Vector3 gateStart, out Vector3 gateEnd))
+        {
+            return;
+        }
+
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(_overlayRect);
+
+        Rect overlayRect = _overlayRect.rect;
+        if (overlayRect.width <= 1f || overlayRect.height <= 1f)
+        {
+            return;
+        }
+
+        Vector3 coinPosition = GetGuidedCoinWorldPosition();
+        if (!TryGetOverlayUv(worldCamera, overlayRect, coinPosition, out Vector2 apexUv)
+            || !TryGetOverlayUv(worldCamera, overlayRect, gateStart, out Vector2 leftUv)
+            || !TryGetOverlayUv(worldCamera, overlayRect, gateEnd, out Vector2 rightUv))
+        {
+            return;
+        }
+
+        if (!_overlayRect.gameObject.activeSelf)
+        {
+            _overlayRect.gameObject.SetActive(true);
+        }
+
+        float aspect = overlayRect.width / overlayRect.height;
+        _overlayMaterial.SetFloat(HoleAspectId, aspect);
+        _overlayMaterial.SetFloat(HalfPlaneEnabledId, 0f);
+        _overlayMaterial.SetFloat(WedgeEnabledId, 1f);
         _overlayMaterial.SetFloat(GateEnabledId, 0f);
+        _overlayMaterial.SetFloat(WedgeSoftnessId, Mathf.Max(0.001f, _stage7WedgeSoftnessUv));
+        _overlayMaterial.SetVector(WedgeApexId, new Vector4(apexUv.x, apexUv.y, 0f, 0f));
+        _overlayMaterial.SetVector(WedgePointLeftId, new Vector4(leftUv.x, leftUv.y, 0f, 0f));
+        _overlayMaterial.SetVector(WedgePointRightId, new Vector4(rightUv.x, rightUv.y, 0f, 0f));
+        _overlayMaterial.SetVector(HoleCenterId, new Vector4(apexUv.x, apexUv.y, 0f, 0f));
     }
 
     bool TryGetOverlayUv(Camera worldCamera, Rect overlayRect, Vector3 worldPosition, out Vector2 uv)
@@ -4024,29 +5257,6 @@ public class OnboardingGuideController : MonoBehaviour
         return null;
     }
 
-    bool TryGetGateArrowEndpoints(out Vector3 start, out Vector3 end)
-    {
-        GateIndicator gateIndicator = GateIndicator.Instance;
-        if (gateIndicator != null && gateIndicator.TryGetGateWorldEndpoints(out start, out end))
-        {
-            return true;
-        }
-
-        if (_openingCoin == null || _sideCoinRight == null)
-        {
-            start = default;
-            end = default;
-            return false;
-        }
-
-        const float gateLineHeightOffset = 0.004f;
-        start = _openingCoin.position;
-        end = _sideCoinRight.position;
-        start.y += gateLineHeightOffset;
-        end.y += gateLineHeightOffset;
-        return true;
-    }
-
     bool TryWorldToArrowAnchoredPosition(Vector3 worldPosition, out Vector2 arrowAnchored)
     {
         arrowAnchored = default;
@@ -4081,9 +5291,9 @@ public class OnboardingGuideController : MonoBehaviour
         PrepareStageOneHandVisual();
 
         GuidePhase loopPhase = _phase;
-        float moveDuration = Mathf.Max(0.05f, _stageOneHandMoveDuration);
-        float pressHold = Mathf.Max(0.01f, _stageOneHandPressHold);
-        float pause = Mathf.Max(0.01f, _stageOneHandPause);
+        float moveDuration = Mathf.Max(0.05f, GetActiveHandMoveDuration());
+        float pressHold = Mathf.Max(0.01f, GetActiveHandPressHold());
+        float pause = Mathf.Max(0.01f, GetActiveHandPause());
 
         while (_phase == loopPhase && UsesHandDragAnimation() && _activeArrow != null)
         {
@@ -4133,7 +5343,7 @@ public class OnboardingGuideController : MonoBehaviour
 
         Vector3 coinWorld = GetGuidedCoinWorldPosition();
         Vector3 launchDir = GetHandDragLaunchDirection(coinWorld);
-        Vector3 pullWorld = -launchDir * Mathf.Max(0.05f, _stageOneHandDragWorldDistance);
+        Vector3 pullWorld = -launchDir * Mathf.Max(0.05f, GetActiveHandDragWorldDistance());
         Vector3 pullEndWorld = coinWorld + pullWorld;
 
         if (TryWorldToArrowAnchoredPosition(coinWorld, out Vector2 coinLocal)
@@ -4152,29 +5362,60 @@ public class OnboardingGuideController : MonoBehaviour
 
     Vector3 GetHandDragLaunchDirection(Vector3 coinPosition)
     {
-        return _phase switch
+        if (_phase == GuidePhase.Stage8_Drag)
         {
-            GuidePhase.Stage5_Drag => GetStageFiveLaunchDirection(coinPosition),
-            GuidePhase.Stage8_Drag => GetStageNineLaunchDirection(coinPosition),
-            GuidePhase.Stage10_Drag => GetStageElevenLaunchDirection(coinPosition),
-            GuidePhase.Stage12_Drag => OnboardingAimTutorialOverlay.GetMidAngleDirection(
-                coinPosition, GetStageTwelveShotTarget()),
-            GuidePhase.Stage13_PreAlignDrag => OnboardingAimTutorialOverlay.GetMidAngleDirection(
-                coinPosition, GetStageFourteenShotTarget()),
-            GuidePhase.Stage15_Drag => OnboardingAimTutorialOverlay.GetMidAngleDirection(
-                coinPosition, GetStageSixteenShotTarget()),
-            GuidePhase.Stage17_Drag => GetStageSeventeenLaunchDirection(coinPosition),
-            GuidePhase.Stage18_PowerShot => OnboardingAimTutorialOverlay.GetMidAngleDirection(
-                coinPosition, GetStageSixGoalTarget()),
-            _ => GetStageTwoLaunchDirection(coinPosition)
-        };
+            return GetStageEightLaunchDirection(coinPosition);
+        }
+
+        if (_phase == GuidePhase.Stage7_Drag)
+        {
+            return GetStageSevenLaunchDirection(coinPosition);
+        }
+
+        if (_phase == GuidePhase.Stage5_Drag || _phase == GuidePhase.Stage6_PowerAim)
+        {
+            return GetStageSixLaunchDirection(coinPosition);
+        }
+
+        return GetStageTwoLaunchDirection(coinPosition);
     }
 
-    Vector3 GetStageFiveLaunchDirection(Vector3 coinPosition)
+    Vector3 GetStageEightLaunchDirection(Vector3 coinPosition)
     {
-        // Stage 6 ile aynı: coin'in gerçek konumundan kale orta açısı.
-        Vector3 goalTarget = GetStageSixGoalTarget();
-        return OnboardingAimTutorialOverlay.GetMidAngleDirection(coinPosition, goalTarget);
+        if (!TryGetStageNineGateMidpoint(out Vector3 gateMid))
+        {
+            return GetStageTwoLaunchDirection(coinPosition);
+        }
+
+        Vector3 toGate = gateMid - coinPosition;
+        toGate.y = 0f;
+        return toGate.sqrMagnitude < 0.0001f ? Vector3.forward : toGate.normalized;
+    }
+
+    bool TryGetStageNineGateMidpoint(out Vector3 midpoint)
+    {
+        midpoint = default;
+        Transform left = ResolveSideCoinTransform("Coin_P1", OnboardingSceneBootstrap.LeftCoinTransform);
+        Transform right = ResolveSideCoinTransform("Coin_P3", OnboardingSceneBootstrap.RightCoinTransform);
+        if (left == null || right == null)
+        {
+            return false;
+        }
+
+        midpoint = (left.position + right.position) * 0.5f;
+        return true;
+    }
+
+    Vector3 GetStageSevenLaunchDirection(Vector3 coinPosition)
+    {
+        if (!TryGetStageSevenGateMidpoint(out Vector3 gateMid))
+        {
+            return GetStageSixLaunchDirection(coinPosition);
+        }
+
+        Vector3 toGate = gateMid - coinPosition;
+        toGate.y = 0f;
+        return toGate.sqrMagnitude < 0.0001f ? Vector3.forward : toGate.normalized;
     }
 
     IEnumerator AnimateStageOneHandMove(Vector2 from, Vector2 to, float duration, GuidePhase loopPhase)
@@ -4202,57 +5443,6 @@ public class OnboardingGuideController : MonoBehaviour
         if (_activeArrow != null)
         {
             _activeArrow.anchoredPosition = to;
-        }
-    }
-
-    IEnumerator AnimateArrowAlongGateLoop()
-    {
-        float halfDuration = Mathf.Max(0.01f, _arrowMoveDuration * 0.5f);
-
-        while (true)
-        {
-            yield return AnimateArrowAlongGateSegment(0f, 1f, halfDuration);
-            yield return AnimateArrowAlongGateSegment(1f, 0f, halfDuration);
-        }
-    }
-
-    IEnumerator AnimateArrowAlongGateSegment(float fromT, float toT, float duration)
-    {
-        if (_activeArrow == null)
-        {
-            yield break;
-        }
-
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            if (!TryGetGateArrowEndpoints(out Vector3 gateStart, out Vector3 gateEnd))
-            {
-                yield break;
-            }
-
-            UpdateActiveGuideElementPosition();
-
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
-            float alongT = Mathf.LerpUnclamped(fromT, toT, t);
-            Vector3 worldPosition = Vector3.Lerp(gateStart, gateEnd, alongT);
-            if (TryWorldToArrowAnchoredPosition(worldPosition, out Vector2 arrowAnchored))
-            {
-                _activeArrow.anchoredPosition = arrowAnchored;
-            }
-
-            yield return null;
-        }
-
-        if (TryGetGateArrowEndpoints(out Vector3 finalStart, out Vector3 finalEnd))
-        {
-            Vector3 worldPosition = Vector3.Lerp(finalStart, finalEnd, toT);
-            if (TryWorldToArrowAnchoredPosition(worldPosition, out Vector2 arrowAnchored))
-            {
-                _activeArrow.anchoredPosition = arrowAnchored;
-            }
         }
     }
 

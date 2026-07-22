@@ -62,12 +62,18 @@ public class BottomTabMenu : MonoBehaviour
 
         UpdateTabVisuals(index);
 
-        if (panelsContainer == null || index == activeIndex)
+        if (index == activeIndex)
         {
             return;
         }
 
         activeIndex = index;
+
+        if (panelsContainer == null)
+        {
+            return;
+        }
+
         Vector2 targetPosition = GetTargetPosition(index);
 
         if (slideCoroutine != null)
@@ -103,7 +109,11 @@ public class BottomTabMenu : MonoBehaviour
 
             if (tab.iconImage != null)
             {
-                tab.iconImage.sprite = isActive ? tab.pressedSprite : tab.defaultSprite;
+                Sprite nextSprite = isActive ? tab.pressedSprite : tab.defaultSprite;
+                if (nextSprite != null)
+                {
+                    tab.iconImage.sprite = nextSprite;
+                }
             }
         }
     }

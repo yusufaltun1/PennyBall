@@ -48,6 +48,12 @@ public class SplashController : MonoBehaviour
         SetProgress(0f);
 
         AsyncOperation loadOperation = SceneManager.LoadSceneAsync(sceneName);
+        if (loadOperation == null)
+        {
+            Debug.LogError($"Splash: '{sceneName}' Build Settings içinde yok veya yüklenemedi.");
+            yield break;
+        }
+
         loadOperation.allowSceneActivation = false;
 
         float elapsed = 0f;

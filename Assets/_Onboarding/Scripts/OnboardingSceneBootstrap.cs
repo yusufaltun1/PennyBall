@@ -1,10 +1,10 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 /// <summary>
 /// Onboarding sahnesinde rakip coinler ve oyuncu kalesi kaldırılır.
-/// Yan coinler başlangıçta gizlenir; coin spawn pozisyonları ve rotasyonları kaydedilir.
+/// Merkez coin (Coin_P2) spawn pozisyonu kaydedilir.
+/// Yan coinler (Coin_P1 / Coin_P3) Aşama 8'e kadar pasif tutulur.
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-1000)]
@@ -12,13 +12,31 @@ public class OnboardingSceneBootstrap : MonoBehaviour
 {
     public static Vector3 CenterCoinSpawnPosition { get; private set; }
     public static Quaternion CenterCoinSpawnRotation { get; private set; } = Quaternion.identity;
-    public static Vector3 SideCoinLeftSpawnPosition { get; private set; }
-    public static Quaternion SideCoinLeftSpawnRotation { get; private set; } = Quaternion.identity;
-    public static Vector3 SideCoinRightSpawnPosition { get; private set; }
-    public static Quaternion SideCoinRightSpawnRotation { get; private set; } = Quaternion.identity;
     public static Transform CenterCoinTransform { get; private set; }
-    public static Transform SideCoinLeftTransform { get; private set; }
-    public static Transform SideCoinRightTransform { get; private set; }
+
+    public static Transform LeftCoinTransform { get; private set; }
+    public static Transform RightCoinTransform { get; private set; }
+    public static Vector3 LeftCoinGameUiSpawnPosition { get; private set; } = new(1.406f, 0.136f, 1.784f);
+    public static Quaternion LeftCoinGameUiSpawnRotation { get; private set; } =
+        new(-0.7071068f, 0f, 0f, 0.7071068f);
+    public static Vector3 RightCoinGameUiSpawnPosition { get; private set; } = new(1.626f, 0.136f, 1.784f);
+    public static Quaternion RightCoinGameUiSpawnRotation { get; private set; } =
+        new(-0.7071068f, 0f, 0f, 0.7071068f);
+
+    public static void CacheSideCoinReferences(Transform leftCoin, Transform rightCoin)
+    {
+        if (leftCoin != null)
+        {
+            LeftCoinTransform = leftCoin;
+            LeftCoinGameUiSpawnRotation = leftCoin.rotation;
+        }
+
+        if (rightCoin != null)
+        {
+            RightCoinTransform = rightCoin;
+            RightCoinGameUiSpawnRotation = rightCoin.rotation;
+        }
+    }
 
     static bool _sceneSetupApplied;
 
@@ -27,8 +45,8 @@ public class OnboardingSceneBootstrap : MonoBehaviour
     {
         _sceneSetupApplied = false;
         CenterCoinTransform = null;
-        SideCoinLeftTransform = null;
-        SideCoinRightTransform = null;
+        LeftCoinTransform = null;
+        RightCoinTransform = null;
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -40,7 +58,6 @@ public class OnboardingSceneBootstrap : MonoBehaviour
         }
 
         EnsureSceneSetup();
-        WireSkipButton();
 
         if (FindFirstObjectByType<OnboardingSceneBootstrap>() != null)
         {
@@ -60,49 +77,6 @@ public class OnboardingSceneBootstrap : MonoBehaviour
         }
 
         EnsureSceneSetup();
-        WireSkipButton();
-    }
-
-    void Start()
-    {
-        WireSkipButton();
-    }
-
-    public static void SkipToExercise()
-    {
-        OnboardingProgress.MarkCompleted();
-        MainMenuClickSound.Play();
-        SceneManager.LoadScene(GameSceneNames.Exercise);
-    }
-
-    public static void WireSkipButton()
-    {
-        if (!IsOnboardingScene(SceneManager.GetActiveScene().name))
-        {
-            return;
-        }
-
-        GameObject skipObject = FindSkipButtonObject();
-        if (skipObject == null)
-        {
-            return;
-        }
-
-        skipObject.transform.SetAsLastSibling();
-
-        if (skipObject.GetComponent<OnboardingSkipButton>() == null)
-        {
-            skipObject.AddComponent<OnboardingSkipButton>();
-        }
-
-        Button button = skipObject.GetComponent<Button>();
-        if (button == null)
-        {
-            return;
-        }
-
-        button.onClick.RemoveListener(SkipToExercise);
-        button.onClick.AddListener(SkipToExercise);
     }
 
     public static void EnsureSceneSetup()
@@ -122,8 +96,17 @@ public class OnboardingSceneBootstrap : MonoBehaviour
         DestroyIfExists("Kale_P");
         DestroyIfExists("OpponentBot");
 
-        DeactivateIfExists("Coin_P1");
-        DeactivateIfExists("Coin_P3");
+        // Yan coinler Aşama 8'e kadar kapalı; GameUI açılış pozisyonları saklanır.
+        if (LeftCoinTransform != null)
+        {
+            LeftCoinTransform.gameObject.SetActive(false);
+        }
+
+        if (RightCoinTransform != null)
+        {
+            RightCoinTransform.gameObject.SetActive(false);
+        }
+
         DeactivateIfExists("InvalidMove");
     }
 
@@ -132,19 +115,54 @@ public class OnboardingSceneBootstrap : MonoBehaviour
 
     static void CacheCoinSpawnPoses()
     {
-        CenterCoinTransform = FindActiveCoinTransform("Coin_P2");
-        SideCoinLeftTransform = FindActiveCoinTransform("Coin_P1");
-        SideCoinRightTransform = FindActiveCoinTransform("Coin_P3");
-
+        CenterCoinTransform = FindCoinTransform("Coin_P2");
         (CenterCoinSpawnPosition, CenterCoinSpawnRotation) = ReadCoinPose(CenterCoinTransform);
-        (SideCoinLeftSpawnPosition, SideCoinLeftSpawnRotation) = ReadCoinPose(SideCoinLeftTransform);
-        (SideCoinRightSpawnPosition, SideCoinRightSpawnRotation) = ReadCoinPose(SideCoinRightTransform);
+
+        LeftCoinTransform = FindCoinTransform("Coin_P1");
+        RightCoinTransform = FindCoinTransform("Coin_P3");
+
+        if (LeftCoinTransform != null)
+        {
+            LeftCoinGameUiSpawnRotation = LeftCoinTransform.rotation;
+        }
+
+        if (RightCoinTransform != null)
+        {
+            RightCoinGameUiSpawnRotation = RightCoinTransform.rotation;
+        }
     }
 
-    static Transform FindActiveCoinTransform(string objectName)
+    /// <summary>
+    /// Coin_P1 / Coin_P3 sahnede kapalı başlayabilir; inactive dahil aranır.
+    /// </summary>
+    static Transform FindCoinTransform(string objectName)
     {
-        GameObject coinObject = GameObject.Find(objectName);
-        return coinObject != null ? coinObject.transform : null;
+        GameObject active = GameObject.Find(objectName);
+        if (active != null)
+        {
+            return active.transform;
+        }
+
+        Transform[] transforms = Object.FindObjectsByType<Transform>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            Transform candidate = transforms[i];
+            if (candidate == null || candidate.name != objectName)
+            {
+                continue;
+            }
+
+            if (!candidate.gameObject.scene.IsValid())
+            {
+                continue;
+            }
+
+            return candidate;
+        }
+
+        return null;
     }
 
     static (Vector3 position, Quaternion rotation) ReadCoinPose(Transform coinTransform)
@@ -159,45 +177,19 @@ public class OnboardingSceneBootstrap : MonoBehaviour
 
     static void DestroyIfExists(string objectName)
     {
-        GameObject target = GameObject.Find(objectName);
+        Transform target = FindCoinTransform(objectName);
         if (target != null)
         {
-            Object.Destroy(target);
+            Object.Destroy(target.gameObject);
         }
     }
 
     static void DeactivateIfExists(string objectName)
     {
-        GameObject target = GameObject.Find(objectName);
+        Transform target = FindCoinTransform(objectName);
         if (target != null)
         {
-            target.SetActive(false);
+            target.gameObject.SetActive(false);
         }
-    }
-
-    static GameObject FindSkipButtonObject()
-    {
-        GameObject direct = GameObject.Find("skip");
-        if (direct != null)
-        {
-            return direct;
-        }
-
-        GameObject canvas = GameObject.Find("Canvas");
-        if (canvas == null)
-        {
-            return null;
-        }
-
-        Transform[] children = canvas.GetComponentsInChildren<Transform>(true);
-        for (int i = 0; i < children.Length; i++)
-        {
-            if (children[i].name == "skip")
-            {
-                return children[i].gameObject;
-            }
-        }
-
-        return null;
     }
 }

@@ -143,12 +143,29 @@ public class GameRulesManager : MonoBehaviour
     /// </summary>
     public void PrepareForPostTutorialOpeningShot()
     {
+        PrepareForPostTutorialOpeningShot(null);
+    }
+
+    /// <summary>
+    /// <paramref name="openingCoin"/> verilirse X-ortası tahmini yerine bu coin açılış coin'i olur.
+    /// Onboarding Aşama 8+: yan coinler önde olduğu için X-ortası yanlışlıkla yan coin seçebilir.
+    /// </summary>
+    public void PrepareForPostTutorialOpeningShot(CoinIdentity openingCoin)
+    {
+        _guidedPlayableCoin = null;
         _playerShotNumber = 1;
         _isFirstPlayerMove = true;
         _isOpeningShot = false;
         GateIndicator.Instance?.Hide();
         CacheInitialPositions();
         DiscoverPlayerCoins();
+
+        if (openingCoin != null)
+        {
+            _openingCoin = openingCoin;
+        }
+
+        ApplyOpeningRestrictions();
     }
 
     /// <summary>
@@ -352,6 +369,14 @@ public class GameRulesManager : MonoBehaviour
         if (_guidedPlayableCoin != null && coin != _guidedPlayableCoin)
         {
             return false;
+        }
+
+        // Onboarding Aşama 1–8: yan coinler ortaya çıkınca X-ortası tahmini yanlış opening coin
+        // seçebiliyor; pasif olmayan oyuncu coin'i seçilebilir kalsın.
+        if (OnboardingGuideController.Instance != null
+            && OnboardingGuideController.Instance.ShouldSuppressInvalidMoveRules)
+        {
+            return true;
         }
 
         if (_isFirstPlayerMove && _openingCoin != null && coin != _openingCoin)
@@ -621,6 +646,24 @@ public class GameRulesManager : MonoBehaviour
 
         if (scoredGoal)
         {
+            OnboardingGuideController onboarding = OnboardingGuideController.Instance;
+            if (onboarding != null && onboarding.ShouldTreatGoalAsStageEightGateSuccess)
+            {
+                _resolvingShotCoin = null;
+                _shotCoin = null;
+                _isResolvingMove = false;
+                _resolveRoutine = null;
+                if (_pendingGoalFreeze)
+                {
+                    UnfreezeAllRoundCoins();
+                }
+
+                GateIndicator.Instance?.Hide();
+                onboarding.NotifyStageEightGateSuccess();
+                UnlockAllPlayerCoins();
+                yield break;
+            }
+
             if (!TryBeginGoalSequence(cancelActiveResolve: false))
             {
                 _resolvingShotCoin = null;
