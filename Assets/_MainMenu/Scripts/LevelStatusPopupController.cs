@@ -21,6 +21,7 @@ public class LevelStatusPopupController : MonoBehaviour
 
     private RectTransform rectTransform;
     private ScrollRect scrollRect;
+    private LevelStatusListPresenter levelListPresenter;
     private float closedY;
     private float openY;
     private Coroutine animationCoroutine;
@@ -92,6 +93,7 @@ public class LevelStatusPopupController : MonoBehaviour
         ResolveButtons();
         WireOpenCloseButtons();
         EnsureScrollSetup();
+        EnsureLevelListPresenter();
     }
 
     void ResolveSlidePanel()
@@ -278,6 +280,21 @@ public class LevelStatusPopupController : MonoBehaviour
         scrollRect.scrollSensitivity = scrollSensitivity;
     }
 
+    void EnsureLevelListPresenter()
+    {
+        Transform wrapper = FindDeepChild(transform, "Wrapper");
+        if (wrapper == null)
+        {
+            return;
+        }
+
+        levelListPresenter = wrapper.GetComponent<LevelStatusListPresenter>();
+        if (levelListPresenter == null)
+        {
+            levelListPresenter = wrapper.gameObject.AddComponent<LevelStatusListPresenter>();
+        }
+    }
+
     static RectTransform CreateScrollContent(RectTransform viewport)
     {
         var content = new GameObject("Content", typeof(RectTransform)).GetComponent<RectTransform>();
@@ -404,6 +421,7 @@ public class LevelStatusPopupController : MonoBehaviour
 
         Canvas.ForceUpdateCanvases();
         ResetScrollToTop();
+        levelListPresenter?.Refresh();
         PrepareClosedState();
         yield return AnimateTo(openY, deactivateOnComplete: false);
         animationCoroutine = null;

@@ -7501,7 +7501,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 992700845}
-  - component: {fileID: 992700846}
+  - component: {fileID: 992700847}
   m_Layer: 5
   m_Name: HukmenMaglup
   m_TagString: Untagged
@@ -7532,7 +7532,7 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &992700846
+--- !u!114 &992700847
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -7541,57 +7541,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 992700844}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b4e8f2c91d3a4e6f8a1b0c5d7e9f2a3b, type: 3}
+  m_Script: {fileID: 11500000, guid: a7c4e91b2d8f4a6e9b0c1d2e3f4a5b6c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ResultPanelController
-  loop: 0
-  won: 0
-  lost: 0
-  draw: 0
-  wonSprites:
-    icon: {fileID: 21300000, guid: d2cf2252d84174c11a805e4e512615f3, type: 3}
-    p1: {fileID: 21300000, guid: 05d1643ca73cf481498b7f954787f99f, type: 3}
-    p2: {fileID: 21300000, guid: 179a3d91f375442ce9d741383750c50f, type: 3}
-    p3: {fileID: 21300000, guid: e421d3db4e472485299324efabd52c42, type: 3}
-    resultLabel: {fileID: 21300000, guid: 9512c862a6c64416cbf11562a2a6b051, type: 3}
-  lostSprites:
-    icon: {fileID: 21300000, guid: b44c3fbbe7d9e422f837cb024085e4f0, type: 3}
-    p1: {fileID: 21300000, guid: 7a6a450d3e9e8426c966a7e5480e8b36, type: 3}
-    p2: {fileID: 21300000, guid: 9093f0a94d78340d1a0dd959fce9c93b, type: 3}
-    p3: {fileID: 21300000, guid: 76c4e9a83f47e4e06bea5f7431480615, type: 3}
-    resultLabel: {fileID: 21300000, guid: 0c26bf7ac527c48e4ae63d02fa9ecc81, type: 3}
-  drawSprites:
-    icon: {fileID: 21300000, guid: 4bfcedd4170e748ac90ffabf5e04d0c5, type: 3}
-    p1: {fileID: 21300000, guid: d572b4ca198774f09a1d6a548e4c72c6, type: 3}
-    p2: {fileID: 21300000, guid: 4183992f97270494799ef6f88e8ca12d, type: 3}
-    p3: {fileID: 21300000, guid: 47357afab83014e418b4bf895af3b000, type: 3}
-    resultLabel: {fileID: 21300000, guid: aa9da33933fdd4e11b248e70adda704d, type: 3}
-  resultLabel: {fileID: 0}
-  people: {fileID: 0}
-  icon: {fileID: 0}
-  p1: {fileID: 0}
-  p2: {fileID: 0}
-  p3: {fileID: 0}
-  buttons: {fileID: 1966685739}
-  confetti: {fileID: 0}
-  continueButton: {fileID: 1918266255}
-  adButton: {fileID: 0}
-  leagueStatusPanel: {fileID: 585451193}
-  rewards: {fileID: 0}
-  rewardCoins: {fileID: 0}
-  rewardXp: {fileID: 0}
-  earnedCoinsLabel: {fileID: 0}
-  earnedXpLabel: {fileID: 0}
-  rewardsEntryOffset: 50
-  rewardsDuration: 0.5
-  labelDuration: 0.55
-  peopleScaleDuration: 0.3
-  iconMoveDuration: 0.5
-  resultHoldDuration: 0.5
-  wonRewardsExtraDelay: 1
-  continueDelay: 1
-  continueDuration: 0.5
-  offscreenPadding: 120
+  m_EditorClassIdentifier: Assembly-CSharp::HukmenMaglupController
+  _continueButton: {fileID: 1918266255}
 --- !u!1 &996338542
 GameObject:
   m_ObjectHideFlags: 0

@@ -27,6 +27,9 @@ public class LeagueUpdateController : MonoBehaviour
 
     const float StartScale = 0.1f;
 
+    bool _showRewardSection = true;
+    bool _playCelebrationEffects = true;
+
     RectTransform _canvasRect;
     Vector2 _updateRestPosition;
     Vector2 _claimFinalPosition;
@@ -69,6 +72,34 @@ public class LeagueUpdateController : MonoBehaviour
         }
 
         _burstPlayer.Clear();
+    }
+
+    public event Action Dismissed;
+
+    public void ConfigureForSeasonResult(bool promoted, int league)
+    {
+        ResolveReferences();
+        _showRewardSection = promoted;
+        _playCelebrationEffects = promoted;
+    }
+
+    public void OnClaimClicked()
+    {
+        MainMenuClickSound.Play();
+
+        if (SceneManager.GetActiveScene().name == GameSceneNames.MainMenu)
+        {
+            Dismiss();
+            return;
+        }
+
+        ClaimToMainMenu();
+    }
+
+    public void Dismiss()
+    {
+        gameObject.SetActive(false);
+        Dismissed?.Invoke();
     }
 
     public void ClaimToMainMenu()
@@ -115,7 +146,7 @@ public class LeagueUpdateController : MonoBehaviour
         _canvasRect = GetComponentInParent<Canvas>()?.GetComponent<RectTransform>();
         PrepareInitialState();
 
-        bool startsIntro = _particleBurst != null || _update != null;
+        bool startsIntro = _playCelebrationEffects && (_particleBurst != null || _update != null);
         if (startsIntro)
         {
             LevelUpSound.Play();
@@ -124,7 +155,7 @@ public class LeagueUpdateController : MonoBehaviour
         Coroutine burstRoutine = null;
         Coroutine updateRoutine = null;
 
-        if (_particleBurst != null)
+        if (_playCelebrationEffects && _particleBurst != null)
         {
             EnsureBurstMask();
             _burstPlayer.Prepare(_particleBurst, _burstSettings);
@@ -134,34 +165,42 @@ public class LeagueUpdateController : MonoBehaviour
         if (_update != null)
         {
             _update.gameObject.SetActive(true);
-            _update.localScale = Vector3.one * StartScale;
 
-            if (_flare != null)
+            if (_playCelebrationEffects)
             {
-                _flare.localScale = Vector3.one;
-                _flareRoutine = StartCoroutine(FlarePulseLoop());
-            }
+                _update.localScale = Vector3.one * StartScale;
 
-            updateRoutine = StartCoroutine(
-                AnimateScale(_update, Vector3.one * StartScale, Vector3.one, _scaleDuration));
+                if (_flare != null)
+                {
+                    _flare.localScale = Vector3.one;
+                    _flareRoutine = StartCoroutine(FlarePulseLoop());
+                }
+
+                updateRoutine = StartCoroutine(
+                    AnimateScale(_update, Vector3.one * StartScale, Vector3.one, _scaleDuration));
+            }
+            else
+            {
+                _update.localScale = Vector3.one;
+            }
         }
 
         yield return WaitForAll(burstRoutine, updateRoutine);
 
-        if (_postIntroDelay > 0f)
+        if (_postIntroDelay > 0f && _playCelebrationEffects)
         {
             yield return new WaitForSeconds(_postIntroDelay);
         }
 
         Coroutine updateMoveRoutine = null;
-        if (_update != null)
+        if (_playCelebrationEffects && _update != null)
         {
             Vector2 moveTarget = GetUpdateMoveUpTarget();
             updateMoveRoutine = StartCoroutine(
                 AnimatePosition(_update, _updateRestPosition, moveTarget, _updateMoveDuration));
         }
 
-        if (_coinsClaimDelay > 0f)
+        if (_coinsClaimDelay > 0f && _showRewardSection)
         {
             yield return new WaitForSeconds(_coinsClaimDelay);
         }
@@ -169,7 +208,7 @@ public class LeagueUpdateController : MonoBehaviour
         Coroutine coinsRoutine = null;
         Coroutine claimRoutine = null;
 
-        if (_coins != null)
+        if (_showRewardSection && _coins != null)
         {
             _coins.gameObject.SetActive(true);
             _coins.localScale = Vector3.one * StartScale;
@@ -180,10 +219,17 @@ public class LeagueUpdateController : MonoBehaviour
         if (_claimButton != null)
         {
             _claimButton.gameObject.SetActive(true);
-            Vector2 claimStart = GetClaimStartPosition();
-            _claimButton.anchoredPosition = claimStart;
-            claimRoutine = StartCoroutine(
-                AnimatePosition(_claimButton, claimStart, _claimFinalPosition, _claimDuration));
+            if (_showRewardSection)
+            {
+                Vector2 claimStart = GetClaimStartPosition();
+                _claimButton.anchoredPosition = claimStart;
+                claimRoutine = StartCoroutine(
+                    AnimatePosition(_claimButton, claimStart, _claimFinalPosition, _claimDuration));
+            }
+            else
+            {
+                _claimButton.anchoredPosition = _claimFinalPosition;
+            }
         }
 
         yield return WaitForAll(updateMoveRoutine, coinsRoutine, claimRoutine);
