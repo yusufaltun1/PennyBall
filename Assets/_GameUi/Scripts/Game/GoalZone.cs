@@ -120,6 +120,12 @@ public class GoalZone : MonoBehaviour
         }
         else if (_goalOwner == CoinTeam.Player && coin.Team == CoinTeam.Opponent)
         {
+            // Online'da rakip golü Photon RPC ile gelir; lokal bot path kapalı.
+            if (OnlineMatchSession.IsOnlineMatch || MatchSessionContext.IsOnlineMatch)
+            {
+                return;
+            }
+
             OpponentBotController.Instance?.NotifyGoalEntered(coin);
         }
     }

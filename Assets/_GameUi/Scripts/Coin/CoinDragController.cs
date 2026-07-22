@@ -732,13 +732,18 @@ public class CoinDragController : MonoBehaviour
 
     public bool TryGetAimLaunchDirection(out Vector3 launchDirection)
     {
+        return TryGetAimLaunchData(out launchDirection, out _);
+    }
+
+    public bool TryGetAimLaunchData(out Vector3 launchDirection, out float pullDistance)
+    {
         launchDirection = Vector3.zero;
+        pullDistance = 0f;
         if (!_isAiming)
         {
             return false;
         }
 
-        float pullDistance;
         return TryGetLaunchData(out launchDirection, out pullDistance);
     }
 

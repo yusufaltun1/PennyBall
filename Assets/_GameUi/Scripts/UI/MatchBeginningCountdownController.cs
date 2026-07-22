@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class MatchBeginningCountdownController : MonoBehaviour
@@ -24,6 +25,8 @@ public class MatchBeginningCountdownController : MonoBehaviour
     AudioSource _audioSource;
     Coroutine _routine;
     Vector3 _counterBaseScale = Vector3.one;
+    CanvasGroup _canvasGroup;
+    GameObject _overlayObject;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void ResetStaticState()
@@ -41,11 +44,6 @@ public class MatchBeginningCountdownController : MonoBehaviour
         {
             _counterBaseScale = _counterImage.rectTransform.localScale;
         }
-
-        if (_beginningRoot != null)
-        {
-            _beginningRoot.SetActive(true);
-        }
     }
 
     void Start()
@@ -59,7 +57,125 @@ public class MatchBeginningCountdownController : MonoBehaviour
         _audioSource.playOnAwake = false;
         _audioSource.spatialBlend = 0f;
 
-        _routine = StartCoroutine(CountdownRoutine());
+        _routine = StartCoroutine(RunCountdownFlow());
+    }
+
+    IEnumerator RunCountdownFlow()
+    {
+        if (ShouldWaitForOnlineOpponent())
+        {
+            // Overlay AÇIK: Create/Join gibi 2. oyuncu gelmeden 3-2-1 yok.
+            IsActive = true;
+            SetWaitingForOpponentUi();
+            Debug.Log("[Countdown] Online — rakip / MatchStart bekleniyor...");
+
+            float waited = 0f;
+            const float timeoutSeconds = 90f;
+            float nextReadyAt = 0f;
+            while (!OnlineMatchSession.MatchPlayAuthorized && waited < timeoutSeconds)
+            {
+                // Photon join başarısız / online flag düştü → bekleme bitir (bot/offline)
+                if (!PendingPhotonSession.HasPending
+                    && !OnlineMatchSession.IsOnlineMatch
+                    && !MatchSessionContext.IsOnlineMatch)
+                {
+                    Debug.LogWarning("[Countdown] Online oturum yok — countdown'a geçiliyor.");
+                    break;
+                }
+
+                // Her iki client Ready gönderir → host MatchStart RPC → Authorize
+                if (waited >= nextReadyAt)
+                {
+                    nextReadyAt = waited + 0.5f;
+                    MatchShotNetworkRelay.Instance?.TrySendClientReady();
+                }
+
+                yield return null;
+                waited += Time.unscaledDeltaTime;
+            }
+
+            if (!OnlineMatchSession.MatchPlayAuthorized
+                && (OnlineMatchSession.IsOnlineMatch || MatchSessionContext.IsOnlineMatch))
+            {
+                // Eski bug: timeout'ta tek başına Authorize → 3-2-1 + oynanabilir maç.
+                Debug.LogWarning("[Countdown] Rakip gelmedi — MainMenu'ye dönülüyor.");
+                IsActive = false;
+                SetBeginningPanelVisible(false);
+                OnlineMatchSession.Clear();
+                PendingPhotonSession.Clear();
+                MatchSessionContext.SetOnlineMatch(false, null, null);
+                SceneManager.LoadScene(GameSceneNames.MainMenu);
+                yield break;
+            }
+
+            SetBeginningPanelVisible(true);
+            Debug.Log("[Countdown] 3-2-1 başlıyor.");
+        }
+
+        yield return CountdownRoutine();
+    }
+
+    /// <summary>Rakip beklerken karartma açık, 3-2-1 sayacı kapalı.</summary>
+    void SetWaitingForOpponentUi()
+    {
+        EnsureCanvasGroup();
+
+        _canvasGroup.alpha = 1f;
+        _canvasGroup.blocksRaycasts = true;
+        _canvasGroup.interactable = true;
+
+        if (_overlayObject != null)
+        {
+            _overlayObject.SetActive(true);
+        }
+
+        if (_counterImage != null)
+        {
+            _counterImage.gameObject.SetActive(false);
+        }
+    }
+
+    void EnsureCanvasGroup()
+    {
+        if (_canvasGroup == null)
+        {
+            _canvasGroup = GetComponent<CanvasGroup>();
+        }
+
+        if (_canvasGroup == null)
+        {
+            _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+        }
+    }
+
+    static bool ShouldWaitForOnlineOpponent()
+    {
+        return MatchSessionContext.IsOnlineMatch
+            || OnlineMatchSession.IsOnlineMatch
+            || PendingPhotonSession.HasPending;
+    }
+
+    /// <summary>
+    /// Beginning paneli (Overlay karartma + Sayac). GameObject.SetActive(false) YOK —
+    /// coroutine bu objede çalışıyor.
+    /// </summary>
+    void SetBeginningPanelVisible(bool visible)
+    {
+        EnsureCanvasGroup();
+
+        _canvasGroup.alpha = visible ? 1f : 0f;
+        _canvasGroup.blocksRaycasts = visible;
+        _canvasGroup.interactable = visible;
+
+        if (_counterImage != null)
+        {
+            _counterImage.gameObject.SetActive(visible);
+        }
+
+        if (_overlayObject != null)
+        {
+            _overlayObject.SetActive(visible);
+        }
     }
 
     void OnDestroy()
@@ -78,14 +194,22 @@ public class MatchBeginningCountdownController : MonoBehaviour
 
     void ResolveReferences()
     {
-        if (_beginningRoot == null)
+        _canvasGroup = GetComponent<CanvasGroup>();
+
+        Transform overlay = transform.Find("Overlay");
+        if (overlay != null)
         {
-            _beginningRoot = gameObject;
+            _overlayObject = overlay.gameObject;
         }
 
-        if (_counterImage == null && _beginningRoot != null)
+        if (_counterImage == null)
         {
-            Transform sayac = _beginningRoot.transform.Find("Sayac");
+            Transform sayac = transform.Find("Sayac");
+            if (sayac == null && _beginningRoot != null)
+            {
+                sayac = _beginningRoot.transform.Find("Sayac");
+            }
+
             if (sayac != null)
             {
                 _counterImage = sayac.GetComponent<Image>();
@@ -226,10 +350,7 @@ public class MatchBeginningCountdownController : MonoBehaviour
 
     void HideBeginning()
     {
-        if (_beginningRoot != null)
-        {
-            _beginningRoot.SetActive(false);
-        }
+        SetBeginningPanelVisible(false);
     }
 
     static float EaseOutBack(float t)

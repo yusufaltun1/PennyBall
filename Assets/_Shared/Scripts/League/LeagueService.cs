@@ -281,21 +281,73 @@ public class LeagueService : MonoBehaviour
             (coins, xp) = WalletService.GetReward(result);
         }
 
+        bool isOnline = MatchSessionContext.IsOnlineMatch || OnlineMatchSession.IsOnlineMatch;
+        bool deferWalletToNakama = isOnline
+            && OnlineWalletService.UseOnlineWallet
+            && NetworkBootstrap.Instance?.Auth != null
+            && NetworkBootstrap.Instance.Auth.IsAuthenticated;
+
         int levelBefore = WalletService.Level;
-        if (coins > 0 || xp > 0)
+        if (!deferWalletToNakama && (coins > 0 || xp > 0))
         {
             WalletService.AddReward(coins, xp);
         }
 
-        MatchSessionContext.SetEarnedRewards(coins, xp, levelBefore, WalletService.Level);
-        MatchSessionContext.SetPendingBoosterUnlock(
-            BoosterConfig.GetUnlockReachedOnLevelUp(levelBefore, WalletService.Level));
+        // UI için provisional; Nakama yanıtı gelince totals/granted güncellenir.
+        MatchSessionContext.SetEarnedRewards(coins, xp, levelBefore,
+            deferWalletToNakama ? levelBefore : WalletService.Level);
+        if (!deferWalletToNakama)
+        {
+            MatchSessionContext.SetPendingBoosterUnlock(
+                BoosterConfig.GetUnlockReachedOnLevelUp(levelBefore, WalletService.Level));
+        }
 
         LeagueRepository.Save(_save);
         StandingsUpdated?.Invoke();
         MatchResultRegistered?.Invoke(result, abandonReason, matchId, durationSeconds);
         MatchAdTracker.RegisterMatchCompleted();
+
+        if (isOnline)
+        {
+            MatchResultSubmitter.SubmitFromLocalMatch(
+                result,
+                durationSeconds,
+                abandonReason,
+                deferWalletToNakama,
+                levelBefore);
+        }
+
         return true;
+    }
+
+    /// <summary>
+    /// Nakama league player_stats → local oyuncu satırı (absolute).
+    /// Online-only sezonlarda kullan; bot ligiyle karıştırmayın.
+    /// </summary>
+    public void ApplyOnlinePlayerStats(int played, int wins, int draws, int points)
+    {
+        if (_save == null)
+        {
+            return;
+        }
+
+        LeagueStandingEntry player = FindPlayerStanding();
+        if (player == null)
+        {
+            return;
+        }
+
+        player.played = Mathf.Max(0, played);
+        player.wins = Mathf.Max(0, wins);
+        player.draws = Mathf.Max(0, draws);
+        player.points = Mathf.Max(0, points);
+        player.lastPlayedUtcTicks = DateTime.UtcNow.Ticks;
+        _save.playerTotalMatches = player.played;
+
+        SortStandings();
+        MatchSessionContext.SetRankAfter(FindPlayerRankInArray());
+        LeagueRepository.Save(_save);
+        StandingsUpdated?.Invoke();
     }
 
     // Sort tetiklemeden mevcut dizi sırasından rank döndürür

@@ -138,6 +138,23 @@ public class CoinInputHandler : MonoBehaviour
             CoinDragController releasedCoin = _activeCoin;
             CoinIdentity identity = releasedCoin.GetComponent<CoinIdentity>();
 
+            bool isOnline = OnlineMatchSession.IsOnlineMatch
+                || MatchSessionContext.IsOnlineMatch
+                || OnlineMatchSession.Channel != null;
+            if (isOnline
+                && identity != null
+                && releasedCoin.TryGetAimLaunchData(out Vector3 launchDir, out float pullDistance))
+            {
+                if (OnlineShotBridge.Instance == null)
+                {
+                    Debug.LogWarning("[OnlineShot] OnlineShotBridge.Instance null — shot gönderilmedi.");
+                }
+                else
+                {
+                    OnlineShotBridge.Instance.CaptureLocalShot(identity, launchDir, pullDistance);
+                }
+            }
+
             releasedCoin.ReleaseAim();
             GateIndicator.Instance?.Hide();
 

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc815c2690ba45b2aca6b6aa071fa57d, type: 3}
+  m_Name: NetworkConfig
+  m_EditorClassIdentifier: 
+  scheme: http
+  host: 127.0.0.1
+  port: 7350
+  serverKey: defaultkey
+  matchmakingTimeoutSeconds: 45
+  matchmakerMinCount: 2
+  matchmakerMaxCount: 2
+  matchmakerQuery: '*'
+  photonFusionAppId: 038975f7-44f7-4eda-a0bc-08a9d3cc124a
+  photonRegion: 
+  autoAuthenticateOnBoot: 1
+  logVerbose: 1

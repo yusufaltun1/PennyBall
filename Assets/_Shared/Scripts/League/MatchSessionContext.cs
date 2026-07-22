@@ -5,6 +5,10 @@ public static class MatchSessionContext
     public static BotPlayerEntry CurrentOpponent => _currentOpponent;
     public static bool HasOpponent => _currentOpponent != null;
 
+    public static bool IsOnlineMatch { get; private set; }
+    public static string OnlineOpponentUserId { get; private set; }
+    public static string OnlineMatchId { get; private set; }
+
     public static int RankBefore  { get; private set; } = -1;
     public static int RankAfter   { get; private set; } = -1;
     public static int EarnedCoins { get; private set; } = 0;
@@ -16,6 +20,13 @@ public static class MatchSessionContext
     public static int PlayerGoalsAtEnd   { get; private set; }
     public static int OpponentGoalsAtEnd { get; private set; }
     public static BoosterType? PendingBoosterUnlock { get; private set; }
+
+    public static void SetOnlineMatch(bool isOnline, string opponentUserId, string matchId)
+    {
+        IsOnlineMatch = isOnline;
+        OnlineOpponentUserId = opponentUserId;
+        OnlineMatchId = matchId;
+    }
 
     public static void SetPendingBoosterUnlock(BoosterType? boosterType)
     {
@@ -67,6 +78,9 @@ public static class MatchSessionContext
     public static void Clear()
     {
         _currentOpponent = null;
+        IsOnlineMatch = false;
+        OnlineOpponentUserId = null;
+        OnlineMatchId = null;
         RankBefore  = -1;
         RankAfter   = -1;
         EarnedCoins = 0;
@@ -76,5 +90,6 @@ public static class MatchSessionContext
         PlayerGoalsAtEnd   = 0;
         OpponentGoalsAtEnd = 0;
         PendingBoosterUnlock = null;
+        OnlineMatchSession.Clear();
     }
 }

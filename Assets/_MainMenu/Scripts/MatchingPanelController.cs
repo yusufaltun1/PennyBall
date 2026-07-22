@@ -315,36 +315,120 @@ public class MatchingPanelController : MonoBehaviour
         if (findingText != null)
         {
             findingText.fontSize = 64f;
-            findingText.text = "Finding a match...";
+            findingText.text = OnlineFeatureFlags.OnlineMatchmakingEnabled
+                ? "Finding a match..."
+                : "Finding opponent...";
         }
     }
 
     private IEnumerator DoMatchmakingSequence()
     {
-        // Gerçek rakibi seç — MatchSessionContext'e de otomatik yazılır
-        BotPlayerEntry opponent = LeagueService.Instance?.PickOpponentForNextMatch();
-
         IReadOnlyList<BotPlayerEntry> shufflePool = GetShufflePool();
 
         yield return SlidePanelUp();
 
         isShuffling = true;
 
-        float shuffleElapsed = 0f;
-        while (shuffleElapsed < 3.0f)
+        // Online matchmaking (flag açıksa) — UI shuffle ile paralel
+        MatchmakingResult matchResult = null;
+        bool matchmakingDone = false;
+        if (OnlineFeatureFlags.OnlineMatchmakingEnabled)
         {
-            shuffleElapsed += 0.25f;
-            ShowRandomBotFromPool(shufflePool);
-            yield return new WaitForSeconds(0.25f);
+            ResolveOnlineOpponentAsync(result =>
+            {
+                matchResult = result;
+                matchmakingDone = true;
+            });
+        }
+        else
+        {
+            BotPlayerEntry bot = LeagueService.Instance?.PickOpponentForNextMatch();
+            if (bot != null)
+            {
+                MatchSessionContext.SetOpponent(bot);
+                MatchSessionContext.SetOnlineMatch(false, null, null);
+            }
+
+            matchResult = MatchmakingResult.BotFallback(bot, "flag_disabled");
+            matchmakingDone = true;
         }
 
-        isShuffling = false;
+        // Avatar shuffle + loop dönmesi: eşleşme bitene kadar sürer (min 3 sn).
+        // Eşleşince isShuffling=false → dönme durur, final avatar kilitlenir.
+        const float minShuffleSeconds = 3f;
+        const float maxShuffleSeconds = 60f;
+        float shuffleElapsed = 0f;
+        while (true)
+        {
+            ShowRandomBotFromPool(shufflePool);
+            yield return new WaitForSeconds(0.25f);
+            shuffleElapsed += 0.25f;
 
-        loopImage?.gameObject.SetActive(false);
+            bool minTimeReached = shuffleElapsed >= minShuffleSeconds;
+            if (minTimeReached && matchmakingDone)
+            {
+                break;
+            }
+
+            if (shuffleElapsed >= maxShuffleSeconds)
+            {
+                break;
+            }
+        }
+
+        // Hâlâ bitmediyse bot fallback
+        if (!matchmakingDone)
+        {
+            matchResult = MatchmakingResult.BotFallback(
+                LeagueService.Instance?.PickOpponentForNextMatch(),
+                "ui_timeout");
+            if (matchResult.Source == MatchOpponentSource.Bot && MatchSessionContext.CurrentOpponent == null
+                && LeagueService.Instance != null)
+            {
+                BotPlayerEntry bot = LeagueService.Instance.PickOpponentForNextMatch();
+                MatchSessionContext.SetOpponent(bot);
+                MatchSessionContext.SetOnlineMatch(false, null, null);
+            }
+        }
+
+        // Eşleşti → dönme dursun, rakip avatarı kilitlensin.
+        isShuffling = false;
+        if (loopImage != null)
+        {
+            loopImage.rectTransform.localRotation = Quaternion.identity;
+            loopImage.gameObject.SetActive(false);
+        }
+
         findingObject?.SetActive(false);
 
-        // Shuffle bitti — gerçek rakibi kilitle
+        BotPlayerEntry opponent = MatchSessionContext.CurrentOpponent;
         ShowOpponent(opponent);
+
+        bool isHuman = matchResult != null && matchResult.Source == MatchOpponentSource.Human;
+        Debug.Log(
+            $"[Matching] Locked opponent='{opponent?.displayName}' " +
+            $"human={isHuman} room='{PendingPhotonSession.SessionName}'");
+
+        GameAnalytics.Track("matchmaking_completed", new Dictionary<string, string>
+        {
+            { "opponent_type", matchResult != null && matchResult.Source == MatchOpponentSource.Human ? "human" : "bot" },
+            { "timed_out", matchResult != null && matchResult.TimedOut ? "true" : "false" },
+            { "reason", matchResult?.FailReason ?? "" }
+        });
+
+        if (OnlineFeatureFlags.OnlineOnlyMatches
+            && (matchResult == null || !matchResult.Success || matchResult.Source != MatchOpponentSource.Human))
+        {
+            if (findingText != null)
+            {
+                findingText.text = "No opponent found";
+                findingObject?.SetActive(true);
+            }
+
+            isRunning = false;
+            matchmakingCoroutine = null;
+            yield break;
+        }
 
         yield return PlayVsRevealAnimation();
 
@@ -384,6 +468,20 @@ public class MatchingPanelController : MonoBehaviour
         matchmakingCoroutine = null;
 
         SceneManager.LoadScene(GameSceneNames.Game);
+    }
+
+    static async void ResolveOnlineOpponentAsync(System.Action<MatchmakingResult> onDone)
+    {
+        try
+        {
+            MatchmakingResult result = await OnlineMatchFlow.ResolveOpponentAsync();
+            onDone?.Invoke(result);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"[Matching] Online resolve failed: {ex.Message}");
+            onDone?.Invoke(MatchmakingResult.Fail(ex.Message));
+        }
     }
 
     private IReadOnlyList<BotPlayerEntry> GetShufflePool()

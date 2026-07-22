@@ -3,7 +3,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Oyuncu ve bot round reset'lerini bağlar. Sıra tabanlı geçiş yok — her iki taraf bağımsız oynar.
+/// Oyuncu ve bot/remote round reset'lerini bağlar.
+/// Online maçta bot kapatılır, RemoteOpponentController kullanılır.
 /// </summary>
 public class MatchTurnCoordinator : MonoBehaviour
 {
@@ -19,8 +20,29 @@ public class MatchTurnCoordinator : MonoBehaviour
             _enableOpponentBot = false;
         }
 
+        if (OnlineMatchSession.IsOnlineMatch
+            || MatchSessionContext.IsOnlineMatch
+            || PendingPhotonSession.HasPending)
+        {
+            _enableOpponentBot = false;
+            EnsureRemoteOpponent();
+            OpponentBotController.Instance?.DisableForOnlineMatch();
+        }
+
         GameRulesManager.Instance?.PrepareForNewMatch();
         StartCoroutine(StartOpponentWhenReady());
+    }
+
+    static void EnsureRemoteOpponent()
+    {
+        if (RemoteOpponentController.Instance != null)
+        {
+            RemoteOpponentController.Instance.OnMatchStarted();
+            return;
+        }
+
+        var go = new GameObject("RemoteOpponentController");
+        go.AddComponent<RemoteOpponentController>().OnMatchStarted();
     }
 
     IEnumerator StartOpponentWhenReady()

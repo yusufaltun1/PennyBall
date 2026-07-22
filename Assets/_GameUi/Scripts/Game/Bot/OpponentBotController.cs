@@ -82,7 +82,32 @@ public class OpponentBotController : MonoBehaviour
 
     void Start()
     {
+        if (IsOnlineMatchActive())
+        {
+            DisableForOnlineMatch();
+            return;
+        }
+
         ApplySessionOpponentDifficulty();
+    }
+
+    static bool IsOnlineMatchActive()
+    {
+        return MatchSessionContext.IsOnlineMatch
+            || OnlineMatchSession.IsOnlineMatch
+            || PendingPhotonSession.HasPending;
+    }
+
+    /// <summary>
+    /// Online / Photon test odasında bot'u tamamen kapatır (coroutine dahil).
+    /// </summary>
+    public void DisableForOnlineMatch()
+    {
+        StopPlayLoop();
+        ClearResolvingState();
+        _resumePlayPending = false;
+        enabled = false;
+        Debug.Log("[Bot] Online maç — bot kapatıldı.");
     }
 
 #if UNITY_EDITOR
@@ -194,6 +219,12 @@ public class OpponentBotController : MonoBehaviour
 
     public void ResetRoundState(bool isMatchOpening = false)
     {
+        if (IsOnlineMatchActive())
+        {
+            DisableForOnlineMatch();
+            return;
+        }
+
         StopPlayLoop();
         ClearResolvingState();
         _roundShotNumber = 1;

@@ -35,6 +35,27 @@ public class LeagueMatchController : MonoBehaviour
     public int OpponentGoals => _opponentGoals;
     public float MatchTimeRemaining => Mathf.Max(0f, _matchTimeRemaining);
     public bool IsMatchActive => _matchActive;
+    public bool IsMatchTimerPaused => _matchTimerPaused;
+
+    /// <summary>Online client: host'tan gelen süre (lokal decrement yok).</summary>
+    public void ApplyNetworkTimeRemaining(float remainingSeconds, bool paused)
+    {
+        if (!_matchActive || _matchReported)
+        {
+            return;
+        }
+
+        _matchTimeRemaining = Mathf.Max(0f, remainingSeconds);
+        _matchTimerPaused = paused;
+    }
+
+    static bool IsOnlineTimeFollower()
+    {
+        return OnlineMatchSession.IsOnlineMatch
+            && OnlineMatchSession.Channel != null
+            && OnlineMatchSession.Channel.IsConnected
+            && !OnlineMatchSession.Channel.IsHost;
+    }
 
     public bool AddMatchTime(float seconds)
     {
@@ -101,13 +122,14 @@ public class LeagueMatchController : MonoBehaviour
 
     void OnApplicationPause(bool paused)
     {
-        SetApplicationPaused(paused);
+        // TODO: hükmen mağlup geçici kapalı — multiplayer test / unfocus için.
+        // SetApplicationPaused(paused);
     }
 
     void OnApplicationFocus(bool hasFocus)
     {
-        // Mobilde bazen sadece focus gelir; pause(false) atlanabiliyor.
-        SetApplicationPaused(!hasFocus);
+        // TODO: hükmen mağlup geçici kapalı — multiplayer test / unfocus için.
+        // SetApplicationPaused(!hasFocus);
     }
 
     void SetApplicationPaused(bool paused)
@@ -121,37 +143,34 @@ public class LeagueMatchController : MonoBehaviour
         {
             _applicationPaused = true;
 
-            if (CanForfeitFromBackground())
-            {
-                _backgroundEnteredUtcTicks = DateTime.UtcNow.Ticks;
-                _backgroundTimeTracked = true;
-            }
+            // Hükmen mağlup (arka plan forfeit) geçici kapalı.
+            // if (CanForfeitFromBackground())
+            // {
+            //     _backgroundEnteredUtcTicks = DateTime.UtcNow.Ticks;
+            //     _backgroundTimeTracked = true;
+            // }
 
             return;
         }
 
         _applicationPaused = false;
 
-        if (CanForfeitFromBackground() && _backgroundTimeTracked)
-        {
-            _backgroundTimeTracked = false;
-            double elapsedSeconds = TimeSpan.FromTicks(DateTime.UtcNow.Ticks - _backgroundEnteredUtcTicks).TotalSeconds;
-
-            if (elapsedSeconds >= BackgroundForfeitThresholdSeconds)
-            {
-                // Debug.Log(
-                    // $"[Match] Arka plan {elapsedSeconds:F1}s (≥{BackgroundForfeitThresholdSeconds:F0}s) — " +
-                    // $"hükmen {BackgroundForfeitOpponentGoals}-{BackgroundForfeitPlayerGoals} mağlubiyet.");
-                ForfeitMatchFromBackground();
-                return;
-            }
-
-            // Debug.Log($"[Match] Arka plan {elapsedSeconds:F1}s — maç devam ediyor.");
-        }
-        else
-        {
-            _backgroundTimeTracked = false;
-        }
+        // if (CanForfeitFromBackground() && _backgroundTimeTracked)
+        // {
+        //     _backgroundTimeTracked = false;
+        //     double elapsedSeconds = TimeSpan.FromTicks(DateTime.UtcNow.Ticks - _backgroundEnteredUtcTicks).TotalSeconds;
+        //
+        //     if (elapsedSeconds >= BackgroundForfeitThresholdSeconds)
+        //     {
+        //         ForfeitMatchFromBackground();
+        //         return;
+        //     }
+        // }
+        // else
+        // {
+        //     _backgroundTimeTracked = false;
+        // }
+        _backgroundTimeTracked = false;
 
         if (!_matchActive || _matchReported)
         {
@@ -179,20 +198,23 @@ public class LeagueMatchController : MonoBehaviour
 
     void ForfeitMatchFromBackground()
     {
-        if (!CanForfeitFromBackground())
-        {
-            return;
-        }
+        // Hükmen mağlup geçici kapalı.
+        return;
 
-        _playerGoals = BackgroundForfeitPlayerGoals;
-        _opponentGoals = BackgroundForfeitOpponentGoals;
-        _matchTimeRemaining = 0f;
-        _matchTimerPaused = false;
-
-        StopMatchTimer();
-        MatchSessionTracker.MarkAbandon("background_forfeit");
-        ScoresChanged?.Invoke();
-        MatchTimerExpired?.Invoke();
+        // if (!CanForfeitFromBackground())
+        // {
+        //     return;
+        // }
+        //
+        // _playerGoals = BackgroundForfeitPlayerGoals;
+        // _opponentGoals = BackgroundForfeitOpponentGoals;
+        // _matchTimeRemaining = 0f;
+        // _matchTimerPaused = false;
+        //
+        // StopMatchTimer();
+        // MatchSessionTracker.MarkAbandon("background_forfeit");
+        // ScoresChanged?.Invoke();
+        // MatchTimerExpired?.Invoke();
     }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -221,8 +243,22 @@ public class LeagueMatchController : MonoBehaviour
         _matchTimerPaused = false;
         _applicationPaused = false;
         _backgroundTimeTracked = false;
-        MatchSessionContext.Clear();
+
+        // Online / Photon test odası: sahne yüklenmeden önce set edilen session'ı silme.
+        // Clear edilirse IsOnlineMatch kaybolur ve bot tekrar devreye girer.
+        if (!ShouldPreserveMatchSessionOnSceneLoad())
+        {
+            MatchSessionContext.Clear();
+        }
+
         ScoresChanged?.Invoke();
+    }
+
+    static bool ShouldPreserveMatchSessionOnSceneLoad()
+    {
+        return PendingPhotonSession.HasPending
+            || MatchSessionContext.IsOnlineMatch
+            || OnlineMatchSession.IsOnlineMatch;
     }
 
     static float GetConfiguredMatchDuration() =>
@@ -379,7 +415,10 @@ public class LeagueMatchController : MonoBehaviour
                     continue;
                 }
 
-                if (!_matchTimerPaused && !_applicationPaused)
+                // Online client: süre host'tan gelir, lokal düşürme (desync / 10sn geride kalma).
+                if (!IsOnlineTimeFollower()
+                    && !_matchTimerPaused
+                    && !_applicationPaused)
                 {
                     float delta = Mathf.Min(Time.unscaledDeltaTime, MaxTimerDeltaSeconds);
                     _matchTimeRemaining -= delta;
@@ -456,6 +495,19 @@ public class LeagueMatchController : MonoBehaviour
         }
 
         _opponentGoals++;
+        ScoresChanged?.Invoke();
+    }
+
+    /// <summary>Online: rakip gol attı (RPC) — skor + timer pause.</summary>
+    public void RegisterOpponentGoalFromNetwork()
+    {
+        if (!_matchActive || _matchReported)
+        {
+            return;
+        }
+
+        _opponentGoals++;
+        _matchTimerPaused = true;
         ScoresChanged?.Invoke();
     }
 

@@ -628,8 +628,15 @@ public class GameRulesManager : MonoBehaviour
                 yield break;
             }
 
-            // Debug.Log($"[GoalLine][Shot] GOL {coin.gameObject.name} | lineCrossed=true");
-            HandlePlayerGoalCelebration();
+            if (OnlineMatchSession.IsOnlineMatch || MatchSessionContext.IsOnlineMatch)
+            {
+                HandlePlayerGoalCelebrationOnline();
+            }
+            else
+            {
+                HandlePlayerGoalCelebration();
+            }
+
             _resolvingShotCoin = null;
             _resolveRoutine = null;
             yield break;
@@ -897,6 +904,31 @@ public class GameRulesManager : MonoBehaviour
     public void HandleEnemyGoalCelebration()
     {
         PlayEnemyGoalCelebrationEffects();
+    }
+
+    /// <summary>Online: efekt oynat, reset Network RoundReset RPC ile gelir.</summary>
+    public void HandlePlayerGoalCelebrationOnline()
+    {
+        GameFeedback.EnsureInstance()?.PlayGoal();
+        InvokePlayerGoalScoredSafely();
+
+        PlayerGoalEffectController effect = PlayerGoalEffectController.EnsureInstance();
+        if (effect != null && effect.CanPlay())
+        {
+            effect.Play(() => { /* reset RPC bekleniyor */ });
+        }
+    }
+
+    /// <summary>Online: yenilgi efekti, reset Network RoundReset RPC ile gelir.</summary>
+    public void HandleEnemyGoalCelebrationOnline()
+    {
+        GameFeedback.EnsureInstance()?.PlayEnemyGoal();
+
+        EnemyGoalEffectController effect = EnemyGoalEffectController.EnsureInstance();
+        if (effect != null && effect.CanPlay())
+        {
+            effect.Play(() => { /* reset RPC bekleniyor */ });
+        }
     }
 
     void PlayEnemyGoalCelebrationEffects()

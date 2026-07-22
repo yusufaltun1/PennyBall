@@ -102,14 +102,15 @@ public class MatchScoreboardPresenter : MonoBehaviour
 
         if (isForfeit)
         {
-            HukmenMaglupController forfeitPanel = HukmenMaglupController.FindPanel();
-            if (forfeitPanel != null)
-            {
-                forfeitPanel.Show();
-                return;
-            }
-
-            Debug.LogWarning("[Match] Hükmen mağlup paneli (HukmenMaglup) sahnede bulunamadı.");
+            // Hükmen mağlup paneli geçici kapalı — normal sonuç paneline düş.
+            // HukmenMaglupController forfeitPanel = HukmenMaglupController.FindPanel();
+            // if (forfeitPanel != null)
+            // {
+            //     forfeitPanel.Show();
+            //     return;
+            // }
+            //
+            // Debug.LogWarning("[Match] Hükmen mağlup paneli (HukmenMaglup) sahnede bulunamadı.");
         }
 
         ResultPanelController resultPanel = FindNormalResultPanel();

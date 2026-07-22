@@ -11,6 +11,15 @@ public static class MatchLauncher
             return;
         }
 
+        if (MatchSessionContext.HasOpponent)
+        {
+            MatchSessionLogger.LogMatchedOpponent(
+                MatchSessionContext.CurrentOpponent,
+                LeagueService.Instance.PlayerLeague);
+            SceneManager.LoadScene(GameSceneNames.Game);
+            return;
+        }
+
         BotPlayerEntry opponent = LeagueService.Instance.PickOpponentForNextMatch();
         if (opponent == null)
         {
@@ -19,6 +28,7 @@ public static class MatchLauncher
         }
 
         MatchSessionContext.SetOpponent(opponent);
+        MatchSessionContext.SetOnlineMatch(false, null, null);
         MatchSessionLogger.LogMatchedOpponent(opponent, LeagueService.Instance.PlayerLeague);
         SceneManager.LoadScene(GameSceneNames.Game);
     }
