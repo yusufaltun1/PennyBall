@@ -85,15 +85,19 @@ public class OnboardingGuideController : MonoBehaviour
             || (_phase == GuidePhase.Completed && _onboardingCompletePending));
 
     /// <summary>
-    /// Aşama 5/7: CoinInputHandler idle Hide'ını engelle; GateIndicator açık kalsın.
+    /// Aşama 5/7/8: CoinInputHandler idle Hide'ını engelle; GateIndicator açık kalsın.
     /// </summary>
     public bool ShouldKeepOnboardingGateIndicatorVisible =>
         _guideStarted
-        && (_phase == GuidePhase.Stage5_Drag || _phase == GuidePhase.Stage7_Drag)
+        && (_phase == GuidePhase.Stage5_Drag
+            || _phase == GuidePhase.Stage7_Drag
+            || _phase == GuidePhase.Stage8_Drag)
         && !IsStageSixAlertVisible()
         && !IsStageSevenAlertVisible()
+        && !IsStageNineAlertVisible()
         && !_stage6PostShotSequenceActive
-        && !_stage7PostShotSequenceActive;
+        && !_stage7PostShotSequenceActive
+        && !_stage9PostShotSequenceActive;
 
     public void NotifyPlayerGoalCelebrationStarting()
     {
@@ -456,9 +460,9 @@ public class OnboardingGuideController : MonoBehaviour
     [Tooltip("Kama maske kenar yumuşaklığı (UV).")]
     [InspectorLabel("Wedge Softness")]
     [SerializeField] float _stage7WedgeSoftnessUv = 0.02f;
-    [Tooltip("Aim yolu gate geçiş toleransı (world).")]
+    [Tooltip("0 = yalnızca GateIndicator segmentinin içinden geçiş geçerli (uç toleransı yok).")]
     [InspectorLabel("Gate Margin")]
-    [SerializeField] float _stage7GateMargin = 0.09f;
+    [SerializeField] float _stage7GateMargin = 0f;
     [Tooltip("Üst üste 2 başarısız atıştan sonra gösterilir.")]
     [InspectorLabel("Alert Panel")]
     [SerializeField] GameObject _stage7Alert;
@@ -1432,7 +1436,7 @@ public class OnboardingGuideController : MonoBehaviour
             _stage7ShotPathSamples,
             gateStart,
             gateEnd,
-            _stage7GateMargin);
+            Mathf.Max(0f, _stage7GateMargin));
     }
 
     IEnumerator StageSevenMissRetryRoutine()
@@ -1457,7 +1461,7 @@ public class OnboardingGuideController : MonoBehaviour
         yield return ReturnCenterCoinHome();
         yield return RevealSideCoinsToGameUiPositions();
         _stage7PostShotSequenceActive = false;
-        EnterStage8();
+        EnterStage8(resetRelatedFailCounts: true);
         _flowRoutine = null;
     }
 
@@ -2171,7 +2175,7 @@ public class OnboardingGuideController : MonoBehaviour
         yield return ShowSuccessBriefly();
         yield return AnimateCoinsToStageTenPositions();
         _stage9PostShotSequenceActive = false;
-        EnterStage10();
+        EnterStage10(resetRelatedFailCounts: true);
         _flowRoutine = null;
     }
 
@@ -2427,7 +2431,8 @@ public class OnboardingGuideController : MonoBehaviour
         }
         else
         {
-            EnterStage9(resetFailCounts: false);
+            // Atış denemesi bitti; el + explanation için Aşama 8 sunumuna dön.
+            EnterStage8();
         }
 
         _flowRoutine = null;
@@ -2442,7 +2447,7 @@ public class OnboardingGuideController : MonoBehaviour
         yield return RestoreStageEightCoinPositions();
         _stage9ConsecutiveFails = 0;
         _stage9PostShotSequenceActive = false;
-        EnterStage9(resetFailCounts: false);
+        EnterStage8();
         _flowRoutine = null;
     }
 
@@ -2464,7 +2469,7 @@ public class OnboardingGuideController : MonoBehaviour
         }
         else
         {
-            EnterStage11(resetFailCounts: false);
+            EnterStage10();
         }
 
         _flowRoutine = null;
@@ -2478,7 +2483,7 @@ public class OnboardingGuideController : MonoBehaviour
         HideStageTenAlert();
         yield return RestoreStageElevenCoinPositions();
         _stage11PostShotSequenceActive = false;
-        EnterStage11(resetFailCounts: false);
+        EnterStage10();
         _flowRoutine = null;
     }
 
@@ -2493,7 +2498,7 @@ public class OnboardingGuideController : MonoBehaviour
         _stage11ConsecutiveFails = 0;
         _stage11NoGoalFails = 0;
         _stage11PostShotSequenceActive = false;
-        EnterStage11(resetFailCounts: false);
+        EnterStage10();
         _flowRoutine = null;
     }
 
@@ -2944,12 +2949,16 @@ public class OnboardingGuideController : MonoBehaviour
         UpdateStageSevenWedgeSpotlight();
     }
 
-    void EnterStage8()
+    void EnterStage8(bool resetRelatedFailCounts = false)
     {
         SetPhase(GuidePhase.Stage8_Drag);
-        GateIndicator.Instance?.Hide();
         HideTutorialOverlay();
         HideStageSevenAlert();
+
+        if (resetRelatedFailCounts)
+        {
+            _stage9ConsecutiveFails = 0;
+        }
 
         EnsureOpeningCoinResolved();
         CoinIdentity centerIdentity = _openingCoin != null
@@ -2971,6 +2980,7 @@ public class OnboardingGuideController : MonoBehaviour
         SetExplanationBackground(_positiveExplanationColor);
         UpdateActiveGuideElementPosition();
         CacheStageEightCoinPositions();
+        EnsureStageEightGateVisible();
     }
 
     void EnsureOpeningCoinResolved()
@@ -3002,7 +3012,7 @@ public class OnboardingGuideController : MonoBehaviour
         }
     }
 
-    void EnterStage9(CoinDragController aimingCoin = null, bool resetFailCounts = true)
+    void EnterStage9(CoinDragController aimingCoin = null, bool resetFailCounts = false)
     {
         if (_phase == GuidePhase.Stage9_PassBetween
             && aimingCoin != null
@@ -3073,13 +3083,19 @@ public class OnboardingGuideController : MonoBehaviour
         EnsureStageNineGateVisible(aimingCoin);
     }
 
-    void EnterStage10()
+    void EnterStage10(bool resetRelatedFailCounts = false)
     {
         SetPhase(GuidePhase.Stage10_PullAndGoal);
         GateIndicator.Instance?.Hide();
         HideTutorialOverlay();
         HideStageNineAlert();
         HideStageTenAlert();
+
+        if (resetRelatedFailCounts)
+        {
+            _stage11ConsecutiveFails = 0;
+            _stage11NoGoalFails = 0;
+        }
 
         EnsureOpeningCoinResolved();
         CoinIdentity centerIdentity = _openingCoin != null
@@ -3105,7 +3121,7 @@ public class OnboardingGuideController : MonoBehaviour
         CacheStageElevenCoinPositions();
     }
 
-    void EnterStage11(CoinDragController aimingCoin = null, bool resetFailCounts = true)
+    void EnterStage11(CoinDragController aimingCoin = null, bool resetFailCounts = false)
     {
         // Aim sırasında tekrarlı çağrı: sadece gate'i tazele.
         if (_phase == GuidePhase.Stage11_PassAndGoal
@@ -3199,6 +3215,51 @@ public class OnboardingGuideController : MonoBehaviour
 
         Transform left = OnboardingSceneBootstrap.LeftCoinTransform;
         Transform right = OnboardingSceneBootstrap.RightCoinTransform;
+        if (left == null || right == null)
+        {
+            return;
+        }
+
+        indicator.ShowWorldGate(left.position, right.position, settings, animate: true);
+    }
+
+    void EnsureStageEightGateVisible()
+    {
+        if (_phase != GuidePhase.Stage8_Drag)
+        {
+            return;
+        }
+
+        GateIndicator indicator = GateIndicator.Instance;
+        if (indicator == null)
+        {
+            return;
+        }
+
+        if (indicator.IsVisible)
+        {
+            return;
+        }
+
+        CoinGateIndicatorSettings settings = _openingCoin != null
+            ? CoinGateIndicatorSettings.Resolve(_openingCoin)
+            : null;
+
+        GameRulesManager rules = GameRulesManager.Instance;
+        CoinIdentity shooter = _openingCoin != null
+            ? _openingCoin.GetComponent<CoinIdentity>()
+            : null;
+
+        if (rules != null
+            && shooter != null
+            && rules.TryGetGateCoins(shooter, out CoinIdentity gateA, out CoinIdentity gateB))
+        {
+            indicator.Show(gateA, gateB, settings, animate: true);
+            return;
+        }
+
+        Transform left = ResolveSideCoinTransform("Coin_P1", OnboardingSceneBootstrap.LeftCoinTransform);
+        Transform right = ResolveSideCoinTransform("Coin_P3", OnboardingSceneBootstrap.RightCoinTransform);
         if (left == null || right == null)
         {
             return;

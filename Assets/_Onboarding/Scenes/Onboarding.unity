@@ -420,7 +420,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: b45d02580383246c3a00de3b503deda3, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 923c35ea32f4e42cfb48ca3a7e9c0ed6, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -594,7 +594,7 @@ Transform:
   m_GameObject: {fileID: 260506484}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.451, y: 0.1393, z: 2.135}
+  m_LocalPosition: {x: 1.563, y: 0.1393, z: 2.139}
   m_LocalScale: {x: 0.03563898, y: 0.03563898, z: 0.03563898}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3180,7 +3180,7 @@ Transform:
   m_GameObject: {fileID: 802918725}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.297, y: 0.1393, z: 2.135}
+  m_LocalPosition: {x: 1.352, y: 0.1393, z: 2.063}
   m_LocalScale: {x: 0.03563898, y: 0.03563898, z: 0.03563898}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4498,7 +4498,7 @@ MonoBehaviour:
   _enemyGoal: {fileID: 0}
   _onboardingCompletePanel: {fileID: 2002770760}
   _worldCamera: {fileID: 7370277067935492232}
-  _appendStageNumberToGuideMessages: 0
+  _appendStageNumberToGuideMessages: 1
   _dragMessage: Pull
   _stage1MinPullPower01: 0.02
   _handDefaultSprite: {fileID: 0}
@@ -4566,7 +4566,7 @@ MonoBehaviour:
   _stage7GateAnimationSpeedScale: 0.5
   _stage7GuideLineColor: {r: 0.15, g: 0.88, b: 0.28, a: 0.92}
   _stage7WedgeSoftnessUv: 0.02
-  _stage7GateMargin: 0.09
+  _stage7GateMargin: 0
   _stage7Alert: {fileID: 902217484}
   _stage8DragMessage: Pull
   _stage8HandScreenOffset: {x: 70, y: -30}
@@ -4595,7 +4595,7 @@ MonoBehaviour:
   _stage11CoinResetDuration: 0.75
   _successPanel: {fileID: 1252960399}
   _successDisplayDuration: 1
-  _successSound: {fileID: 8300000, guid: c793df690251c4d4aaf8ceb80a618db2, type: 3}
+  _successSound: {fileID: 8300000, guid: 2df6ceeeeeab043feabd13249dd3469b, type: 3}
   _arrowBounceHeight: 50
   _arrowMoveDuration: 0.85
   _coinGuideExplanationGap: 10
@@ -6694,7 +6694,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6d9d5f4c22e59448cb58c97e34093a15, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 37ed41de6918b45e29faa16e215a27aa, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -6924,7 +6924,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 39ebb4b27876b4f4c9d60b54aa5a9e5a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: f700e7ee3bdb54c378b50c7ee93659a1, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -7936,7 +7936,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a4c4f3b5a68e848f7a945960550caffd, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 033583db9e511437b81fc75644a9e512, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
