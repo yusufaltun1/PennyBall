@@ -8,6 +8,7 @@ public class SettingsToggleControl : MonoBehaviour
         Music,
         SoundEffects,
         Vibration,
+        Notification
     }
 
     [SerializeField] SettingKind _kind;
@@ -117,6 +118,9 @@ public class SettingsToggleControl : MonoBehaviour
             case SettingKind.Vibration:
                 GameFeedbackSettingsService.VibrationEnabled = nextValue;
                 break;
+            case SettingKind.Notification:
+                GameFeedbackSettingsService.NotificationEnabled = nextValue;
+                break;
         }
 
         RefreshFromService();
@@ -132,6 +136,8 @@ public class SettingsToggleControl : MonoBehaviour
                 return GameFeedbackSettingsService.SoundEffectsEnabled;
             case SettingKind.Vibration:
                 return GameFeedbackSettingsService.VibrationEnabled;
+            case SettingKind.Notification:
+                return GameFeedbackSettingsService.NotificationEnabled;
             default:
                 return true;
         }

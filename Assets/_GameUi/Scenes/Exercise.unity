@@ -12867,10 +12867,10 @@ RectTransform:
   - {fileID: 2901001002}
   - {fileID: 726936418}
   - {fileID: 495917896}
-  - {fileID: 1674004250}
   - {fileID: 890745525}
   - {fileID: 1459445806}
   - {fileID: 542251078}
+  - {fileID: 1674004250}
   - {fileID: 3100001002}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

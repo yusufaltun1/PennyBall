@@ -206,8 +206,43 @@ public class SettingsPopupController : MonoBehaviour
         BindToggle("PanelRoot/Container/Wrapper/Control-Music/Button", SettingsToggleControl.SettingKind.Music);
         BindToggle("PanelRoot/Container/Wrapper/Control-SoundEffects/Button", SettingsToggleControl.SettingKind.SoundEffects);
         BindToggle("PanelRoot/Container/Wrapper/Control-Vibrations/Button", SettingsToggleControl.SettingKind.Vibration);
+        BindToggle("PanelRoot/Container/Wrapper/Control-Notifications/Button", SettingsToggleControl.SettingKind.Notification);
+        BindTermsLink();
         ConfigureVersionLabel();
         _settingsBound = true;
+    }
+
+    const string PrivacyPolicyUrl = "https://orviadigital.com.tr/privacy";
+
+    void BindTermsLink()
+    {
+        Transform termsTransform = transform.Find("PanelRoot/Container/Wrapper/Link-Terms");
+        if (termsTransform == null)
+        {
+            Debug.LogWarning("[Settings] Link-Terms bulunamadı.");
+            return;
+        }
+
+        Button termsButton = termsTransform.GetComponent<Button>();
+        if (termsButton == null)
+        {
+            Image image = termsTransform.GetComponent<Image>();
+            termsButton = termsTransform.gameObject.AddComponent<Button>();
+            termsButton.transition = Selectable.Transition.None;
+            if (image != null)
+            {
+                termsButton.targetGraphic = image;
+            }
+        }
+
+        termsButton.onClick.RemoveListener(OpenPrivacyPolicy);
+        termsButton.onClick.AddListener(OpenPrivacyPolicy);
+    }
+
+    void OpenPrivacyPolicy()
+    {
+        MainMenuClickSound.Play();
+        Application.OpenURL(PrivacyPolicyUrl);
     }
 
     void RefreshAllToggles()

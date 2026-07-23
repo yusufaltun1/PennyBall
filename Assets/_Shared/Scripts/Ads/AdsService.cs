@@ -250,10 +250,10 @@ public class AdsService : MonoBehaviour,
         }
 
         _mainMenuNavigationPending = true;
+        HidePostMatchOverlays();
 
         if (Instance != null && MatchAdTracker.ShouldShowInterstitial())
         {
-            // Debug.Log($"[Ads] Interstitial gösterilecek (match #{MatchAdTracker.CompletedMatchCount}).");
             Instance.StartCoroutine(Instance.NavigateToMainMenuWithInterstitial());
             return;
         }
@@ -261,11 +261,107 @@ public class AdsService : MonoBehaviour,
         SceneManager.LoadScene(GameSceneNames.MainMenu);
     }
 
+    /// <summary>
+    /// Reklam / menü geçişinde Result paneli kapanınca altta kalan
+    /// LeagueUpdate / InvalidMove gibi overlay'ler görünmesin.
+    /// </summary>
+    public static void HidePostMatchOverlays()
+    {
+        InvalidMoveFeedbackPresenter.ForceHideAll();
+
+        string[] overlayNames =
+        {
+            "InvalidMove",
+            "ResettingGame",
+            "LeagueUpdate",
+            "LevelUp",
+            "LeagueStatus",
+            "ResultPanel",
+            "HukmenMaglup",
+            "UnlockedFeatures",
+            "Beginning"
+        };
+
+        for (int i = 0; i < overlayNames.Length; i++)
+        {
+            SetNamedObjectsActive(overlayNames[i], false);
+        }
+    }
+
+    static void SetNamedObjectsActive(string objectName, bool active)
+    {
+        GameObject[] roots = SceneManager.GetActiveScene().GetRootGameObjects();
+        for (int r = 0; r < roots.Length; r++)
+        {
+            Transform[] transforms = roots[r].GetComponentsInChildren<Transform>(true);
+            for (int t = 0; t < transforms.Length; t++)
+            {
+                if (transforms[t].name != objectName)
+                {
+                    continue;
+                }
+
+                if (transforms[t].gameObject.activeSelf != active)
+                {
+                    transforms[t].gameObject.SetActive(active);
+                }
+            }
+        }
+    }
+
     IEnumerator NavigateToMainMenuWithInterstitial()
     {
+        HidePostMatchOverlays();
+        EnsureAdTransitionCover(true);
+
         yield return WaitUntilCanShowAd();
         yield return WaitForInterstitialReady(4f);
-        ShowInterstitial(() => SceneManager.LoadScene(GameSceneNames.MainMenu));
+
+        ShowInterstitial(() =>
+        {
+            EnsureAdTransitionCover(false);
+            SceneManager.LoadScene(GameSceneNames.MainMenu);
+        });
+    }
+
+    void EnsureAdTransitionCover(bool visible)
+    {
+        const string coverName = "AdTransitionCover";
+        Transform existing = transform.Find(coverName);
+        GameObject cover = existing != null ? existing.gameObject : null;
+
+        if (!visible)
+        {
+            if (cover != null)
+            {
+                cover.SetActive(false);
+            }
+
+            return;
+        }
+
+        if (cover == null)
+        {
+            cover = new GameObject(coverName, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            cover.transform.SetParent(transform, false);
+
+            Canvas canvas = cover.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 32000;
+
+            var imageGo = new GameObject("Dim", typeof(RectTransform), typeof(Image));
+            imageGo.transform.SetParent(cover.transform, false);
+            RectTransform rt = imageGo.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            Image image = imageGo.GetComponent<Image>();
+            image.color = Color.black;
+            image.raycastTarget = true;
+        }
+
+        cover.SetActive(true);
     }
 
     IEnumerator WaitUntilCanShowAd()
@@ -316,7 +412,12 @@ public class AdsService : MonoBehaviour,
 
     public void OnUnityAdsShowStart(string placementId)
     {
-        // Debug.Log($"[Ads] Show start: {placementId}");
+        // Reklam native UI açıldı — siyah cover'ı kaldırabiliriz.
+        if (_pendingShow == PendingShowType.Interstitial)
+        {
+            EnsureAdTransitionCover(false);
+        }
+
         TrackAdEvent("ad_show_start", placementId);
     }
 

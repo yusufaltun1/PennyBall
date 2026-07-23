@@ -50,6 +50,7 @@ public class LeagueStatusPresenter : MonoBehaviour
     void OnContinueClicked()
     {
         gameObject.SetActive(false);
+        AdsService.HidePostMatchOverlays();
         AdsService.GoToMainMenuMaybeWithInterstitial();
     }
 

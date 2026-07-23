@@ -22,6 +22,7 @@ public class LeagueService : MonoBehaviour
     public LeagueSaveData Save => _save;
     public int PlayerLeague => _save?.playerLeague ?? 1;
     public int PlayerTotalMatches => _save?.playerTotalMatches ?? 0;
+    public int PlayerTotalGoals => _save?.playerTotalGoals ?? 0;
     public int PlayerAvatarIndex => _save?.playerAvatarIndex ?? 0;
     public TimeSpan SeasonRemaining => GetSeasonRemaining();
     public bool HasPendingSeasonResult => _save != null && _save.hasPendingSeasonResult;
@@ -261,6 +262,10 @@ public class LeagueService : MonoBehaviour
             }
         }
 
+        // Lig paneli istatistiği: maçta atılan goller birikir.
+        int goalsThisMatch = Mathf.Max(0, MatchSessionContext.PlayerGoalsAtEnd);
+        _save.playerTotalGoals = Mathf.Max(0, _save.playerTotalGoals) + goalsThisMatch;
+
         if (_save.currentOpponentBotId >= 0
             && TryGetBotStanding(_save.currentOpponentBotId, out LeagueStandingEntry botEntry))
         {
@@ -326,7 +331,14 @@ public class LeagueService : MonoBehaviour
         if (_save == null) return;
         AvatarSpriteLibrary lib = AvatarSpriteLibrary.Load();
         int max = lib != null ? lib.Count - 1 : 0;
-        _save.playerAvatarIndex = Mathf.Clamp(index, 0, max);
+        int clamped = Mathf.Clamp(index, 0, max);
+        int previous = _save.playerAvatarIndex;
+        if (previous == clamped)
+        {
+            return;
+        }
+
+        _save.playerAvatarIndex = clamped;
 
         LeagueStandingEntry player = FindPlayerStanding();
         if (player != null)
@@ -334,6 +346,13 @@ public class LeagueService : MonoBehaviour
 
         LeagueRepository.Save(_save);
         AvatarChanged?.Invoke();
+
+        GameAnalytics.Track("avatar_changed", new Dictionary<string, string>
+        {
+            { "avatar_index", clamped.ToString() },
+            { "previous_avatar_index", previous.ToString() },
+            { "player_level", WalletService.Level.ToString() }
+        });
     }
 
     public void SetPlayerDisplayName(string displayName)
@@ -350,7 +369,8 @@ public class LeagueService : MonoBehaviour
             trimmed = trimmed.Substring(0, maxLength);
         }
 
-        if (_save.playerDisplayName == trimmed)
+        string previous = _save.playerDisplayName ?? string.Empty;
+        if (previous == trimmed)
         {
             return;
         }
@@ -366,6 +386,13 @@ public class LeagueService : MonoBehaviour
         LeagueRepository.Save(_save);
         StandingsUpdated?.Invoke();
         DisplayNameChanged?.Invoke();
+
+        GameAnalytics.Track("name_changed", new Dictionary<string, string>
+        {
+            { "new_name", trimmed },
+            { "previous_name", string.IsNullOrEmpty(previous) ? "Player" : previous },
+            { "player_level", WalletService.Level.ToString() }
+        });
     }
 
     LeagueSaveData CreateNewSave()

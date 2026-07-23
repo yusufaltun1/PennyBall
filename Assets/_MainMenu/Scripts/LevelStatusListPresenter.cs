@@ -6,6 +6,10 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public class LevelStatusListPresenter : MonoBehaviour
 {
+    /// <summary>Aktif seviye + bundan sonraki gösterilecek seviye sayısı.</summary>
+    const int ExtraLevelsAhead = 19;
+    const int TargetRowCount = 1 + ExtraLevelsAhead;
+
     static readonly Color ActiveXpColor = Color.white;
     static readonly Color PassiveXpColor = new(0.5921569f, 0.5294118f, 0.74509805f, 1f);
 
@@ -81,7 +85,7 @@ public class LevelStatusListPresenter : MonoBehaviour
                 isCurrentLevel ? ActiveXpColor : PassiveXpColor,
                 isCurrentLevel ? FontStyles.Bold : FontStyles.Normal);
 
-            row.Bind(level, xpRequired, progress, isMaxLevel);
+            row.Bind(level, xpRequired, progress, isMaxLevel, showMinFillAtZero: isCurrentLevel);
         }
     }
 
@@ -94,12 +98,44 @@ public class LevelStatusListPresenter : MonoBehaviour
 
     void EnsureRows()
     {
-        if (_rows.Count > 0)
+        if (_rows.Count >= TargetRowCount)
         {
             return;
         }
 
         Transform searchRoot = ResolveRowsRoot();
+        CollectExistingRows(searchRoot);
+
+        if (_rows.Count == 0)
+        {
+            return;
+        }
+
+        LevelStatusRowView template = _rows[_rows.Count > 1 ? 1 : 0];
+        while (_rows.Count < TargetRowCount)
+        {
+            GameObject clone = Instantiate(template.gameObject, searchRoot);
+            clone.name = $"LevelInfo2 ({_rows.Count})";
+            clone.SetActive(true);
+
+            LevelStatusRowView row = clone.GetComponent<LevelStatusRowView>();
+            if (row == null)
+            {
+                row = clone.AddComponent<LevelStatusRowView>();
+            }
+
+            row.ResolveReferences();
+            _rows.Add(row);
+        }
+    }
+
+    void CollectExistingRows(Transform searchRoot)
+    {
+        if (_rows.Count > 0)
+        {
+            return;
+        }
+
         for (int i = 0; i < searchRoot.childCount; i++)
         {
             Transform child = searchRoot.GetChild(i);

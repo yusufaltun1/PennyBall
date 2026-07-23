@@ -223,6 +223,44 @@ public class InvalidMoveFeedbackPresenter : MonoBehaviour
         }
     }
 
+    public static void ForceHideAll()
+    {
+        InvalidMoveFeedbackPresenter[] presenters =
+            FindObjectsByType<InvalidMoveFeedbackPresenter>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        for (int i = 0; i < presenters.Length; i++)
+        {
+            if (presenters[i] != null)
+            {
+                presenters[i].HideAllImmediatePublic();
+            }
+        }
+
+        GameObject invalidMove = GameObject.Find("InvalidMove");
+        if (invalidMove != null)
+        {
+            invalidMove.SetActive(false);
+        }
+
+        GameObject resettingGame = GameObject.Find("ResettingGame");
+        if (resettingGame != null)
+        {
+            resettingGame.SetActive(false);
+        }
+    }
+
+    public void HideAllImmediatePublic()
+    {
+        if (_feedbackRoutine != null)
+        {
+            StopCoroutine(_feedbackRoutine);
+            _feedbackRoutine = null;
+        }
+
+        _isPerformingStreakReset = false;
+        HideAllImmediate();
+    }
+
     void HideAllImmediate()
     {
         HideInvalidMove();

@@ -206,6 +206,7 @@ public class OpponentBotController : MonoBehaviour
 
         TeamRulesService.BeginNewRound(_state);
         TeamRulesService.DiscoverCoins(_state, "_E");
+        OpponentBotBrain.ClearShotMemory();
         PrepareOpeningTurn();
         BeginPlayLoop();
     }
@@ -470,6 +471,7 @@ public class OpponentBotController : MonoBehaviour
                 ValidShotCommitted?.Invoke(CoinTeam.Opponent);
             }
 
+            OpponentBotBrain.RememberValidShot(coin, _shotStartPosition, coin.transform.position);
             _roundShotNumber++;
         }
 

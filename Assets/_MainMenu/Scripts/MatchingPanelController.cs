@@ -18,6 +18,7 @@ public class MatchingPanelController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI sayacText;
     [SerializeField] private RectTransform vsObject;
     [SerializeField] private Image vsImage;
+    [SerializeField] private Button cancelButton;
 
     [Header("Avatars")]
     [SerializeField] private AvatarSpriteLibrary avatarLibrary;
@@ -36,6 +37,7 @@ public class MatchingPanelController : MonoBehaviour
 
     private bool isShuffling;
     private bool isRunning;
+    private bool cancelButtonBound;
     private Coroutine matchmakingCoroutine;
     private Coroutine findingFadeCoroutine;
     private RectTransform rectTransform;
@@ -61,6 +63,12 @@ public class MatchingPanelController : MonoBehaviour
 
         ResolveAudioLibrary();
         ResolveReferences();
+        BindCancelButton();
+    }
+
+    private void OnDestroy()
+    {
+        UnbindCancelButton();
     }
 
     private void ResolveReferences()
@@ -78,6 +86,104 @@ public class MatchingPanelController : MonoBehaviour
         {
             vsImage = vsObject.GetComponent<Image>();
         }
+
+        ResolveCancelButton();
+    }
+
+    private void ResolveCancelButton()
+    {
+        if (cancelButton != null)
+        {
+            return;
+        }
+
+        Transform found = transform.Find("Btn_Cancel");
+        if (found == null)
+        {
+            found = transform.Find("Cancel");
+        }
+
+        if (found == null)
+        {
+            found = transform.Find("Button");
+        }
+
+        if (found != null)
+        {
+            cancelButton = found.GetComponent<Button>();
+        }
+    }
+
+    private void BindCancelButton()
+    {
+        ResolveCancelButton();
+        if (cancelButtonBound || cancelButton == null)
+        {
+            return;
+        }
+
+        cancelButton.onClick.AddListener(OnCancelButtonPressed);
+        cancelButtonBound = true;
+    }
+
+    private void UnbindCancelButton()
+    {
+        if (cancelButton != null)
+        {
+            cancelButton.onClick.RemoveListener(OnCancelButtonPressed);
+        }
+
+        cancelButtonBound = false;
+    }
+
+    private void OnCancelButtonPressed()
+    {
+        CancelMatchFlow();
+    }
+
+    /// <summary>Eşleşmeyi iptal eder, Matching panel'i kapatır, Main Menu'ye döner.</summary>
+    public void CancelMatchFlow()
+    {
+        if (!isRunning && !gameObject.activeSelf)
+        {
+            return;
+        }
+
+        MainMenuClickSound.Play();
+
+        GameAnalytics.Track("matchmaking_cancelled", new Dictionary<string, string>
+        {
+            { "league", LeagueService.Instance != null ? LeagueService.Instance.PlayerLeague.ToString() : "1" },
+            { "player_level", WalletService.Level.ToString() }
+        });
+
+        if (matchmakingCoroutine != null)
+        {
+            StopCoroutine(matchmakingCoroutine);
+            matchmakingCoroutine = null;
+        }
+
+        isShuffling = false;
+        isRunning = false;
+
+        if (audioSource != null)
+        {
+            audioSource.Stop();
+        }
+
+        StopFindingMusic();
+        MatchSessionContext.Clear();
+
+        ResetUiState();
+        gameObject.SetActive(false);
+
+        GameFeedbackSettingsService.EnsureLoaded();
+        if (GameFeedbackSettingsService.MusicEnabled)
+        {
+            MainMenuMusicController.Instance?.Play();
+        }
+
+        Debug.Log("[Matching] Cancel — eşleşme iptal, Main Menu.");
     }
 
     private void ResolveAudioLibrary()
@@ -294,6 +400,13 @@ public class MatchingPanelController : MonoBehaviour
             gameObject.SetActive(true);
         }
 
+        BindCancelButton();
+        if (cancelButton != null)
+        {
+            cancelButton.gameObject.SetActive(true);
+            cancelButton.interactable = true;
+        }
+
         StopFootballGameMusic();
         MainMenuMusicController.StopMusic();
         PlayFindingSound();
@@ -304,8 +417,13 @@ public class MatchingPanelController : MonoBehaviour
     private void ResetUiState()
     {
         rectTransform ??= GetComponent<RectTransform>();
+        EnsureStretchToCanvas();
         if (rectTransform != null)
-            rectTransform.anchoredPosition = new Vector2(0f, 0f);
+        {
+            // Stretch panel: ekranın altında gizli başlangıç.
+            float hiddenY = -GetCanvasHeight();
+            rectTransform.anchoredPosition = new Vector2(0f, hiddenY);
+        }
 
         loopImage?.gameObject.SetActive(true);
         findingObject?.SetActive(true);
@@ -317,6 +435,43 @@ public class MatchingPanelController : MonoBehaviour
             findingText.fontSize = 64f;
             findingText.text = "Finding a match...";
         }
+    }
+
+    private void EnsureStretchToCanvas()
+    {
+        rectTransform ??= GetComponent<RectTransform>();
+        if (rectTransform == null)
+        {
+            return;
+        }
+
+        rectTransform.anchorMin = Vector2.zero;
+        rectTransform.anchorMax = Vector2.one;
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        rectTransform.sizeDelta = Vector2.zero;
+        rectTransform.offsetMin = Vector2.zero;
+        rectTransform.offsetMax = Vector2.zero;
+    }
+
+    private float GetCanvasHeight()
+    {
+        float canvasHeight = 2340f;
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas != null)
+        {
+            RectTransform canvasRt = canvas.GetComponent<RectTransform>();
+            if (canvasRt != null && canvasRt.rect.height > 0f)
+            {
+                canvasHeight = canvasRt.rect.height;
+            }
+        }
+
+        if (rectTransform != null && rectTransform.rect.height > 1f)
+        {
+            canvasHeight = rectTransform.rect.height;
+        }
+
+        return canvasHeight;
     }
 
     private IEnumerator DoMatchmakingSequence()
@@ -475,19 +630,12 @@ public class MatchingPanelController : MonoBehaviour
             yield break;
         }
 
-        float canvasHeight = 2340f;
-        Canvas canvas = GetComponentInParent<Canvas>();
-        if (canvas != null)
-        {
-            RectTransform canvasRt = canvas.GetComponent<RectTransform>();
-            if (canvasRt != null && canvasRt.rect.height > 0f)
-            {
-                canvasHeight = canvasRt.rect.height;
-            }
-        }
+        EnsureStretchToCanvas();
 
-        const float hiddenY = 0f;
-        float targetY = canvasHeight;
+        // Eski davranış: alttan yukarı kayarak tam ekranı kapla.
+        // Stretch + merkez pivot: gizli = -height, görünür = 0.
+        float hiddenY = -GetCanvasHeight();
+        const float targetY = 0f;
 
         rectTransform.anchoredPosition = new Vector2(0f, hiddenY);
 

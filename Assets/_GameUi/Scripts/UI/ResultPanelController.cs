@@ -98,6 +98,8 @@ public class ResultPanelController : MonoBehaviour
 
     public void ShowResult(MatchResultType result)
     {
+        InvalidMoveFeedbackPresenter.ForceHideAll();
+
         won  = result == MatchResultType.Win;
         lost = result == MatchResultType.Loss;
         draw = result == MatchResultType.Draw;
