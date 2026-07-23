@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Oyuncu maç sonunda level atlayacaksa tier'a göre bot AI gücünü ve think süresini yükseltir:
 /// Lv 1-4 → tier 5 ayarları | Lv 5-9 → tier 10 ayarları | Lv 10-14 → tier 15 ayarları.
-/// Diğer durumlarda varsayılan strength (12) + maç sayısına göre think algoritması kullanılır.
+/// Diğer durumlarda varsayılan strength (13) + maç sayısına göre think algoritması kullanılır.
 /// Maç içinde bot skorda öndeyse son adımda strength 15 ve think -0.3s uygulanır.
 /// </summary>
 public static class BotLevelUpBoostPolicy
@@ -14,7 +14,7 @@ public static class BotLevelUpBoostPolicy
     public const int TierStrengthUntil10 = 9;
     public const int TierStrengthUntil15 = 15;
 
-    public const int DefaultBaseStrength = 12;
+    public const int DefaultBaseStrength = 13;
     public const int ScoreLeadStrength = 15;
     public const float ScoreLeadThinkReductionSeconds = 0.3f;
 
