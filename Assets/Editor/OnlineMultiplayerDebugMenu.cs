@@ -109,7 +109,7 @@ public static class OnlineMultiplayerDebugMenu
             return;
         }
 
-        string roomName = "pb_test_" + Random.Range(100000, 999999);
+        string roomName = FixedTestRoom;
         BeginPendingTestRoom(roomName, "Waiting...", 1);
     }
 

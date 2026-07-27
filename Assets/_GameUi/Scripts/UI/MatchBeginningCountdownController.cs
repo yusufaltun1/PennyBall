@@ -71,19 +71,22 @@ public class MatchBeginningCountdownController : MonoBehaviour
 
             float waited = 0f;
             const float timeoutSeconds = 90f;
-            const float relayWaitSeconds = 12f;
+            const float setupWaitSeconds = 30f;
             float nextReadyAt = 0f;
-            float relayWaited = 0f;
+            float setupWaited = 0f;
 
-            while (MatchShotNetworkRelay.Instance == null && relayWaited < relayWaitSeconds)
+            while (IsWaitingForOnlineSetup() && setupWaited < setupWaitSeconds)
             {
                 yield return null;
-                relayWaited += Time.unscaledDeltaTime;
+                setupWaited += Time.unscaledDeltaTime;
             }
 
-            if (MatchShotNetworkRelay.Instance == null)
+            if (IsWaitingForOnlineSetup())
             {
-                Debug.LogWarning("[Countdown] ShotRelay hazır değil — Ready gönderilemiyor.");
+                Debug.LogWarning(
+                    "[Countdown] Online setup timeout — channel/relay hazır değil. " +
+                    $"online={OnlineMatchSession.IsOnlineMatch} channel={(OnlineMatchSession.Channel != null)} " +
+                    $"relay={(MatchShotNetworkRelay.Instance != null)}");
             }
 
             while (!OnlineMatchSession.MatchPlayAuthorized && waited < timeoutSeconds)
@@ -167,6 +170,31 @@ public class MatchBeginningCountdownController : MonoBehaviour
         return MatchSessionContext.IsOnlineMatch
             || OnlineMatchSession.IsOnlineMatch
             || PendingPhotonSession.HasPending;
+    }
+
+    static bool IsWaitingForOnlineSetup()
+    {
+        if (OnlineMatchSession.MatchPlayAuthorized)
+        {
+            return false;
+        }
+
+        if (PendingPhotonSession.HasPending)
+        {
+            return true;
+        }
+
+        if (MatchSessionContext.IsOnlineMatch && !OnlineMatchSession.IsOnlineMatch)
+        {
+            return true;
+        }
+
+        if (OnlineMatchSession.IsOnlineMatch && MatchShotNetworkRelay.Instance == null)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>

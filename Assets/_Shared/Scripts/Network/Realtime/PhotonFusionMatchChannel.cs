@@ -54,8 +54,8 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
 
         ApplyPhotonAppSettings();
 
-        // Önceki maçtan kalan DontDestroyOnLoad runner relay'i kilitleyebiliyor.
         await PhotonFusionCleanup.ForceShutdownAllAsync();
+        await Task.Delay(150);
 
         if (_runner != null && _runner.IsRunning)
         {
@@ -132,8 +132,44 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
 
         SnapshotRemotePlayers("scene_load");
         _relaySpawnRequested = false;
+        DespawnStaleShotRelay();
         await EnsureShotRelayAsync();
-        TrySendMatchStartIfReady();
+        NotifyRelayHandshake();
+    }
+
+    void DespawnStaleShotRelay()
+    {
+        if (_runner == null || !_runner.IsRunning || !_runner.IsSharedModeMasterClient)
+        {
+            MatchShotNetworkRelay.ResetStaticState();
+            return;
+        }
+
+        MatchShotNetworkRelay[] relays = UnityEngine.Object.FindObjectsByType<MatchShotNetworkRelay>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+
+        for (int i = 0; i < relays.Length; i++)
+        {
+            MatchShotNetworkRelay relay = relays[i];
+            if (relay == null || relay.Object == null || !relay.Object.IsValid)
+            {
+                continue;
+            }
+
+            Debug.Log("[PhotonFusion] Eski ShotRelay despawn (yeni maç handshake)");
+            _runner.Despawn(relay.Object);
+        }
+
+        MatchShotNetworkRelay.ResetStaticState();
+        _relaySpawnRequested = false;
+    }
+
+    void NotifyRelayHandshake()
+    {
+        OnlineMatchGoalSync.TryBindRelay();
+        MatchShotNetworkRelay.Instance?.TrySendClientReady();
+        MatchShotNetworkRelay.Instance?.TryEvaluateMatchStart();
     }
 
     AuthenticationValues CreateAuthValues()
@@ -253,15 +289,13 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
         }
         else
         {
-            TrySendMatchStartIfReady();
+            NotifyRelayHandshake();
         }
     }
 
     void TrySendMatchStartIfReady()
     {
-        // MatchStart artık Ready handshake ile (countdown → TrySendClientReady).
-        // Burada zorla başlatma — erken 3-2-1 desync yaratıyordu.
-        OnlineMatchGoalSync.TryBindRelay();
+        NotifyRelayHandshake();
     }
 
     void TrySpawnShotRelay()
@@ -421,7 +455,7 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
         FlushPendingSends();
         TrySpawnShotRelay();
         BindShotRelay();
-        TrySendMatchStartIfReady();
+        NotifyRelayHandshake();
         RemotePlayersChanged?.Invoke();
     }
 

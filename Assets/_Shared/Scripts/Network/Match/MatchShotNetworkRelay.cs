@@ -16,7 +16,7 @@ public class MatchShotNetworkRelay : NetworkBehaviour
     public System.Action RoundResetReceived;
     public System.Action<float, bool> TimeSyncReceived;
 
-    readonly HashSet<int> _readyPlayerIds = new HashSet<int>();
+    readonly HashSet<PlayerRef> _readyPlayers = new HashSet<PlayerRef>();
     int _goalSeq;
     int _lastRoundResetSeq = -1;
     bool _matchStartSent;
@@ -27,9 +27,14 @@ public class MatchShotNetworkRelay : NetworkBehaviour
     public override void Spawned()
     {
         Instance = this;
-        _readyPlayerIds.Clear();
+        _readyPlayers.Clear();
         _matchStartSent = false;
-        Debug.Log($"[ShotRelay] Spawned HasStateAuthority={Object.HasStateAuthority} local={Runner.LocalPlayer}");
+        Debug.Log(
+            $"[ShotRelay] Spawned HasStateAuthority={Object.HasStateAuthority} " +
+            $"master={Runner != null && Runner.IsSharedModeMasterClient} local={Runner?.LocalPlayer}");
+
+        TrySendClientReady();
+        TryEvaluateMatchStart();
     }
 
     public void ForceRegisterInstance()
@@ -103,7 +108,7 @@ public class MatchShotNetworkRelay : NetworkBehaviour
             return true;
         }
 
-        if (!Object.HasStateAuthority)
+        if (!IsMatchStartAuthority())
         {
             return false;
         }
@@ -112,6 +117,76 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         RPC_MatchStart();
         Debug.Log("[ShotRelay] RPC_MatchStart");
         return true;
+    }
+
+    /// <summary>Master: odadaki tüm oyuncular Ready ise MatchStart gönder.</summary>
+    public void TryEvaluateMatchStart()
+    {
+        if (_matchStartSent || Object == null || !Object.IsValid || Runner == null)
+        {
+            return;
+        }
+
+        if (!IsMatchStartAuthority())
+        {
+            return;
+        }
+
+        int activeCount = CountActivePlayers();
+        if (activeCount < 2)
+        {
+            return;
+        }
+
+        if (!AllActivePlayersReady())
+        {
+            return;
+        }
+
+        Debug.Log($"[ShotRelay] EvaluateMatchStart OK active={activeCount} ready={_readyPlayers.Count}");
+        TrySendMatchStart();
+    }
+
+    bool IsMatchStartAuthority()
+    {
+        return Object.HasStateAuthority
+            || (Runner != null && Runner.IsSharedModeMasterClient);
+    }
+
+    int CountActivePlayers()
+    {
+        if (Runner == null)
+        {
+            return 0;
+        }
+
+        int count = 0;
+        foreach (PlayerRef _ in Runner.ActivePlayers)
+        {
+            count++;
+        }
+
+        return count;
+    }
+
+    bool AllActivePlayersReady()
+    {
+        if (Runner == null)
+        {
+            return false;
+        }
+
+        int activeCount = 0;
+        foreach (PlayerRef player in Runner.ActivePlayers)
+        {
+            activeCount++;
+            if (!_readyPlayers.Contains(player))
+            {
+                return false;
+            }
+        }
+
+        return activeCount >= 2;
     }
 
     public bool TrySendGoal(bool localPlayerScored)
@@ -125,7 +200,6 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         RPC_Goal(localPlayerScored, _goalSeq);
         Debug.Log($"[ShotRelay] RPC_Goal scored={localPlayerScored} seq={_goalSeq}");
 
-        // Master kendi golü: reset zamanla. Client golü: master RPC_Goal handler'da zamanlar.
         if (Object.HasStateAuthority)
         {
             ScheduleRoundReset(_goalSeq);
@@ -166,13 +240,12 @@ public class MatchShotNetworkRelay : NetworkBehaviour
     [Rpc(RpcSources.All, RpcTargets.All, InvokeLocal = true)]
     void RPC_ClientReady(PlayerRef player)
     {
-        _readyPlayerIds.Add(player.PlayerId);
-        Debug.Log($"[ShotRelay] Ready player={player} count={_readyPlayerIds.Count}");
+        _readyPlayers.Add(player);
+        Debug.Log(
+            $"[ShotRelay] Ready player={player} ready={_readyPlayers.Count} " +
+            $"active={CountActivePlayers()}");
 
-        if (Object.HasStateAuthority && !_matchStartSent && _readyPlayerIds.Count >= 2)
-        {
-            TrySendMatchStart();
-        }
+        TryEvaluateMatchStart();
     }
 
     [Rpc(RpcSources.All, RpcTargets.All, InvokeLocal = false)]
@@ -220,7 +293,6 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         Debug.Log($"[ShotRelay] RPC_Recv Goal senderScored={senderScored} seq={seq}");
         GoalReceived?.Invoke(senderScored);
 
-        // Client gol attı → master burada reset zamanlar (kendi golünde TrySendGoal zamanlar).
         if (Object.HasStateAuthority && senderScored)
         {
             ScheduleRoundReset(seq);
