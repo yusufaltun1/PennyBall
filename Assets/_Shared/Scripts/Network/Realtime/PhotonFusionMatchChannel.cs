@@ -32,6 +32,7 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
     public event Action Connected;
     public event Action Disconnected;
     public event Action<ShotIntentMessage> ShotReceived;
+    public event Action<ShotRollbackMessage> ShotRollbackReceived;
     public event Action<ScoreSyncMessage> ScoreReceived;
     public event Action<MatchEndMessage> MatchEndReceived;
     public event Action<CoinSnapshotBatchMessage> SnapshotReceived;
@@ -189,6 +190,7 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
         if (MatchShotNetworkRelay.Instance != null)
         {
             MatchShotNetworkRelay.Instance.ShotReceived -= OnRelayShotReceived;
+            MatchShotNetworkRelay.Instance.ShotRollbackReceived -= OnRelayShotRollbackReceived;
         }
 
         if (_runner != null && _runner.IsRunning)
@@ -224,6 +226,33 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
 
         Debug.LogWarning("[PhotonFusion] ShotRelay hazır değil — ReliableData fallback");
         SendJson(MatchRealtimeOp.ShotIntent, JsonUtility.ToJson(shot));
+    }
+
+    public void SendShotRollback(ShotRollbackMessage rollback)
+    {
+        if (rollback == null)
+        {
+            return;
+        }
+
+        if (MatchShotNetworkRelay.Instance == null)
+        {
+            MatchShotNetworkRelay found = UnityEngine.Object.FindFirstObjectByType<MatchShotNetworkRelay>();
+            if (found != null)
+            {
+                found.ForceRegisterInstance();
+            }
+        }
+
+        if (MatchShotNetworkRelay.Instance != null
+            && MatchShotNetworkRelay.Instance.TrySendShotRollback(rollback))
+        {
+            Debug.Log($"[PhotonFusion] ShotRollback RPC sent coin={rollback.coinObjectName} seq={rollback.seq}");
+            return;
+        }
+
+        Debug.LogWarning("[PhotonFusion] ShotRelay yok — Rollback ReliableData fallback");
+        SendJson(MatchRealtimeOp.ShotRollback, JsonUtility.ToJson(rollback));
     }
 
     public void SendScore(ScoreSyncMessage score) =>
@@ -363,11 +392,16 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
 
         MatchShotNetworkRelay.Instance.ShotReceived -= OnRelayShotReceived;
         MatchShotNetworkRelay.Instance.ShotReceived += OnRelayShotReceived;
+        MatchShotNetworkRelay.Instance.ShotRollbackReceived -= OnRelayShotRollbackReceived;
+        MatchShotNetworkRelay.Instance.ShotRollbackReceived += OnRelayShotRollbackReceived;
         OnlineMatchGoalSync.TryBindRelay();
         Debug.Log("[PhotonFusion] ShotRelay bound");
     }
 
     void OnRelayShotReceived(ShotIntentMessage shot) => ShotReceived?.Invoke(shot);
+
+    void OnRelayShotRollbackReceived(ShotRollbackMessage rollback) =>
+        ShotRollbackReceived?.Invoke(rollback);
 
     static NetworkObject LoadShotRelayPrefab()
     {
@@ -395,7 +429,8 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
         DispatchOp(op, json);
 
         // Shared Mode: master, client→server gelen mesajı diğer peer'lara iletir (2p'de no-op).
-        if (_runner.IsSharedModeMasterClient && op == MatchRealtimeOp.ShotIntent)
+        if (_runner.IsSharedModeMasterClient
+            && (op == MatchRealtimeOp.ShotIntent || op == MatchRealtimeOp.ShotRollback))
         {
             RelayToOtherRemotes(player, key, data);
         }
@@ -407,6 +442,9 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
         {
             case MatchRealtimeOp.ShotIntent:
                 ShotReceived?.Invoke(JsonUtility.FromJson<ShotIntentMessage>(json));
+                break;
+            case MatchRealtimeOp.ShotRollback:
+                ShotRollbackReceived?.Invoke(JsonUtility.FromJson<ShotRollbackMessage>(json));
                 break;
             case MatchRealtimeOp.ScoreSync:
                 ScoreReceived?.Invoke(JsonUtility.FromJson<ScoreSyncMessage>(json));

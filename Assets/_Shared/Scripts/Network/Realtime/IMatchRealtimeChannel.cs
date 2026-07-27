@@ -19,6 +19,22 @@ public class ShotIntentMessage
     public Vector3 Position => new(posX, posY, posZ);
 }
 
+/// <summary>
+/// Geçersiz hamle sonrası coin'i atış öncesi pozisyona geri al (remote sync).
+/// </summary>
+[Serializable]
+public class ShotRollbackMessage
+{
+    public string senderUserId;
+    public string coinObjectName;
+    public float posX;
+    public float posY;
+    public float posZ;
+    public int seq;
+
+    public Vector3 Position => new(posX, posY, posZ);
+}
+
 [Serializable]
 public struct ScoreSyncMessage
 {
@@ -60,7 +76,8 @@ public enum MatchRealtimeOp : byte
     CoinSnapshot = 4,
     TurnGrant = 5,
     Forfeit = 6,
-    Ready = 7
+    Ready = 7,
+    ShotRollback = 8
 }
 
 public interface IMatchRealtimeChannel : IDisposable
@@ -74,6 +91,7 @@ public interface IMatchRealtimeChannel : IDisposable
     event Action Connected;
     event Action Disconnected;
     event Action<ShotIntentMessage> ShotReceived;
+    event Action<ShotRollbackMessage> ShotRollbackReceived;
     event Action<ScoreSyncMessage> ScoreReceived;
     event Action<MatchEndMessage> MatchEndReceived;
     event Action<CoinSnapshotBatchMessage> SnapshotReceived;
@@ -83,6 +101,7 @@ public interface IMatchRealtimeChannel : IDisposable
     System.Threading.Tasks.Task LeaveAsync();
 
     void SendShot(ShotIntentMessage shot);
+    void SendShotRollback(ShotRollbackMessage rollback);
     void SendScore(ScoreSyncMessage score);
     void SendMatchEnd(MatchEndMessage end);
     void SendSnapshot(CoinSnapshotBatchMessage batch);

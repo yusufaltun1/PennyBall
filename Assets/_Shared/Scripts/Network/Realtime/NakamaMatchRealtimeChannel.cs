@@ -23,6 +23,7 @@ public sealed class NakamaMatchRealtimeChannel : IMatchRealtimeChannel
     public event Action Connected;
     public event Action Disconnected;
     public event Action<ShotIntentMessage> ShotReceived;
+    public event Action<ShotRollbackMessage> ShotRollbackReceived;
     public event Action<ScoreSyncMessage> ScoreReceived;
     public event Action<MatchEndMessage> MatchEndReceived;
     public event Action<CoinSnapshotBatchMessage> SnapshotReceived;
@@ -106,6 +107,11 @@ public sealed class NakamaMatchRealtimeChannel : IMatchRealtimeChannel
         SendJson(MatchRealtimeOp.ShotIntent, JsonUtility.ToJson(shot));
     }
 
+    public void SendShotRollback(ShotRollbackMessage rollback)
+    {
+        SendJson(MatchRealtimeOp.ShotRollback, JsonUtility.ToJson(rollback));
+    }
+
     public void SendScore(ScoreSyncMessage score)
     {
         SendJson(MatchRealtimeOp.ScoreSync, JsonUtility.ToJson(score));
@@ -156,6 +162,9 @@ public sealed class NakamaMatchRealtimeChannel : IMatchRealtimeChannel
         {
             case MatchRealtimeOp.ShotIntent:
                 ShotReceived?.Invoke(JsonUtility.FromJson<ShotIntentMessage>(json));
+                break;
+            case MatchRealtimeOp.ShotRollback:
+                ShotRollbackReceived?.Invoke(JsonUtility.FromJson<ShotRollbackMessage>(json));
                 break;
             case MatchRealtimeOp.ScoreSync:
                 ScoreReceived?.Invoke(JsonUtility.FromJson<ScoreSyncMessage>(json));

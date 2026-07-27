@@ -11,6 +11,7 @@ public class MatchShotNetworkRelay : NetworkBehaviour
     public static MatchShotNetworkRelay Instance { get; private set; }
 
     public System.Action<ShotIntentMessage> ShotReceived;
+    public System.Action<ShotRollbackMessage> ShotRollbackReceived;
     public System.Action MatchStartReceived;
     public System.Action<bool> GoalReceived; // true = gönderen gol attı → alıcı gol yedi
     public System.Action RoundResetReceived;
@@ -82,6 +83,25 @@ public class MatchShotNetworkRelay : NetworkBehaviour
             shot.senderUserId ?? string.Empty);
 
         Debug.Log($"[ShotRelay] RPC_Send {shot.coinObjectName} seq={shot.seq}");
+        return true;
+    }
+
+    public bool TrySendShotRollback(ShotRollbackMessage rollback)
+    {
+        if (rollback == null || Object == null || !Object.IsValid)
+        {
+            return false;
+        }
+
+        RPC_ApplyShotRollback(
+            rollback.coinObjectName ?? string.Empty,
+            rollback.posX,
+            rollback.posY,
+            rollback.posZ,
+            rollback.seq,
+            rollback.senderUserId ?? string.Empty);
+
+        Debug.Log($"[ShotRelay] RPC_Send Rollback {rollback.coinObjectName} seq={rollback.seq}");
         return true;
     }
 
@@ -277,6 +297,29 @@ public class MatchShotNetworkRelay : NetworkBehaviour
 
         Debug.Log($"[ShotRelay] RPC_Recv shot {coinObjectName} seq={seq}");
         ShotReceived?.Invoke(msg);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.All, InvokeLocal = false)]
+    void RPC_ApplyShotRollback(
+        string coinObjectName,
+        float posX,
+        float posY,
+        float posZ,
+        int seq,
+        string senderUserId)
+    {
+        var msg = new ShotRollbackMessage
+        {
+            coinObjectName = coinObjectName,
+            posX = posX,
+            posY = posY,
+            posZ = posZ,
+            seq = seq,
+            senderUserId = senderUserId
+        };
+
+        Debug.Log($"[ShotRelay] RPC_Recv Rollback {coinObjectName} seq={seq}");
+        ShotRollbackReceived?.Invoke(msg);
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All, InvokeLocal = true)]

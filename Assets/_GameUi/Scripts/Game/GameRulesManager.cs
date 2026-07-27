@@ -89,6 +89,17 @@ public class GameRulesManager : MonoBehaviour
     /// <summary>Gate kuralına uyan geçerli atış tamamlandığında.</summary>
     public event Action<CoinTeam> ValidShotCommitted;
 
+    /// <summary>Online: rakibin invalid move feedback UI'si için.</summary>
+    public void NotifyRemoteInvalidMoveStarted(CoinTeam team)
+    {
+        InvalidMoveRollbackStarted?.Invoke(team);
+    }
+
+    public void NotifyRemoteInvalidMoveFinished(CoinTeam team)
+    {
+        InvalidMoveRollbackFinished?.Invoke(team);
+    }
+
     void Awake()
     {
         if (Instance != null && Instance != this)
