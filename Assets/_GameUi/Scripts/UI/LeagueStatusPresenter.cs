@@ -1,16 +1,24 @@
+using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
 /// Lig durumunu UI'da göstermek için basit presenter.
+/// LigTimer (TMP): "League ends in 2d 8h 32m" — sezon bitişine kalan süre.
 /// </summary>
 public class LeagueStatusPresenter : MonoBehaviour
 {
+    const string SeasonTimerObjectName = "LigTimer";
+    const string SeasonEndedText = "League ended";
+
     [SerializeField] Text _leagueLabel;
     [SerializeField] Text _rankLabel;
     [SerializeField] Text _pointsLabel;
-    [SerializeField] Text _seasonTimeLabel;
+    [SerializeField] TextMeshProUGUI _seasonTimeLabel;
     [SerializeField] Button _continueButton;
+
+    string _lastSeasonTimerText;
 
     void Awake()
     {
@@ -19,6 +27,8 @@ public class LeagueStatusPresenter : MonoBehaviour
 
         if (_continueButton != null)
             _continueButton.onClick.AddListener(OnContinueClicked);
+
+        ResolveSeasonTimeLabel();
     }
 
     void OnDestroy()
@@ -29,6 +39,8 @@ public class LeagueStatusPresenter : MonoBehaviour
 
     void OnEnable()
     {
+        ResolveSeasonTimeLabel();
+
         if (LeagueService.Instance != null)
         {
             LeagueService.Instance.StandingsUpdated += Refresh;
@@ -84,6 +96,7 @@ public class LeagueStatusPresenter : MonoBehaviour
             _pointsLabel.text = $"{player.points} pts";
         }
 
+        _lastSeasonTimerText = null;
         RefreshSeasonTimer();
     }
 
@@ -94,13 +107,64 @@ public class LeagueStatusPresenter : MonoBehaviour
             return;
         }
 
-        System.TimeSpan remaining = LeagueService.Instance.SeasonRemaining;
-        if (remaining < System.TimeSpan.Zero)
+        TimeSpan remaining = LeagueService.Instance.SeasonRemaining;
+        string text;
+        if (remaining <= TimeSpan.Zero)
         {
-            remaining = System.TimeSpan.Zero;
+            text = SeasonEndedText;
+        }
+        else
+        {
+            text =
+                $"League ends in {remaining.Days}d {remaining.Hours}h {remaining.Minutes}m";
         }
 
-        _seasonTimeLabel.text = $"{remaining.Days}d {remaining.Hours}h {remaining.Minutes}m";
+        if (text == _lastSeasonTimerText)
+        {
+            return;
+        }
+
+        _lastSeasonTimerText = text;
+        _seasonTimeLabel.text = text;
+    }
+
+    void ResolveSeasonTimeLabel()
+    {
+        if (_seasonTimeLabel != null)
+        {
+            return;
+        }
+
+        Transform timer = FindDeepChild(transform, SeasonTimerObjectName);
+        if (timer != null)
+        {
+            _seasonTimeLabel = timer.GetComponent<TextMeshProUGUI>();
+        }
+    }
+
+    static Transform FindDeepChild(Transform parent, string name)
+    {
+        if (parent == null)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            if (child.name == name)
+            {
+                return child;
+            }
+
+            Transform nested = FindDeepChild(child, name);
+            if (nested != null)
+            {
+                return nested;
+            }
+        }
+
+        return null;
     }
 
     static LeagueStandingEntry FindPlayer(LeagueSaveData save)

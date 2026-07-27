@@ -4498,7 +4498,7 @@ MonoBehaviour:
   _enemyGoal: {fileID: 0}
   _onboardingCompletePanel: {fileID: 2002770760}
   _worldCamera: {fileID: 7370277067935492232}
-  _appendStageNumberToGuideMessages: 1
+  _appendStageNumberToGuideMessages: 0
   _dragMessage: Pull
   _stage1MinPullPower01: 0.02
   _handDefaultSprite: {fileID: 0}
