@@ -51,6 +51,12 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         }
     }
 
+    /// <summary>Maçlar arası runner kapanırken relay static referansını sıfırla.</summary>
+    public static void ResetStaticState()
+    {
+        Instance = null;
+    }
+
     public bool TrySend(ShotIntentMessage shot)
     {
         if (shot == null || Object == null || !Object.IsValid)

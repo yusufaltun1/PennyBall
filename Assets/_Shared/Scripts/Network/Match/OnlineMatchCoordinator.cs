@@ -17,6 +17,7 @@ public class OnlineMatchCoordinator : MonoBehaviour
     float _timeSyncTimer;
     int _lastSentPlayerGoals = -1;
     int _lastSentOpponentGoals = -1;
+    bool _connectInProgress;
     bool _timeSyncBound;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -65,6 +66,16 @@ public class OnlineMatchCoordinator : MonoBehaviour
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        if (scene.name == GameSceneNames.MainMenu)
+        {
+            _connectInProgress = false;
+            UnsubscribeChannel();
+            UnsubscribeRules();
+            _timeSyncBound = false;
+            PhotonFusionCleanup.ForceShutdownAll();
+            return;
+        }
+
         if (scene.name != GameSceneNames.Game)
         {
             return;
@@ -114,6 +125,13 @@ public class OnlineMatchCoordinator : MonoBehaviour
 
     async System.Threading.Tasks.Task ConnectPendingPhotonAsync()
     {
+        if (_connectInProgress)
+        {
+            return;
+        }
+
+        _connectInProgress = true;
+
         string session = PendingPhotonSession.SessionName;
         string matchId = PendingPhotonSession.MatchId;
         string opponentUserId = PendingPhotonSession.OpponentUserId;
@@ -122,56 +140,63 @@ public class OnlineMatchCoordinator : MonoBehaviour
         bool isTest = PendingPhotonSession.IsTestRoom;
         PendingPhotonSession.Clear();
 
-        NetworkBootstrap bootstrap = NetworkBootstrap.Instance;
-        if (bootstrap == null)
-        {
-            var go = new GameObject("NetworkBootstrap");
-            bootstrap = go.AddComponent<NetworkBootstrap>();
-        }
-
-        IMatchRealtimeChannel channel = MatchRealtimeFactory.Create(bootstrap);
-        if (channel == null)
-        {
-            Debug.LogError("[OnlineMatch] Photon channel yok — AppId kontrol et.");
-            MatchSessionContext.SetOnlineMatch(false, null, null);
-            // Countdown IsActive kilidini aç (JoinAsync içindeki authorize Begin ile siliniyordu).
-            OnlineMatchSession.AuthorizeMatchPlay();
-            return;
-        }
-
         try
         {
-            await channel.JoinAsync(session);
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"[OnlineMatch] Photon Join failed: {ex.Message}");
-            channel.Dispose();
-            MatchSessionContext.SetOnlineMatch(false, null, null);
-            OnlineMatchSession.AuthorizeMatchPlay();
-            return;
-        }
+            await PhotonFusionCleanup.ForceShutdownAllAsync();
 
-        if (isTest)
-        {
-            OnlineMatchSession.BeginTestRoom(session, channel, opponentName);
-        }
-        else
-        {
-            var result = MatchmakingResult.Human(matchId, session, opponentUserId, opponentName, avatar);
-            OnlineMatchSession.BeginHumanMatch(result, channel);
-        }
+            NetworkBootstrap bootstrap = NetworkBootstrap.Instance;
+            if (bootstrap == null)
+            {
+                var go = new GameObject("NetworkBootstrap");
+                bootstrap = go.AddComponent<NetworkBootstrap>();
+            }
 
-        // Join sonrası erken authorize yok — Ready/MatchStart.
-        MatchSessionContext.SetOnlineMatch(true, opponentUserId, matchId);
-        EnsureRemoteOpponent();
-        DisableBot();
-        SubscribeRules();
-        BindChannel();
+            IMatchRealtimeChannel channel = MatchRealtimeFactory.Create(bootstrap);
+            if (channel == null)
+            {
+                Debug.LogError("[OnlineMatch] Photon channel yok — AppId kontrol et.");
+                MatchSessionContext.SetOnlineMatch(false, null, null);
+                OnlineMatchSession.AuthorizeMatchPlay();
+                return;
+            }
 
-        if (channel is PhotonFusionMatchChannel fusion)
+            try
+            {
+                await channel.JoinAsync(session);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[OnlineMatch] Photon Join failed: {ex.Message}");
+                channel.Dispose();
+                MatchSessionContext.SetOnlineMatch(false, null, null);
+                OnlineMatchSession.AuthorizeMatchPlay();
+                return;
+            }
+
+            if (isTest)
+            {
+                OnlineMatchSession.BeginTestRoom(session, channel, opponentName);
+            }
+            else
+            {
+                var result = MatchmakingResult.Human(matchId, session, opponentUserId, opponentName, avatar);
+                OnlineMatchSession.BeginHumanMatch(result, channel);
+            }
+
+            MatchSessionContext.SetOnlineMatch(true, opponentUserId, matchId);
+            EnsureRemoteOpponent();
+            DisableBot();
+            SubscribeRules();
+            BindChannel();
+
+            if (channel is PhotonFusionMatchChannel fusion)
+            {
+                await fusion.RefreshAfterSceneLoadAsync();
+            }
+        }
+        finally
         {
-            await fusion.RefreshAfterSceneLoadAsync();
+            _connectInProgress = false;
         }
     }
 

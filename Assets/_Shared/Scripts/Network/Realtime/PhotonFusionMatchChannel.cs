@@ -54,6 +54,9 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
 
         ApplyPhotonAppSettings();
 
+        // Önceki maçtan kalan DontDestroyOnLoad runner relay'i kilitleyebiliyor.
+        await PhotonFusionCleanup.ForceShutdownAllAsync();
+
         if (_runner != null && _runner.IsRunning)
         {
             await LeaveAsync();

@@ -71,7 +71,21 @@ public class MatchBeginningCountdownController : MonoBehaviour
 
             float waited = 0f;
             const float timeoutSeconds = 90f;
+            const float relayWaitSeconds = 12f;
             float nextReadyAt = 0f;
+            float relayWaited = 0f;
+
+            while (MatchShotNetworkRelay.Instance == null && relayWaited < relayWaitSeconds)
+            {
+                yield return null;
+                relayWaited += Time.unscaledDeltaTime;
+            }
+
+            if (MatchShotNetworkRelay.Instance == null)
+            {
+                Debug.LogWarning("[Countdown] ShotRelay hazır değil — Ready gönderilemiyor.");
+            }
+
             while (!OnlineMatchSession.MatchPlayAuthorized && waited < timeoutSeconds)
             {
                 // Photon join başarısız / online flag düştü → bekleme bitir (bot/offline)

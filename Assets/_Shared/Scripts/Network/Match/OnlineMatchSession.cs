@@ -74,17 +74,8 @@ public static class OnlineMatchSession
 
     public static void Clear()
     {
-        if (Channel != null)
-        {
-            try
-            {
-                Channel.Dispose();
-            }
-            catch
-            {
-                // ignore
-            }
-        }
+        Channel = null;
+        PhotonFusionCleanup.ForceShutdownAll();
 
         IsOnlineMatch = false;
         MatchId = null;
@@ -92,7 +83,6 @@ public static class OnlineMatchSession
         OpponentUserId = null;
         OpponentDisplayName = null;
         OpponentAvatarIndex = 0;
-        Channel = null;
         MatchPlayAuthorized = false;
         SessionCleared?.Invoke();
     }
