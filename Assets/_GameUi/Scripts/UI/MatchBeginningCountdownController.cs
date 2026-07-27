@@ -104,6 +104,7 @@ public class MatchBeginningCountdownController : MonoBehaviour
                 if (waited >= nextReadyAt)
                 {
                     nextReadyAt = waited + 0.5f;
+                    OnlineMatchDiagnostics.LogWaitingState("countdown");
                     MatchShotNetworkRelay.Instance?.TrySendClientReady();
                 }
 

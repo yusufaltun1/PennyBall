@@ -21,6 +21,6 @@ MonoBehaviour:
   matchmakerMaxCount: 2
   matchmakerQuery: '*'
   photonFusionAppId: 038975f7-44f7-4eda-a0bc-08a9d3cc124a
-  photonRegion: 
+  photonRegion: eu
   autoAuthenticateOnBoot: 1
   logVerbose: 1

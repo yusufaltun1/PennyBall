@@ -9,14 +9,14 @@ public static class OnlineFeatureFlags
     const string PrefOnlineOnly = "pb.online.online_only";
     const string PrefUseFusion = "pb.online.use_fusion";
 
-    /// <summary>Kapalıyken Matching tamamen bot path kullanır. Editor'da varsayılan açık.</summary>
+    /// <summary>Kapalıyken Matching tamamen bot path kullanır.</summary>
     public static bool OnlineMatchmakingEnabled
     {
         get
         {
             if (!PlayerPrefs.HasKey(PrefMatchmaking))
             {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 return true;
 #else
                 return false;

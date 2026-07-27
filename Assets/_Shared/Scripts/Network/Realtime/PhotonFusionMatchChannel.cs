@@ -117,6 +117,8 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
             $"remotes={RemotePlayerCount} active={CountActivePlayers()} " +
             $"sessionPlayerCount={SafeSessionPlayerCount()}");
 
+        OnlineMatchDiagnostics.LogPhotonJoin(sessionName, _runner);
+
         // ShotRelay'i burada spawn etme — MainMenu→Game SceneManager.LoadScene
         // NetworkObject'i öldürür / _relaySpawnRequested kilidi takılır.
         // Relay: RefreshAfterSceneLoadAsync (Game sahnesinde).

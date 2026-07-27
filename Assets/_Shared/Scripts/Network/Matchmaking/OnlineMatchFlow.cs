@@ -90,7 +90,8 @@ public static class OnlineMatchFlow
         }
 
         Debug.Log(
-            $"[MatchFlow] Photon QM joined room='{quick.PhotonRoomName}' — 2. oyuncu bekleniyor...");
+            $"[MatchFlow] Photon QM joined room='{quick.PhotonRoomName}' " +
+            $"region='{bootstrap.Config.photonRegion}' — 2. oyuncu bekleniyor...");
 
         float elapsed = 0f;
         float nextLogAt = 1f;
