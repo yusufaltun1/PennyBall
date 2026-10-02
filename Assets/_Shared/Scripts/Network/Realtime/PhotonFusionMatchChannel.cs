@@ -142,9 +142,14 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
 
     void DespawnStaleShotRelay()
     {
-        if (_runner == null || !_runner.IsRunning || !_runner.IsSharedModeMasterClient)
+        if (_runner == null || !_runner.IsRunning)
         {
-            MatchShotNetworkRelay.ResetStaticState();
+            return;
+        }
+
+        // Client: Instance'ı silme — host'un spawn ettiği relay'i bekliyoruz.
+        if (!_runner.IsSharedModeMasterClient)
+        {
             return;
         }
 

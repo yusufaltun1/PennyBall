@@ -21,6 +21,7 @@ public class MatchShotNetworkRelay : NetworkBehaviour
     int _goalSeq;
     int _lastRoundResetSeq = -1;
     bool _matchStartSent;
+    float _spawnedAt;
     Coroutine _delayedResetRoutine;
 
     const float GoalToResetDelaySeconds = 2.4f;
@@ -30,6 +31,7 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         Instance = this;
         _readyPlayers.Clear();
         _matchStartSent = false;
+        _spawnedAt = Time.unscaledTime;
         Debug.Log(
             $"[ShotRelay] Spawned HasStateAuthority={Object.HasStateAuthority} " +
             $"master={Runner != null && Runner.IsSharedModeMasterClient} local={Runner?.LocalPlayer}");
@@ -128,6 +130,8 @@ public class MatchShotNetworkRelay : NetworkBehaviour
             return true;
         }
 
+        // Shared Mode: StateAuthority yoksa RPC_MatchStart (StateAuthority source) sessizce düşerdi.
+        // Master client RPC'yi All source ile basar.
         if (!IsMatchStartAuthority())
         {
             return false;
@@ -135,11 +139,16 @@ public class MatchShotNetworkRelay : NetworkBehaviour
 
         _matchStartSent = true;
         RPC_MatchStart();
-        Debug.Log("[ShotRelay] RPC_MatchStart");
+        Debug.Log(
+            $"[ShotRelay] RPC_MatchStart auth={Object.HasStateAuthority} " +
+            $"master={Runner != null && Runner.IsSharedModeMasterClient}");
         return true;
     }
 
-    /// <summary>Master: odadaki tüm oyuncular Ready ise MatchStart gönder.</summary>
+    /// <summary>
+    /// 2 oyuncu odadaysa başlat.
+    /// Ready handshake tercih edilir; 2 sn sonra Ready eksik olsa bile host zorlar.
+    /// </summary>
     public void TryEvaluateMatchStart()
     {
         if (_matchStartSent || Object == null || !Object.IsValid || Runner == null)
@@ -158,13 +167,35 @@ public class MatchShotNetworkRelay : NetworkBehaviour
             return;
         }
 
-        if (!AllActivePlayersReady())
+        bool allReady = AllActivePlayersReady();
+        bool enoughReady = _readyPlayers.Count >= 2;
+        float sinceSpawn = Time.unscaledTime - _spawnedAt;
+        bool forceAfterDelay = sinceSpawn >= 2f;
+
+        if (!allReady && !enoughReady && !forceAfterDelay)
         {
             return;
         }
 
-        Debug.Log($"[ShotRelay] EvaluateMatchStart OK active={activeCount} ready={_readyPlayers.Count}");
+        Debug.Log(
+            $"[ShotRelay] EvaluateMatchStart OK active={activeCount} ready={_readyPlayers.Count} " +
+            $"allReady={allReady} force={forceAfterDelay && !allReady}");
         TrySendMatchStart();
+    }
+
+    void Update()
+    {
+        if (_matchStartSent || Object == null || !Object.IsValid)
+        {
+            return;
+        }
+
+        // Host: periyodik Ready + evaluate (RPC kaybı / geç join toparlansın).
+        if (IsMatchStartAuthority() && Time.frameCount % 30 == 0)
+        {
+            TrySendClientReady();
+            TryEvaluateMatchStart();
+        }
     }
 
     bool IsMatchStartAuthority()
@@ -322,7 +353,7 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         ShotRollbackReceived?.Invoke(msg);
     }
 
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All, InvokeLocal = true)]
+    [Rpc(RpcSources.All, RpcTargets.All, InvokeLocal = true)]
     void RPC_MatchStart()
     {
         Debug.Log("[ShotRelay] RPC_Recv MatchStart");

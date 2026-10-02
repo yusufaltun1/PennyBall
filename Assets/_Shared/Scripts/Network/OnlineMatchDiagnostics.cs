@@ -41,6 +41,9 @@ public static class OnlineMatchDiagnostics
             $"relay={(MatchShotNetworkRelay.Instance != null)} " +
             $"authorized={OnlineMatchSession.MatchPlayAuthorized} " +
             $"matchmaking={OnlineFeatureFlags.OnlineMatchmakingEnabled}");
+
+        MatchShotNetworkRelay.Instance?.TrySendClientReady();
+        MatchShotNetworkRelay.Instance?.TryEvaluateMatchStart();
     }
 
     public static void LogPhotonJoin(string room, NetworkRunner runner)
