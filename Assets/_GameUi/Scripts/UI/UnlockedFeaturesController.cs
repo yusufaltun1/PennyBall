@@ -26,19 +26,19 @@ public class UnlockedFeaturesController : MonoBehaviour
 
     [Header("Freeze Content")]
     [SerializeField] Sprite _freezePosterSprite;
-    [SerializeField] string _freezeDescription = "Freeze opponent for 5s";
+    [SerializeField] string _freezeDescriptionKey = "unlocked.freeze.desc";
 
     [Header("Time Content")]
     [SerializeField] Sprite _timePosterSprite;
-    [SerializeField] string _timeDescription = "Extend the match for 15 seconds";
+    [SerializeField] string _timeDescriptionKey = "unlocked.time.desc";
 
     [Header("Goal Keeper Content")]
     [SerializeField] Sprite _goalKeeperPosterSprite;
-    [SerializeField] string _goalKeeperDescription = "Use a Goal Keeper for 5 seconds";
+    [SerializeField] string _goalKeeperDescriptionKey = "unlocked.goal_keeper.desc";
 
     [Header("Last Coin Content")]
     [SerializeField] Sprite _lastCoinPosterSprite;
-    [SerializeField] string _lastCoinDescription = "Activate latest coin";
+    [SerializeField] string _lastCoinDescriptionKey = "unlocked.last_coin.desc";
 
     [Header("Particle Burst")]
     [SerializeField] UIParticleBurstSettings _burstSettings = new()
@@ -75,6 +75,7 @@ public class UnlockedFeaturesController : MonoBehaviour
     readonly UIParticleBurstPlayer _burstPlayer = new();
     Image _posterImage;
     TextMeshProUGUI _descText;
+    TextMeshProUGUI _featureNameText;
 
     void Awake()
     {
@@ -92,6 +93,27 @@ public class UnlockedFeaturesController : MonoBehaviour
         _time = feature == BoosterType.Time;
         _goalKeeper = feature == BoosterType.GoalKeeper;
         _lastCoinEnable = feature == BoosterType.LastCoin;
+    }
+
+    [ContextMenu("Play Preview")]
+    void PlayPreview()
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning("[UnlockedFeatures] Play Preview sadece Play Mode'da çalışır.");
+            return;
+        }
+
+        BoosterType feature = _time ? BoosterType.Time
+            : _goalKeeper ? BoosterType.GoalKeeper
+            : _lastCoinEnable ? BoosterType.LastCoin
+            : BoosterType.Freeze;
+
+        Debug.Log($"[UnlockedFeatures] Play Preview: {feature}");
+        Configure(feature, null);
+        transform.SetAsLastSibling();
+        gameObject.SetActive(false);
+        gameObject.SetActive(true);
     }
 
     void WireContinueButton()
@@ -125,6 +147,8 @@ public class UnlockedFeaturesController : MonoBehaviour
 
     void OnEnable()
     {
+        LocalizationService.LanguageChanged += ApplyFeatureContent;
+
         if (!_playOnEnable)
         {
             return;
@@ -140,6 +164,8 @@ public class UnlockedFeaturesController : MonoBehaviour
 
     void OnDisable()
     {
+        LocalizationService.LanguageChanged -= ApplyFeatureContent;
+
         if (_sequenceRoutine != null)
         {
             StopCoroutine(_sequenceRoutine);
@@ -185,29 +211,58 @@ public class UnlockedFeaturesController : MonoBehaviour
         {
             _descText = _desc.GetComponent<TextMeshProUGUI>();
         }
+
+        if (_featureNameText == null && _poster != null)
+        {
+            Transform featureName = _poster.Find("FeatureName");
+            if (featureName != null)
+            {
+                _featureNameText = featureName.GetComponent<TextMeshProUGUI>();
+            }
+        }
     }
 
     void ApplyFeatureContent()
     {
+        ApplyFeatureName();
+
         switch (_activeFeature)
         {
             case BoosterType.Time:
                 ApplyPoster(_timePosterSprite);
-                ApplyDescription(_timeDescription);
+                ApplyDescription(_timeDescriptionKey);
                 return;
             case BoosterType.GoalKeeper:
                 ApplyPoster(_goalKeeperPosterSprite);
-                ApplyDescription(_goalKeeperDescription);
+                ApplyDescription(_goalKeeperDescriptionKey);
                 return;
             case BoosterType.LastCoin:
                 ApplyPoster(_lastCoinPosterSprite);
-                ApplyDescription(_lastCoinDescription);
+                ApplyDescription(_lastCoinDescriptionKey);
                 return;
             default:
                 ApplyPoster(_freezePosterSprite);
-                ApplyDescription(_freezeDescription);
+                ApplyDescription(_freezeDescriptionKey);
                 return;
         }
+    }
+
+    void ApplyFeatureName()
+    {
+        if (_featureNameText == null)
+        {
+            return;
+        }
+
+        string key = _activeFeature switch
+        {
+            BoosterType.Time => "unlocked.time.name",
+            BoosterType.GoalKeeper => "unlocked.goal_keeper.name",
+            BoosterType.LastCoin => "unlocked.last_coin.name",
+            _ => "unlocked.freeze.name",
+        };
+
+        _featureNameText.text = LocalizationService.Get(key);
     }
 
     void ApplyPoster(Sprite sprite)
@@ -218,11 +273,11 @@ public class UnlockedFeaturesController : MonoBehaviour
         }
     }
 
-    void ApplyDescription(string description)
+    void ApplyDescription(string descriptionKey)
     {
-        if (_descText != null && !string.IsNullOrEmpty(description))
+        if (_descText != null && !string.IsNullOrEmpty(descriptionKey))
         {
-            _descText.text = description;
+            _descText.text = LocalizationService.Get(descriptionKey);
         }
     }
 

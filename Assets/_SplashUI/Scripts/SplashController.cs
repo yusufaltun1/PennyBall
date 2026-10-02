@@ -32,15 +32,8 @@ public class SplashController : MonoBehaviour
 
     void Start()
     {
-        string nextScene = ResolveNextSceneName();
+        string nextScene = FirstRunFlow.GetSceneAfterSplash();
         StartCoroutine(LoadNextSceneRoutine(nextScene));
-    }
-
-    static string ResolveNextSceneName()
-    {
-        return OnboardingProgress.IsCompleted
-            ? GameSceneNames.MainMenu
-            : OnboardingSceneNames.Onboarding;
     }
 
     IEnumerator LoadNextSceneRoutine(string sceneName)

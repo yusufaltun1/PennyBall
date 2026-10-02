@@ -10,7 +10,7 @@ using UnityEngine.UI;
 public class LeagueStatusPresenter : MonoBehaviour
 {
     const string SeasonTimerObjectName = "LigTimer";
-    const string SeasonEndedText = "League ended";
+    const string SeasonEndedKey = "league.season_ended";
 
     [SerializeField] Text _leagueLabel;
     [SerializeField] Text _rankLabel;
@@ -111,12 +111,12 @@ public class LeagueStatusPresenter : MonoBehaviour
         string text;
         if (remaining <= TimeSpan.Zero)
         {
-            text = SeasonEndedText;
+            text = LocalizationService.Get(SeasonEndedKey);
         }
         else
         {
             text =
-                $"League ends in {remaining.Days}d {remaining.Hours}h {remaining.Minutes}m";
+                $"{remaining.Days}d {remaining.Hours}h {remaining.Minutes}m";
         }
 
         if (text == _lastSeasonTimerText)

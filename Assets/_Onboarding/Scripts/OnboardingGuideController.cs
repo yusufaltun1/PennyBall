@@ -266,8 +266,8 @@ public class OnboardingGuideController : MonoBehaviour
     [SerializeField] bool _appendStageNumberToGuideMessages = true;
 
     [Header("Aşama 1 — Drag")]
-    [InspectorLabel("Drag Message")]
-    [SerializeField] string _dragMessage = "Drag";
+    [InspectorLabel("Drag Message Key")]
+    [SerializeField] string _dragMessage = "onboarding.stage1.message";
     [Tooltip("Aşama 1→2 geçişi için minimum çekme gücü (0-1).")]
     [FormerlySerializedAs("_minPullPower01")]
     [InspectorLabel("Min Pull Power")]
@@ -300,8 +300,8 @@ public class OnboardingGuideController : MonoBehaviour
 
     [Header("Aşama 2 — Release To Shot")]
     [FormerlySerializedAs("_releaseToShotMessage")]
-    [InspectorLabel("Release Message")]
-    [SerializeField] string _stage2ReleaseMessage = "Release to shot";
+    [InspectorLabel("Release Message Key")]
+    [SerializeField] string _stage2ReleaseMessage = "onboarding.stage2.message";
     [Tooltip("Inspector hedefi (Transform atanırsa pozisyon yerine bunu kullanır).")]
     [InspectorLabel("Shot Target")]
     [SerializeField] Transform _stageTwoShotTarget;
@@ -320,8 +320,8 @@ public class OnboardingGuideController : MonoBehaviour
 
     [Header("Aşama 3 — Drag Again")]
     [FormerlySerializedAs("_dragAgainMessage")]
-    [InspectorLabel("Drag Message")]
-    [SerializeField] string _stage3DragMessage = "Drag again";
+    [InspectorLabel("Drag Message Key")]
+    [SerializeField] string _stage3DragMessage = "onboarding.stage3.message";
     [Tooltip("Aşama 3→4 geçişi için minimum çekme gücü (0-1).")]
     [InspectorLabel("Min Pull Power")]
     [SerializeField] float _stage3MinPullPower01 = 0.02f;
@@ -344,8 +344,8 @@ public class OnboardingGuideController : MonoBehaviour
     [SerializeField] float _stage3HandPause = 0.15f;
 
     [Header("Aşama 4 — Align Shot")]
-    [InspectorLabel("Release Message")]
-    [SerializeField] string _stage4ReleaseMessage = "Release to shot";
+    [InspectorLabel("Release Message Key")]
+    [SerializeField] string _stage4ReleaseMessage = "onboarding.stage4.message";
     [Tooltip("Inspector hedefi (Transform atanırsa pozisyon yerine bunu kullanır).")]
     [InspectorLabel("Shot Target")]
     [SerializeField] Transform _stageFourShotTarget;
@@ -366,8 +366,8 @@ public class OnboardingGuideController : MonoBehaviour
     [SerializeField] float _stageFourToCompletePause = 1.5f;
 
     [Header("Aşama 5 — Drag")]
-    [InspectorLabel("Drag Message")]
-    [SerializeField] string _stage5DragMessage = "Pull";
+    [InspectorLabel("Drag Message Key")]
+    [SerializeField] string _stage5DragMessage = "onboarding.stage5.message";
     [Tooltip("El offset (piksel). Pozitif X sağa.")]
     [InspectorLabel("Hand Screen Offset")]
     [SerializeField] Vector2 _stage5HandScreenOffset = new(45f, 0f);
@@ -385,14 +385,14 @@ public class OnboardingGuideController : MonoBehaviour
     [SerializeField] float _stage5HandPause = 0.15f;
 
     [Header("Aşama 6 — Power Aim")]
-    [InspectorLabel("Drag Message")]
-    [SerializeField] string _stage6DragMessage = "Pull";
+    [InspectorLabel("Drag Message Key")]
+    [SerializeField] string _stage6DragMessage = "onboarding.stage6.message";
     [Tooltip("Aim ucu GateIndicator'ü geçmeden önce.")]
-    [InspectorLabel("Increase Power Message")]
-    [SerializeField] string _stage6IncreasePowerMessage = "Increase Power";
+    [InspectorLabel("Increase Power Message Key")]
+    [SerializeField] string _stage6IncreasePowerMessage = "onboarding.stage6.increase_power";
     [Tooltip("Aim ucu GateIndicator'ü geçince.")]
-    [InspectorLabel("Release Message")]
-    [SerializeField] string _stage6ReleaseMessage = "Release now";
+    [InspectorLabel("Release Message Key")]
+    [SerializeField] string _stage6ReleaseMessage = "onboarding.stage6.release_now";
     [Tooltip("El offset (piksel). Pozitif X sağa.")]
     [InspectorLabel("Hand Screen Offset")]
     [SerializeField] Vector2 _stage6HandScreenOffset = new(45f, 0f);
@@ -428,8 +428,8 @@ public class OnboardingGuideController : MonoBehaviour
     [SerializeField] float _stage6SuccessReturnHomePause = 1f;
 
     [Header("Aşama 7 — Drag")]
-    [InspectorLabel("Drag Message")]
-    [SerializeField] string _stage7DragMessage = "Pull";
+    [InspectorLabel("Drag Message Key")]
+    [SerializeField] string _stage7DragMessage = "onboarding.stage7.message";
     [Tooltip("El offset (piksel). Pozitif X sağa.")]
     [InspectorLabel("Hand Screen Offset")]
     [SerializeField] Vector2 _stage7HandScreenOffset = new(45f, 0f);
@@ -468,8 +468,8 @@ public class OnboardingGuideController : MonoBehaviour
     [SerializeField] GameObject _stage7Alert;
 
     [Header("Aşama 8 — Drag")]
-    [InspectorLabel("Drag Message")]
-    [SerializeField] string _stage8DragMessage = "Drag";
+    [InspectorLabel("Drag Message Key")]
+    [SerializeField] string _stage8DragMessage = "onboarding.stage8.message";
     [Tooltip("El offset (piksel). Pozitif X sağa.")]
     [InspectorLabel("Hand Screen Offset")]
     [SerializeField] Vector2 _stage8HandScreenOffset = new(45f, 0f);
@@ -504,8 +504,8 @@ public class OnboardingGuideController : MonoBehaviour
     [SerializeField] float _stage9CoinResetDuration = 0.75f;
 
     [Header("Aşama 10 — Pull and Goal")]
-    [InspectorLabel("Pull Message")]
-    [SerializeField] string _stage10DragMessage = "Pull and Goal";
+    [InspectorLabel("Pull Message Key")]
+    [SerializeField] string _stage10DragMessage = "onboarding.stage10.message";
     [Tooltip("El offset (piksel). Pozitif X sağa.")]
     [InspectorLabel("Hand Screen Offset")]
     [SerializeField] Vector2 _stage10HandScreenOffset = new(45f, 0f);
@@ -2944,7 +2944,8 @@ public class OnboardingGuideController : MonoBehaviour
         UpdateStageSevenWedgeSpotlight();
         SetCoinGuideAnchors();
         ShowCoinGuideVisuals();
-        SetGuideExplanationVisible(false);
+        SetActiveGuideText(_stage7DragMessage);
+        SetExplanationBackground(_positiveExplanationColor);
         UpdateActiveGuideElementPosition();
         UpdateStageSevenWedgeSpotlight();
     }
@@ -3630,10 +3631,6 @@ public class OnboardingGuideController : MonoBehaviour
                  || _phase == GuidePhase.Stage10_PullAndGoal)
         {
             RestoreCoinGuideElementIfNeeded();
-            if (_phase == GuidePhase.Stage7_Drag)
-            {
-                SetGuideExplanationVisible(false);
-            }
         }
     }
 
@@ -4453,13 +4450,7 @@ public class OnboardingGuideController : MonoBehaviour
         bool compactCoinLayout = UsesCompactCoinGuideLayout(guideElement);
         bool stageOneHand = UsesHandDragAnimation() && arrow == _arrow;
         bool textOnlyExplanation = UsesTextOnlyExplanationLayout(guideElement);
-        bool hideExplanation = _phase == GuidePhase.Stage7_Drag;
-
-        if (hideExplanation)
-        {
-            explanation.gameObject.SetActive(false);
-        }
-        else if (!explanation.gameObject.activeSelf)
+        if (!explanation.gameObject.activeSelf)
         {
             explanation.gameObject.SetActive(true);
         }
@@ -4479,16 +4470,10 @@ public class OnboardingGuideController : MonoBehaviour
         }
 
         GuideExplanationAutoWidth autoWidth = explanation.GetComponent<GuideExplanationAutoWidth>();
-        if (!hideExplanation)
-        {
-            autoWidth?.Refresh();
-        }
+        autoWidth?.Refresh();
 
         Canvas.ForceUpdateCanvases();
-        if (!hideExplanation)
-        {
-            LayoutRebuilder.ForceRebuildLayoutImmediate(explanation);
-        }
+        LayoutRebuilder.ForceRebuildLayoutImmediate(explanation);
 
         if (!textOnlyExplanation)
         {
@@ -4496,12 +4481,12 @@ public class OnboardingGuideController : MonoBehaviour
         }
 
         float arrowHeight = textOnlyExplanation ? 0f : MeasureGuideChildHeight(arrow);
-        float explanationHeight = hideExplanation ? 0f : MeasureGuideChildHeight(explanation);
+        float explanationHeight = MeasureGuideChildHeight(explanation);
         float arrowWidth = textOnlyExplanation ? 0f : MeasureGuideChildWidth(arrow);
-        float explanationWidth = hideExplanation ? 0f : MeasureGuideChildWidth(explanation);
+        float explanationWidth = MeasureGuideChildWidth(explanation);
 
         float explanationGap = compactCoinLayout ? _coinGuideExplanationGap : _explanationArrowGap;
-        if (!hideExplanation && (stageOneHand || textOnlyExplanation))
+        if (stageOneHand || textOnlyExplanation)
         {
             // El / metin-only pull aşamalarında explanation Inspector offset'i ile konumlanır.
             explanation.anchorMin = new Vector2(0.5f, 0.5f);
@@ -4509,16 +4494,14 @@ public class OnboardingGuideController : MonoBehaviour
             explanation.pivot = new Vector2(0.5f, 0.5f);
             explanation.anchoredPosition = GetActiveHandExplanationScreenOffset();
         }
-        else if (!hideExplanation && compactCoinLayout)
+        else if (compactCoinLayout)
         {
             ApplyCompactCoinArrowLayout(arrow, arrowHeight);
             ApplyCompactCoinExplanationLayout(explanation, arrowHeight);
         }
 
         float width = Mathf.Max(arrowWidth, explanationWidth, _guideElementMinWidth);
-        float height = hideExplanation
-            ? (textOnlyExplanation ? 0f : arrowHeight)
-            : textOnlyExplanation
+        float height = textOnlyExplanation
             ? explanationHeight
             : stageOneHand
             ? arrowHeight * 0.5f + explanationGap + explanationHeight + arrowHeight * 0.5f
@@ -4526,7 +4509,7 @@ public class OnboardingGuideController : MonoBehaviour
         guideElement.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
         guideElement.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
 
-        if (!hideExplanation && !stageOneHand && !textOnlyExplanation && compactCoinLayout)
+        if (!stageOneHand && !textOnlyExplanation && compactCoinLayout)
         {
             ApplyCompactCoinArrowLayout(arrow, arrowHeight);
             ApplyCompactCoinExplanationLayout(explanation, arrowHeight);
@@ -4694,7 +4677,7 @@ public class OnboardingGuideController : MonoBehaviour
         _activeExplanationImage = GetExplanationImage(_guideElement);
         PrepareCoinGuideArrow();
         ShowActiveGuideVisuals();
-        SetGuideExplanationVisible(_phase != GuidePhase.Stage7_Drag);
+        SetGuideExplanationVisible(true);
     }
 
     void SetGuideExplanationVisible(bool visible)
@@ -4996,8 +4979,9 @@ public class OnboardingGuideController : MonoBehaviour
         RefreshExplanationLayout(_pullGuideElement);
     }
 
-    string FormatGuideMessage(string message)
+    string FormatGuideMessage(string messageKey)
     {
+        string message = LocalizationService.Get(messageKey);
         if (!_appendStageNumberToGuideMessages
             || string.IsNullOrEmpty(message)
             || !TryGetDisplayStageNumber(out int stageNumber))

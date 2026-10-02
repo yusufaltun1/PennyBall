@@ -11250,13 +11250,13 @@ MonoBehaviour:
   _goalKeeper: 0
   _lastCoinEnable: 0
   _freezePosterSprite: {fileID: 21300000, guid: acbd5703b02ee495ebc5dca2499ccc5b, type: 3}
-  _freezeDescription: Freeze opponent for 5s
+  _freezeDescriptionKey: unlocked.freeze.desc
   _timePosterSprite: {fileID: 21300000, guid: 13ef95767c5ff46ff808d0a5ff7180d0, type: 3}
-  _timeDescription: Extend the match for 15 seconds
+  _timeDescriptionKey: unlocked.time.desc
   _goalKeeperPosterSprite: {fileID: 21300000, guid: ab019671af0b84e5b9f9989b6170b338, type: 3}
-  _goalKeeperDescription: Use a Goal Keeper for 5 seconds
+  _goalKeeperDescriptionKey: unlocked.goal_keeper.desc
   _lastCoinPosterSprite: {fileID: 21300000, guid: 2059be756a2214de38ea684c2ac41b48, type: 3}
-  _lastCoinDescription: Activate latest coin
+  _lastCoinDescriptionKey: unlocked.last_coin.desc
   _burstSettings:
     particleCount: 24
     burstCoverage: 1

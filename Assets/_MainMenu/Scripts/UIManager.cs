@@ -85,9 +85,10 @@ public class UIManager : MonoBehaviour
     {
         MainMenuClickSound.Play();
 
-        if (!OnboardingProgress.IsCompleted)
+        string pendingFirstRunScene = FirstRunFlow.GetPendingFirstRunScene();
+        if (pendingFirstRunScene != null)
         {
-            SceneManager.LoadScene(OnboardingSceneNames.Onboarding);
+            SceneManager.LoadScene(pendingFirstRunScene);
             return;
         }
 

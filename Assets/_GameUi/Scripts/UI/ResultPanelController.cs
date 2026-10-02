@@ -21,7 +21,6 @@ public class ResultPanelController : MonoBehaviour
         public Sprite p1;
         public Sprite p2;
         public Sprite p3;
-        public Sprite resultLabel;
     }
 
     [Header("Playback")]
@@ -36,7 +35,8 @@ public class ResultPanelController : MonoBehaviour
     [SerializeField] private OutcomeSprites drawSprites;
 
     [Header("Animation Targets")]
-    [SerializeField] private RectTransform resultLabel;
+    [SerializeField] private RectTransform result;
+    [SerializeField] private TextMeshProUGUI resultText;
     [SerializeField] private RectTransform people;
     [SerializeField] private RectTransform icon;
     [SerializeField] private RectTransform p1;
@@ -60,7 +60,7 @@ public class ResultPanelController : MonoBehaviour
     [SerializeField] private float rewardsDuration = 0.5f;
 
     [Header("Timing")]
-    [SerializeField] private float labelDuration = 0.55f;
+    [SerializeField] private float resultDuration = 0.55f;
     [SerializeField] private float peopleScaleDuration = 0.5f;
     [SerializeField] private float iconMoveDuration = 0.5f;
     [SerializeField] private float resultHoldDuration = 0.5f;
@@ -69,14 +69,13 @@ public class ResultPanelController : MonoBehaviour
     [SerializeField] private float continueDuration = 0.5f;
     [SerializeField] private float offscreenPadding = 120f;
 
-    private Image resultLabelImage;
     private Image iconImage;
     private Image p1Image;
     private Image p2Image;
     private Image p3Image;
 
     private RectTransform canvasRect;
-    private RectState labelFinal;
+    private RectState resultFinal;
     private RectState iconFinal;
     private RectState peopleFinal;
     private readonly RectState[] personFinals = new RectState[3];
@@ -136,7 +135,6 @@ public class ResultPanelController : MonoBehaviour
     private void Awake()
     {
         canvasRect = GetComponentInParent<Canvas>()?.GetComponent<RectTransform>();
-        resultLabelImage = resultLabel.GetComponent<Image>();
         iconImage = icon.GetComponent<Image>();
         p1Image = p1.GetComponent<Image>();
         p2Image = p2.GetComponent<Image>();
@@ -315,7 +313,7 @@ public class ResultPanelController : MonoBehaviour
     {
         if (earnedCoinsLabel != null)
         {
-            earnedCoinsLabel.text = $"+{MatchSessionContext.EarnedCoins}";
+            earnedCoinsLabel.text = LocalizationService.Get("game.reward_coins", MatchSessionContext.EarnedCoins);
             earnedCoinsLabel.ForceMeshUpdate();
         }
 
@@ -402,6 +400,8 @@ public class ResultPanelController : MonoBehaviour
 
     private void OnEnable()
     {
+        LocalizationService.LanguageChanged += OnLanguageChanged;
+
         previousWon = won;
         previousLost = lost;
         previousDraw = draw;
@@ -420,7 +420,18 @@ public class ResultPanelController : MonoBehaviour
 
     private void OnDisable()
     {
+        LocalizationService.LanguageChanged -= OnLanguageChanged;
         StopPresentation();
+    }
+
+    private void OnLanguageChanged()
+    {
+        RefreshResultText();
+
+        if (!IsExerciseMode)
+        {
+            RefreshRewardLabels();
+        }
     }
 
     private void Update()
@@ -464,6 +475,12 @@ public class ResultPanelController : MonoBehaviour
         if (outcome != ResultOutcome.None)
         {
             ApplyOutcomeSprites(outcome);
+            RefreshResultText();
+
+            if (!IsExerciseMode)
+            {
+                RefreshRewardLabels();
+            }
 
             if (outcome == ResultOutcome.Won)
             {
@@ -507,11 +524,6 @@ public class ResultPanelController : MonoBehaviour
             _ => default
         };
 
-        if (sprites.resultLabel != null)
-        {
-            resultLabelImage.sprite = sprites.resultLabel;
-        }
-
         if (sprites.icon != null)
         {
             iconImage.sprite = sprites.icon;
@@ -533,6 +545,27 @@ public class ResultPanelController : MonoBehaviour
         }
     }
 
+    private void RefreshResultText()
+    {
+        if (resultText == null)
+        {
+            return;
+        }
+
+        string key = GetActiveOutcome() switch
+        {
+            ResultOutcome.Won => "game.result.win",
+            ResultOutcome.Lost => "game.result.lost",
+            ResultOutcome.Draw => "game.result.draw",
+            _ => null
+        };
+
+        if (key != null)
+        {
+            resultText.SetText(LocalizationService.Get(key));
+        }
+    }
+
     private void StopPresentation()
     {
         if (playCoroutine != null)
@@ -546,7 +579,10 @@ public class ResultPanelController : MonoBehaviour
 
     private void CacheFinalStates()
     {
-        labelFinal = Capture(resultLabel);
+        if (result != null)
+        {
+            resultFinal = Capture(result);
+        }
         iconFinal = Capture(icon);
         peopleFinal = Capture(people);
         personFinals[0] = Capture(p1);
@@ -583,11 +619,14 @@ public class ResultPanelController : MonoBehaviour
     {
         float canvasHalfHeight = GetCanvasHalfHeight();
 
-        resultLabel.gameObject.SetActive(true);
-        resultLabel.anchoredPosition = new Vector2(
-            labelFinal.AnchoredPosition.x,
-            -canvasHalfHeight - resultLabel.rect.height * 0.5f - offscreenPadding);
-        resultLabel.localScale = Vector3.one * 0.1f;
+        if (result != null)
+        {
+            result.gameObject.SetActive(true);
+            result.anchoredPosition = new Vector2(
+                resultFinal.AnchoredPosition.x,
+                -canvasHalfHeight - result.rect.height * 0.5f - offscreenPadding);
+            result.localScale = Vector3.one * 0.1f;
+        }
 
         people.gameObject.SetActive(false);
         people.anchoredPosition = peopleFinal.AnchoredPosition;
@@ -617,8 +656,12 @@ public class ResultPanelController : MonoBehaviour
     {
         if (includeResultElements)
         {
-            resultLabel.gameObject.SetActive(true);
-            Apply(resultLabel, labelFinal);
+            if (result != null)
+            {
+                result.gameObject.SetActive(true);
+                Apply(result, resultFinal);
+            }
+
             people.gameObject.SetActive(true);
             Apply(people, peopleFinal);
             Apply(p1, personFinals[0]);
@@ -629,7 +672,11 @@ public class ResultPanelController : MonoBehaviour
         }
         else
         {
-            resultLabel.gameObject.SetActive(false);
+            if (result != null)
+            {
+                result.gameObject.SetActive(false);
+            }
+
             people.gameObject.SetActive(false);
             icon.gameObject.SetActive(false);
         }
@@ -660,13 +707,16 @@ public class ResultPanelController : MonoBehaviour
 
     private IEnumerator PlayResultSequence()
     {
-        yield return AnimateRect(
-            resultLabel,
-            resultLabel.anchoredPosition,
-            labelFinal.AnchoredPosition,
-            Vector3.one * 0.1f,
-            labelFinal.LocalScale,
-            labelDuration);
+        if (result != null)
+        {
+            yield return AnimateRect(
+                result,
+                result.anchoredPosition,
+                resultFinal.AnchoredPosition,
+                Vector3.one * 0.1f,
+                resultFinal.LocalScale,
+                resultDuration);
+        }
 
         people.gameObject.SetActive(true);
         SetPersonScales(Vector3.one * 0.1f);
@@ -711,7 +761,10 @@ public class ResultPanelController : MonoBehaviour
 
         icon.gameObject.SetActive(false);
         people.gameObject.SetActive(false);
-        resultLabel.gameObject.SetActive(false);
+        if (result != null)
+        {
+            result.gameObject.SetActive(false);
+        }
 
         if (rewards != null && !IsExerciseMode)
         {

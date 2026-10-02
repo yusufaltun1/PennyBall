@@ -15,6 +15,7 @@ public class LevelUpController : MonoBehaviour
     [SerializeField] RectTransform _coins;
     [SerializeField] RectTransform _claimButton;
     [SerializeField] TextMeshProUGUI _levelText;
+    [SerializeField] TextMeshProUGUI _rewardedCoinsText;
 
     [SerializeField] UIParticleBurstSettings _burstSettings = new()
     {
@@ -64,6 +65,7 @@ public class LevelUpController : MonoBehaviour
 
     void OnDisable()
     {
+        LocalizationService.LanguageChanged -= ApplyRewardedCoinsText;
         _playOnEnable = false;
         StopSequenceCoroutines();
         _burstPlayer.Clear();
@@ -71,6 +73,9 @@ public class LevelUpController : MonoBehaviour
 
     void OnEnable()
     {
+        LocalizationService.LanguageChanged += ApplyRewardedCoinsText;
+        ApplyRewardedCoinsText();
+
         if (!_playOnEnable)
         {
             return;
@@ -238,6 +243,16 @@ public class LevelUpController : MonoBehaviour
         _levelText.text = _displayLevel.ToString();
     }
 
+    void ApplyRewardedCoinsText()
+    {
+        if (_rewardedCoinsText == null)
+        {
+            return;
+        }
+
+        _rewardedCoinsText.text = LocalizationService.Get("level_up.reward_coins", LevelUpBonusCoins);
+    }
+
     void ResolveReferences()
     {
         if (_particleBurst == null)
@@ -260,6 +275,15 @@ public class LevelUpController : MonoBehaviour
         if (_coins == null)
         {
             _coins = transform.Find("Coins") as RectTransform;
+        }
+
+        if (_rewardedCoinsText == null && _coins != null)
+        {
+            Transform rewardedCoins = FindDeepChild(_coins, "RewardedCoins");
+            if (rewardedCoins != null)
+            {
+                _rewardedCoinsText = rewardedCoins.GetComponent<TextMeshProUGUI>();
+            }
         }
 
         if (_claimButton == null)

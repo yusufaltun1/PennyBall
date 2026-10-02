@@ -10,6 +10,7 @@ public class BottomTabMenu : MonoBehaviour
         public Button button;
         public GameObject bgObject;
         public Image iconImage;
+        public GameObject nameObject;
         public Sprite defaultSprite;
         public Sprite pressedSprite;
     }
@@ -105,6 +106,11 @@ public class BottomTabMenu : MonoBehaviour
             if (tab.bgObject != null)
             {
                 tab.bgObject.SetActive(isActive);
+            }
+
+            if (tab.nameObject != null)
+            {
+                tab.nameObject.SetActive(isActive);
             }
 
             if (tab.iconImage != null)

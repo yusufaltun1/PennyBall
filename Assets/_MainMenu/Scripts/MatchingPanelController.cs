@@ -433,7 +433,7 @@ public class MatchingPanelController : MonoBehaviour
         if (findingText != null)
         {
             findingText.fontSize = 64f;
-            findingText.text = "Finding a match...";
+            findingText.text = LocalizationService.Get("matching.finding");
         }
     }
 

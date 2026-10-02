@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -21,6 +22,11 @@ public class SettingsPopupController : MonoBehaviour
     private bool isOpen;
     private bool _settingsBound;
     private bool _buttonsWired;
+    const float LanguageOptionWidth = 72f;
+    const float LanguageOptionSpacing = 8f;
+    static readonly Color UnselectedLanguageColor = new(1f, 1f, 1f, 0.4f);
+
+    private readonly List<LanguageOption> _languageOptions = new();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void RegisterSceneHook()
@@ -208,6 +214,8 @@ public class SettingsPopupController : MonoBehaviour
         BindToggle("PanelRoot/Container/Wrapper/Control-Vibrations/Button", SettingsToggleControl.SettingKind.Vibration);
         BindToggle("PanelRoot/Container/Wrapper/Control-Notifications/Button", SettingsToggleControl.SettingKind.Notification);
         BindTermsLink();
+        BindHowToPlayLink();
+        BindLanguageControl();
         ConfigureVersionLabel();
         _settingsBound = true;
     }
@@ -243,6 +251,171 @@ public class SettingsPopupController : MonoBehaviour
     {
         MainMenuClickSound.Play();
         Application.OpenURL(PrivacyPolicyUrl);
+    }
+
+    void BindHowToPlayLink()
+    {
+        Transform linkTransform = transform.Find("PanelRoot/Container/Wrapper/Link-HowToPlay");
+        if (linkTransform == null)
+        {
+            return;
+        }
+
+        Button linkButton = linkTransform.GetComponent<Button>();
+        if (linkButton == null)
+        {
+            Image image = linkTransform.GetComponent<Image>();
+            linkButton = linkTransform.gameObject.AddComponent<Button>();
+            linkButton.transition = Selectable.Transition.None;
+            if (image != null)
+            {
+                linkButton.targetGraphic = image;
+            }
+        }
+
+        linkButton.onClick.RemoveListener(OpenHowToPlay);
+        linkButton.onClick.AddListener(OpenHowToPlay);
+    }
+
+    void BindLanguageControl()
+    {
+        if (_languageOptions.Count > 0)
+        {
+            RefreshLanguageOptions();
+            return;
+        }
+
+        Transform controlTransform = transform.Find("PanelRoot/Container/Wrapper/Control-Language");
+        if (controlTransform == null)
+        {
+            return;
+        }
+
+        Transform templateTransform = controlTransform.Find("Button");
+        Button template = templateTransform != null ? templateTransform.GetComponent<Button>() : null;
+        if (template == null)
+        {
+            Debug.LogWarning("[Settings] Control-Language/Button bulunamadı.");
+            return;
+        }
+
+        var languages = LocalizationService.SupportedLanguages;
+        RectTransform optionsRoot = CreateLanguageOptionsRoot(
+            controlTransform,
+            (RectTransform)template.transform,
+            languages.Count);
+
+        for (int i = 0; i < languages.Count; i++)
+        {
+            string languageCode = languages[i];
+            Button option = Instantiate(template, optionsRoot, false);
+            option.name = $"Language-{LocalizationService.GetLanguageShortLabel(languageCode)}";
+            option.onClick.RemoveAllListeners();
+            option.onClick.AddListener(() => OnLanguageOptionPressed(languageCode));
+
+            LayoutElement layout = option.GetComponent<LayoutElement>() ?? option.gameObject.AddComponent<LayoutElement>();
+            layout.preferredWidth = LanguageOptionWidth;
+            layout.flexibleWidth = 1f;
+
+            TextMeshProUGUI label = option.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (label != null)
+            {
+                label.text = LocalizationService.GetLanguageShortLabel(languageCode);
+            }
+
+            _languageOptions.Add(new LanguageOption(languageCode, option.GetComponent<Image>(), label));
+        }
+
+        template.gameObject.SetActive(false);
+
+        LocalizationService.LanguageChanged -= RefreshLanguageOptions;
+        LocalizationService.LanguageChanged += RefreshLanguageOptions;
+        RefreshLanguageOptions();
+    }
+
+    static RectTransform CreateLanguageOptionsRoot(Transform parent, RectTransform template, int optionCount)
+    {
+        var rootObject = new GameObject("LanguageOptions", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        var root = (RectTransform)rootObject.transform;
+        root.SetParent(parent, false);
+        // Satır etiketi (raycast target) butonların üstüne taşıyor; en üstte kalmazsa soldaki buton tıklanmaz.
+        root.SetAsLastSibling();
+
+        float width = Mathf.Max(
+            template.rect.width,
+            optionCount * LanguageOptionWidth + (optionCount - 1) * LanguageOptionSpacing);
+        float rightEdge = template.anchoredPosition.x + (1f - template.pivot.x) * template.rect.width;
+
+        // Şablonun sağ kenarı sabit kalır; butonlar sola doğru genişler.
+        root.anchorMin = template.anchorMin;
+        root.anchorMax = template.anchorMax;
+        root.pivot = new Vector2(1f, template.pivot.y);
+        root.sizeDelta = new Vector2(width, template.rect.height);
+        root.anchoredPosition = new Vector2(rightEdge, template.anchoredPosition.y);
+
+        HorizontalLayoutGroup layout = rootObject.GetComponent<HorizontalLayoutGroup>();
+        layout.spacing = LanguageOptionSpacing;
+        layout.childAlignment = TextAnchor.MiddleRight;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = true;
+
+        return root;
+    }
+
+    void OnLanguageOptionPressed(string languageCode)
+    {
+        if (languageCode == LocalizationService.CurrentLanguage)
+        {
+            return;
+        }
+
+        MainMenuClickSound.Play();
+        LocalizationService.SetLanguage(languageCode);
+    }
+
+    void RefreshLanguageOptions()
+    {
+        string currentLanguage = LocalizationService.CurrentLanguage;
+        for (int i = 0; i < _languageOptions.Count; i++)
+        {
+            LanguageOption option = _languageOptions[i];
+            Color color = option.LanguageCode == currentLanguage ? Color.white : UnselectedLanguageColor;
+
+            if (option.Background != null)
+            {
+                option.Background.color = color;
+            }
+
+            if (option.Label != null)
+            {
+                option.Label.color = color;
+            }
+        }
+    }
+
+    readonly struct LanguageOption
+    {
+        public readonly string LanguageCode;
+        public readonly Image Background;
+        public readonly TextMeshProUGUI Label;
+
+        public LanguageOption(string languageCode, Image background, TextMeshProUGUI label)
+        {
+            LanguageCode = languageCode;
+            Background = background;
+            Label = label;
+        }
+    }
+
+    void OpenHowToPlay()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        Transform overlayParent = canvas != null ? canvas.rootCanvas.transform : transform.parent;
+
+        Close();
+        HowToPlayOverlay.Open(overlayParent);
     }
 
     void RefreshAllToggles()
@@ -302,6 +475,8 @@ public class SettingsPopupController : MonoBehaviour
 
     private void OnDestroy()
     {
+        LocalizationService.LanguageChanged -= RefreshLanguageOptions;
+
         if (openButton != null)
         {
             openButton.onClick.RemoveListener(Open);
