@@ -76,10 +76,10 @@ public class OnboardingCompleteController : MonoBehaviour
         _burstPlayer.Clear();
     }
 
-    public void ClaimToExercise()
+    public void ClaimToMainMenu()
     {
         MainMenuClickSound.Play();
-        SceneManager.LoadScene(GameSceneNames.Exercise);
+        SceneManager.LoadScene(GameSceneNames.MainMenu);
     }
 
     void WireClaimButton()
@@ -95,8 +95,8 @@ public class OnboardingCompleteController : MonoBehaviour
             return;
         }
 
-        button.onClick.RemoveListener(ClaimToExercise);
-        button.onClick.AddListener(ClaimToExercise);
+        button.onClick.RemoveListener(ClaimToMainMenu);
+        button.onClick.AddListener(ClaimToMainMenu);
     }
 
     void ResolveReferences()

@@ -64,15 +64,19 @@ public class MatchScoreboardPresenter : MonoBehaviour
             return;
         }
 
-        if (!_handleMatchEnd)
-        {
-            playerScore = MatchSessionContext.PlayerGoalsAtEnd;
-            opponentScore = MatchSessionContext.OpponentGoalsAtEnd;
-            return;
-        }
+        // Maç bitti (hükmen 0-3 dahil) — final skor
+        playerScore = MatchSessionContext.PlayerGoalsAtEnd;
+        opponentScore = MatchSessionContext.OpponentGoalsAtEnd;
 
-        playerScore = 0;
-        opponentScore = 0;
+        if (LeagueMatchController.Instance != null
+            && playerScore == 0
+            && opponentScore == 0
+            && (LeagueMatchController.Instance.PlayerGoals != 0
+                || LeagueMatchController.Instance.OpponentGoals != 0))
+        {
+            playerScore = LeagueMatchController.Instance.PlayerGoals;
+            opponentScore = LeagueMatchController.Instance.OpponentGoals;
+        }
     }
 
     public static void RefreshAll()

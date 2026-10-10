@@ -6,4 +6,5 @@ public class GameFeedbackSettingsData
     public bool soundEffectsEnabled = true;
     public bool vibrationEnabled = true;
     public bool musicEnabled = true;
+    public bool notificationEnabled = true;
 }

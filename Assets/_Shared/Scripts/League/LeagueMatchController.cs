@@ -211,6 +211,7 @@ public class LeagueMatchController : MonoBehaviour
         // _matchTimeRemaining = 0f;
         // _matchTimerPaused = false;
         //
+        // MatchSessionContext.SetFinalScore(_playerGoals, _opponentGoals);
         // StopMatchTimer();
         // MatchSessionTracker.MarkAbandon("background_forfeit");
         // ScoresChanged?.Invoke();

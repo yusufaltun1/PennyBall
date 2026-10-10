@@ -28,16 +28,25 @@ public static class GameFeedbackSettingsService
         set => SetField(ref _data.vibrationEnabled, value);
     }
 
-    public static bool MusicEnabled
-    {
-        get
+        public static bool MusicEnabled
         {
-            EnsureLoaded();
-            return _data.musicEnabled;
+            get
+            {
+                EnsureLoaded();
+                return _data.musicEnabled;
+            }
+            set => SetField(ref _data.musicEnabled, value);
         }
-        set => SetField(ref _data.musicEnabled, value);
-    }
 
+        public static bool NotificationEnabled
+        {
+            get
+            {
+                EnsureLoaded();
+                return _data.notificationEnabled;
+            }
+            set => SetField(ref _data.notificationEnabled, value);
+        }
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Bootstrap()
     {

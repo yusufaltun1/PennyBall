@@ -85,9 +85,10 @@ public class UIManager : MonoBehaviour
     {
         MainMenuClickSound.Play();
 
-        if (!OnboardingProgress.IsCompleted)
+        string pendingFirstRunScene = FirstRunFlow.GetPendingFirstRunScene();
+        if (pendingFirstRunScene != null)
         {
-            SceneManager.LoadScene(OnboardingSceneNames.Onboarding);
+            SceneManager.LoadScene(pendingFirstRunScene);
             return;
         }
 
@@ -103,6 +104,14 @@ public class UIManager : MonoBehaviour
     public void OnPlayOfflineButtonPressed()
     {
         MainMenuClickSound.Play();
+
+        GameAnalytics.Track("play_offline", new Dictionary<string, string>
+        {
+            { "league", LeagueService.Instance != null ? LeagueService.Instance.PlayerLeague.ToString() : "1" },
+            { "player_level", WalletService.Level.ToString() },
+            { "source", "main_menu" }
+        });
+
         SceneManager.LoadScene(GameSceneNames.Exercise);
     }
 

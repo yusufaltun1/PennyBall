@@ -121,6 +121,8 @@ public class CoinInputHandler : MonoBehaviour
 
             _cameraZoom?.TryBeginEdgeAssist(_activeCoin);
 
+            OnboardingGuideController.Instance?.PrepareOnboardingAimLockBeforeAimUpdate(_activeCoin);
+
             if (TryUpdateAim(screenPosition, out pullRatio, out float sideRatioFromAim))
             {
                 sideRatio = sideRatioFromAim;
@@ -182,7 +184,10 @@ public class CoinInputHandler : MonoBehaviour
         }
 
         GateIndicator indicator = GateIndicator.Instance;
-        if (indicator != null && indicator.IsVisible)
+        if (indicator != null
+            && indicator.IsVisible
+            && (OnboardingGuideController.Instance == null
+                || !OnboardingGuideController.Instance.ShouldKeepOnboardingGateIndicatorVisible))
         {
             indicator.Hide();
         }
@@ -254,6 +259,9 @@ public class CoinInputHandler : MonoBehaviour
         CaptureAimRayReference();
         _activeCoin.BeginAim();
         _cameraZoom?.TryBeginEdgeAssist(coin);
+
+        // Aşama 8→9: GateIndicator göstermeden önce Stage9 kurallarını aç.
+        OnboardingGuideController.Instance?.OnPlayerAimBegan(_activeCoin);
 
         CoinIdentity identity = _activeCoin.GetComponent<CoinIdentity>();
         TryShowGateIndicator(identity, _activeCoin);

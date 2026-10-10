@@ -110,7 +110,7 @@ public class LevelStatusRowView : MonoBehaviour
         }
     }
 
-    public void Bind(int level, int xpRequired, float progress, bool isMaxLevel)
+    public void Bind(int level, int xpRequired, float progress, bool isMaxLevel, bool showMinFillAtZero = false)
     {
         ResolveReferences();
 
@@ -124,10 +124,10 @@ public class LevelStatusRowView : MonoBehaviour
             xpLabel.SetText(isMaxLevel ? "MAX" : xpRequired.ToString());
         }
 
-        ApplyBarFill(isMaxLevel ? 1f : progress);
+        ApplyBarFill(isMaxLevel ? 1f : progress, showMinFillAtZero);
     }
 
-    void ApplyBarFill(float progress)
+    void ApplyBarFill(float progress, bool showMinFillAtZero)
     {
         if (barFill == null)
         {
@@ -137,7 +137,7 @@ public class LevelStatusRowView : MonoBehaviour
         CacheFullBarWidth();
 
         progress = Mathf.Clamp01(progress);
-        if (progress <= 0f)
+        if (progress <= 0f && !showMinFillAtZero)
         {
             if (barFillImage != null)
             {

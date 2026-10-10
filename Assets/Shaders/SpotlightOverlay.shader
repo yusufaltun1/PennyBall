@@ -17,6 +17,9 @@ Shader "PennyBall/UI/SpotlightOverlay"
         _GatePointA ("Gate Point A", Vector) = (0.4, 0.7, 0, 0)
         _GatePointB ("Gate Point B", Vector) = (0.6, 0.7, 0, 0)
         _WedgeNearColor ("Wedge Near Color", Color) = (1, 0, 0, 0.235)
+        _HalfPlaneEnabled ("Half Plane Enabled", Float) = 0
+        _HalfPlaneBrightPoint ("Half Plane Bright Point", Vector) = (0.5, 0.8, 0, 0)
+        _HalfPlaneSoftness ("Half Plane Softness", Float) = 0.02
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
         _StencilOp ("Stencil Operation", Float) = 0
@@ -94,6 +97,9 @@ Shader "PennyBall/UI/SpotlightOverlay"
             float4 _GatePointA;
             float4 _GatePointB;
             fixed4 _WedgeNearColor;
+            float _HalfPlaneEnabled;
+            float4 _HalfPlaneBrightPoint;
+            float _HalfPlaneSoftness;
 
             // Apex'ten boundaryPoint'e giden ışının iç (otherPoint) tarafına olan
             // işaretli dik mesafe; pozitif değerler wedge'in içini gösterir.
@@ -152,6 +158,30 @@ Shader "PennyBall/UI/SpotlightOverlay"
                     result.a = color.a * darkMask + _WedgeNearColor.a * nearGateMask;
 
                     return result;
+                }
+
+                // Gate çizgisinin bir tarafı karanlık, diğer tarafı (rakip tarafı) aydınlık.
+                // Coin etrafında daire delik açılır.
+                if (_HalfPlaneEnabled > 0.5)
+                {
+                    float2 aspectScale = float2(_HoleAspect, 1.0);
+                    float2 p = input.texcoord * aspectScale;
+                    float2 gateA = _GatePointA.xy * aspectScale;
+                    float2 gateB = _GatePointB.xy * aspectScale;
+                    float2 brightPoint = _HalfPlaneBrightPoint.xy * aspectScale;
+                    float softness = max(_HalfPlaneSoftness, 0.0001);
+
+                    // Pozitif: aydınlık (rakip) tarafı.
+                    float brightSideDistance = SignedEdgeDistance(gateA, gateB, brightPoint, p);
+                    float darkMask = 1.0 - smoothstep(0.0, softness, brightSideDistance);
+
+                    float2 delta = input.texcoord - _HoleCenter.xy;
+                    delta.x *= _HoleAspect;
+                    float dist = length(delta);
+                    float holeMask = smoothstep(_HoleRadius, _HoleRadius + _HoleSoftness, dist);
+
+                    color.a *= darkMask * holeMask;
+                    return color;
                 }
 
                 float2 delta = input.texcoord - _HoleCenter.xy;

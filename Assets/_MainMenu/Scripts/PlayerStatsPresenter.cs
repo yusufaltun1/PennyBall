@@ -34,7 +34,7 @@ public class PlayerStatsPresenter : MonoBehaviour
         int wins    = player?.wins   ?? 0;
         int draws   = player?.draws  ?? 0;
         int losses  = played - wins - draws;
-        int goals   = LeagueService.Instance?.Save?.playerTotalGoals ?? 0;
+        int goals   = LeagueService.Instance?.PlayerTotalGoals ?? 0;
 
         Set(_pointsText,       points.ToString());
         Set(_matchesPlayedText, played.ToString());

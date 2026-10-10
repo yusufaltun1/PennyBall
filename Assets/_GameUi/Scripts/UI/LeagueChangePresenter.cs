@@ -44,6 +44,7 @@ public class LeagueChangePresenter : MonoBehaviour
     void OnEnable()
     {
         ApplyPendingResultToUi();
+        LocalizationService.LanguageChanged += ApplyPendingResultToUi;
 
         if (_routine != null)
         {
@@ -55,6 +56,8 @@ public class LeagueChangePresenter : MonoBehaviour
 
     void OnDisable()
     {
+        LocalizationService.LanguageChanged -= ApplyPendingResultToUi;
+
         if (_routine != null)
         {
             StopCoroutine(_routine);
@@ -190,15 +193,17 @@ public class LeagueChangePresenter : MonoBehaviour
             {
                 if (result.Promoted)
                 {
-                    titleLabel.SetText($"You promoted to\n{LeagueConfig.GetLeagueName(result.NewLeague)}!");
+                    titleLabel.SetText(LocalizationService.Get("league_change.promoted",
+                        LeagueConfig.GetLeagueName(result.NewLeague)));
                 }
                 else if (result.FinalRank == 1 && result.NewLeague >= LeagueConfig.LeagueCount)
                 {
-                    titleLabel.SetText($"You finished 1st in\n{LeagueConfig.GetLeagueName(result.NewLeague)}!");
+                    titleLabel.SetText(LocalizationService.Get("league_change.finished_first",
+                        LeagueConfig.GetLeagueName(result.NewLeague)));
                 }
                 else
                 {
-                    titleLabel.SetText("Your league did not change!");
+                    titleLabel.SetText(LocalizationService.Get("league_change.unchanged"));
                 }
             }
 
@@ -222,7 +227,7 @@ public class LeagueChangePresenter : MonoBehaviour
             {
                 if (coinsLabel != null)
                 {
-                    coinsLabel.SetText($"{result.RewardCoins} Coins");
+                    coinsLabel.SetText(LocalizationService.Get("league_change.reward_coins", result.RewardCoins));
                 }
 
                 if (xpLabel != null)
@@ -239,7 +244,7 @@ public class LeagueChangePresenter : MonoBehaviour
 
         if (titleLabel != null)
         {
-            titleLabel.SetText("Your league did not change!");
+            titleLabel.SetText(LocalizationService.Get("league_change.unchanged"));
         }
     }
 

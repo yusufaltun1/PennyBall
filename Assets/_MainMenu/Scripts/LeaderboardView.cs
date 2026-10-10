@@ -44,6 +44,7 @@ public class LeaderboardView : MonoBehaviour
             LeagueService.Instance.PlayerPromoted += OnLeagueChanged;
         }
 
+        LocalizationService.LanguageChanged += RefreshLeagueName;
         RefreshLeagueName();
         Rebuild();
     }
@@ -56,6 +57,7 @@ public class LeaderboardView : MonoBehaviour
             LeagueService.Instance.PlayerPromoted -= OnLeagueChanged;
         }
 
+        LocalizationService.LanguageChanged -= RefreshLeagueName;
         StopScroll();
         StopRankAnim();
     }

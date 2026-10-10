@@ -10,6 +10,7 @@ public class BottomTabMenu : MonoBehaviour
         public Button button;
         public GameObject bgObject;
         public Image iconImage;
+        public GameObject nameObject;
         public Sprite defaultSprite;
         public Sprite pressedSprite;
     }
@@ -62,12 +63,18 @@ public class BottomTabMenu : MonoBehaviour
 
         UpdateTabVisuals(index);
 
-        if (panelsContainer == null || index == activeIndex)
+        if (index == activeIndex)
         {
             return;
         }
 
         activeIndex = index;
+
+        if (panelsContainer == null)
+        {
+            return;
+        }
+
         Vector2 targetPosition = GetTargetPosition(index);
 
         if (slideCoroutine != null)
@@ -101,9 +108,18 @@ public class BottomTabMenu : MonoBehaviour
                 tab.bgObject.SetActive(isActive);
             }
 
+            if (tab.nameObject != null)
+            {
+                tab.nameObject.SetActive(isActive);
+            }
+
             if (tab.iconImage != null)
             {
-                tab.iconImage.sprite = isActive ? tab.pressedSprite : tab.defaultSprite;
+                Sprite nextSprite = isActive ? tab.pressedSprite : tab.defaultSprite;
+                if (nextSprite != null)
+                {
+                    tab.iconImage.sprite = nextSprite;
+                }
             }
         }
     }

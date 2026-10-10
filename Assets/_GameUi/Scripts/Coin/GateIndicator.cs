@@ -19,27 +19,36 @@ public class GateIndicator : MonoBehaviour
     CoinIdentity _gateCoinB;
     Vector3 _gateStart;
     Vector3 _gateEnd;
+    Vector3 _worldGateStart;
+    Vector3 _worldGateEnd;
+    bool _useWorldGate;
     Color _lineColor;
     Color _glowColor;
     float _dashOffset;
     float _glowPulseTime;
     float _lastDashLength = -1f;
     float _lastDashGap = -1f;
+    float _animationSpeedScale = 1f;
     bool _isVisible;
     bool _animate;
 
     public static GateIndicator Instance { get; private set; }
     public bool IsVisible => _isVisible;
 
+    public void SetAnimationSpeedScale(float scale)
+    {
+        _animationSpeedScale = Mathf.Max(0f, scale);
+    }
+
     public bool TryGetGateMidpoint(out Vector3 worldMidpoint)
     {
-        if (!_isVisible || _gateCoinA == null || _gateCoinB == null)
+        if (!_isVisible || !TrySyncGatePositions())
         {
             worldMidpoint = default;
             return false;
         }
 
-        worldMidpoint = (_gateCoinA.transform.position + _gateCoinB.transform.position) * 0.5f;
+        worldMidpoint = (_gateStart + _gateEnd) * 0.5f;
         return true;
     }
 
@@ -181,6 +190,7 @@ public class GateIndicator : MonoBehaviour
             return;
         }
 
+        _useWorldGate = false;
         ApplySettings(settings);
         _gateCoinA = gateCoinA;
         _gateCoinB = gateCoinB;
@@ -195,8 +205,46 @@ public class GateIndicator : MonoBehaviour
         SetRenderersEnabled(true);
     }
 
+    /// <summary>
+    /// Coin'e bağlı olmadan dünya pozisyonlarıyla yatay/sabit gate çizgisi gösterir.
+    /// </summary>
+    public void ShowWorldGate(
+        Vector3 start,
+        Vector3 end,
+        CoinGateIndicatorSettings settings,
+        bool animate)
+    {
+        bool preserveAnimation = _isVisible && _useWorldGate;
+        _useWorldGate = true;
+        _gateCoinA = null;
+        _gateCoinB = null;
+        _worldGateStart = start;
+        _worldGateEnd = end;
+        ApplySettings(settings);
+        _lineColor = settings != null ? settings.LineColor : new Color(0.506f, 0.325f, 0.796f, 1f);
+        _glowColor = settings != null ? settings.GlowColor : _lineColor;
+        if (!preserveAnimation)
+        {
+            _dashOffset = 0f;
+            _glowPulseTime = 0f;
+        }
+
+        _animate = animate;
+        _isVisible = true;
+        TrySyncGatePositions();
+        RebuildVisual();
+        SetRenderersEnabled(true);
+    }
+
     bool TrySyncGatePositions()
     {
+        if (_useWorldGate)
+        {
+            _gateStart = _worldGateStart;
+            _gateEnd = _worldGateEnd;
+            return true;
+        }
+
         if (_gateCoinA == null || _gateCoinB == null)
         {
             return false;
@@ -216,6 +264,8 @@ public class GateIndicator : MonoBehaviour
     {
         _isVisible = false;
         _animate = false;
+        _useWorldGate = false;
+        _animationSpeedScale = 1f;
         _gateCoinA = null;
         _gateCoinB = null;
         SetRenderersEnabled(false);
@@ -378,10 +428,14 @@ public class GateIndicator : MonoBehaviour
     float GetLineWidth() => _activeSettings != null ? _activeSettings.LineWidth : 0.05f;
     float GetDashLength() => _activeSettings != null ? _activeSettings.DashLength : 0.055f;
     float GetDashGap() => _activeSettings != null ? _activeSettings.DashGap : 0.04f;
-    float GetAnimationSpeed() => _activeSettings != null ? _activeSettings.AnimationSpeed : 1.2f;
+    float GetAnimationSpeed() =>
+        (_activeSettings != null ? _activeSettings.AnimationSpeed : 1.2f) * _animationSpeedScale;
+
     float GetGlowWidthMultiplier() => _activeSettings != null ? _activeSettings.GlowWidthMultiplier : 3.2f;
     float GetGlowAlpha() => _activeSettings != null ? _activeSettings.GlowAlpha : 0.28f;
-    float GetGlowPulseSpeed() => _activeSettings != null ? _activeSettings.GlowPulseSpeed : 2.5f;
+
+    float GetGlowPulseSpeed() =>
+        (_activeSettings != null ? _activeSettings.GlowPulseSpeed : 2.5f) * _animationSpeedScale;
     float GetGlowPulseAmount() => _activeSettings != null ? _activeSettings.GlowPulseAmount : 0.12f;
     float GetGlowWidth() => GetLineWidth() * GetGlowWidthMultiplier();
 
