@@ -93,27 +93,10 @@ public static class OnlineMatchFlow
             $"[MatchFlow] Photon QM joined room='{quick.PhotonRoomName}' " +
             $"region='{bootstrap.Config.photonRegion}' — 2. oyuncu bekleniyor...");
 
-        float elapsed = 0f;
-        float nextLogAt = 1f;
+        bool opponentFound = await PhotonJoinHelper.WaitForRemotePlayerAsync(
+            channel, timeoutSeconds, progress, "[MatchFlow] QM");
 
-        while (channel.RemotePlayerCount < 1 && elapsed < timeoutSeconds)
-        {
-            progress?.Report(Mathf.Clamp01(elapsed / Mathf.Max(0.01f, timeoutSeconds)));
-
-            // Main thread frame — Task.Delay bazen ActivePlayers'ı stale bırakıyordu.
-            await Task.Yield();
-            elapsed += Time.unscaledDeltaTime;
-
-            if (elapsed >= nextLogAt)
-            {
-                nextLogAt += 1f;
-                Debug.Log(
-                    $"[MatchFlow] QM wait {elapsed:F0}s remotes={channel.RemotePlayerCount} " +
-                    $"connected={channel.IsConnected} host={channel.IsHost}");
-            }
-        }
-
-        if (channel.RemotePlayerCount < 1)
+        if (!opponentFound)
         {
             Debug.LogWarning("[MatchFlow] Photon QM timeout — rakip gelmedi.");
             try
@@ -133,12 +116,37 @@ public static class OnlineMatchFlow
         Debug.Log(
             $"[MatchFlow] Photon QM eşleşti remotes={channel.RemotePlayerCount} room='{quick.PhotonRoomName}'");
 
+        if (IsStaleAgainstActiveSession(quick.MatchId))
+        {
+            try
+            {
+                await channel.LeaveAsync();
+            }
+            catch
+            {
+                channel.Dispose();
+            }
+
+            return MatchmakingResult.Fail("stale_quick_match_discarded");
+        }
+
         // Authorize YOK — Game sahnesinde Ready → MatchStart ile 3-2-1 hizalanır.
         PendingPhotonSession.Clear();
         OnlineMatchSession.BeginHumanMatch(quick, channel);
 
         ApplyOpponentContext(quick);
         return quick;
+    }
+
+    /// <summary>
+    /// İptal edilen/terk edilen bir quick-match araması, UI'dan ayrı olarak arka planda
+    /// (async void, coroutine lifecycle'a bağlı değil) çalışmaya devam edip gecikmeli
+    /// sonuçlanabiliyor. Bu sırada kullanıcı Create/Join ile BAŞKA bir maça girmiş olabilir —
+    /// o zaman bu bayat sonucun global OnlineMatchSession/Photon state'ini ezmesini engelleriz.
+    /// </summary>
+    static bool IsStaleAgainstActiveSession(string myMatchId)
+    {
+        return OnlineMatchSession.IsOnlineMatch && OnlineMatchSession.MatchId != myMatchId;
     }
 
     static MatchmakingResult BuildPhotonQuickMatch()
@@ -184,6 +192,16 @@ public static class OnlineMatchFlow
 
     static MatchmakingResult FallbackBot(string reason)
     {
+        if (OnlineMatchSession.IsOnlineMatch)
+        {
+            // Bu bayat (iptal edilmiş) arama, kullanıcının o sırada aktif oynadığı
+            // başka bir maçın (örn. Create/Join) Photon bağlantısını kesmemeli.
+            Debug.LogWarning(
+                $"[MatchFlow] Stale fallback discarded (reason={reason}) — " +
+                $"aktif maç zaten var (matchId={OnlineMatchSession.MatchId}).");
+            return MatchmakingResult.Fail($"stale_discarded_{reason}");
+        }
+
         OnlineMatchSession.Clear();
         PendingPhotonSession.Clear();
         MatchSessionContext.SetOnlineMatch(false, null, null);

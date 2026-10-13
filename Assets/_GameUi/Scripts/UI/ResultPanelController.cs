@@ -112,6 +112,7 @@ public class ResultPanelController : MonoBehaviour
         BindButtons();
         RefreshAdButtonVisibility();
         SetButtonsInteractable(true);
+        HideOtherResultPanels();
 
         if (!gameObject.activeSelf)
             gameObject.SetActive(true);  // OnEnable fires → HandleOutcomeChange çalışır
@@ -119,6 +120,27 @@ public class ResultPanelController : MonoBehaviour
             HandleOutcomeChange();
 
         RefreshChildScoreboards();
+    }
+
+    /// <summary>
+    /// Önceki bir maç döngüsünden kalmış olabilecek diğer sonuç panellerini (kapatılmadan
+    /// bırakılmış LeagueStatus/HukmenMaglup/LevelUp/UnlockedFeatures) kapatır — aksi halde
+    /// ResultPanel ile aynı anda üst üste görünebiliyorlardı.
+    /// </summary>
+    void HideOtherResultPanels()
+    {
+        HideIfActive(leagueStatusPanel);
+        HideIfActive(FindFirstObjectByType<HukmenMaglupController>(FindObjectsInactive.Include)?.gameObject);
+        HideIfActive(FindFirstObjectByType<LevelUpController>(FindObjectsInactive.Include)?.gameObject);
+        HideIfActive(FindFirstObjectByType<UnlockedFeaturesController>(FindObjectsInactive.Include)?.gameObject);
+    }
+
+    static void HideIfActive(GameObject go)
+    {
+        if (go != null && go.activeSelf)
+        {
+            go.SetActive(false);
+        }
     }
 
     void RefreshChildScoreboards()

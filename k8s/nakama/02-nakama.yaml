@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nakama
+  namespace: nakama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nakama
+  template:
+    metadata:
+      labels:
+        app: nakama
+    spec:
+      containers:
+        - name: nakama
+          image: ysfaltn/nakama-pennyball:3.22.0
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-ecx"]
+          args:
+            - >
+              /nakama/nakama migrate up --database.address $(DB_USER):$(DB_PASSWORD)@postgres:5432/nakama &&
+              exec /nakama/nakama
+              --name nakama1
+              --database.address $(DB_USER):$(DB_PASSWORD)@postgres:5432/nakama
+              --logger.level INFO
+              --session.token_expiry_sec 7200
+              --runtime.path /nakama/data/modules
+              --runtime.http_key $(RUNTIME_HTTP_KEY)
+              --socket.server_key $(SOCKET_SERVER_KEY)
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: nakama-postgres-credentials
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nakama-postgres-credentials
+                  key: password
+            - name: RUNTIME_HTTP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nakama-server-keys
+                  key: runtime_http_key
+            - name: SOCKET_SERVER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nakama-server-keys
+                  key: socket_server_key
+          ports:
+            - name: grpc
+              containerPort: 7349
+            - name: http
+              containerPort: 7350
+            - name: console
+              containerPort: 7351
+          readinessProbe:
+            tcpSocket:
+              port: 7350
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 7350
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nakama
+  namespace: nakama
+spec:
+  selector:
+    app: nakama
+  ports:
+    - name: grpc
+      port: 7349
+      targetPort: 7349
+    - name: http
+      port: 7350
+      targetPort: 7350
+    - name: console
+      port: 7351
+      targetPort: 7351

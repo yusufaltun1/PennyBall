@@ -165,6 +165,7 @@ public class ChangeAvatarPanelController : MonoBehaviour
     {
         _currentIndex = index;
         LeagueService.Instance?.SetPlayerAvatar(index);
+        _ = OnlineAvatarService.PushAsync(index);
         RefreshAll();
     }
 

@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc815c2690ba45b2aca6b6aa071fa57d, type: 3}
   m_Name: NetworkConfig
   m_EditorClassIdentifier: 
-  scheme: http
-  host: 127.0.0.1
-  port: 7350
-  serverKey: defaultkey
+  scheme: https
+  host: nakama.orviagame.com.tr
+  port: 443
+  serverKey: 01a66c5410ddafdbffad1ea9fff354f1506bbd4e7fb9617b
   matchmakingTimeoutSeconds: 45
   matchmakerMinCount: 2
   matchmakerMaxCount: 2

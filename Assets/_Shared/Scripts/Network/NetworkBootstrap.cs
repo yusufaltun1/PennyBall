@@ -59,6 +59,18 @@ public class NetworkBootstrap : MonoBehaviour
             {
                 _ = OnlineWalletService.SyncFromServerAsync();
             }
+
+            // Avatar/isim daha önce (bu senkron eklenmeden) yerelde ayarlanmış olabilir —
+            // her girişte mevcut değeri gönder, sunucu zaten her zaman üzerine yazıyor.
+            if (LeagueService.Instance != null)
+            {
+                _ = OnlineAvatarService.PushAsync(LeagueService.Instance.PlayerAvatarIndex);
+                string displayName = LeagueService.Instance.Save?.playerDisplayName;
+                if (!string.IsNullOrEmpty(displayName))
+                {
+                    _ = OnlineAvatarService.PushDisplayNameAsync(displayName);
+                }
+            }
         };
         _auth.AuthFailed += message => Failed?.Invoke(message);
     }

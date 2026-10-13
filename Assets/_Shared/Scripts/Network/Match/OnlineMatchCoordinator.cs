@@ -431,6 +431,7 @@ public class OnlineMatchCoordinator : MonoBehaviour
 
     void OnOpponentLeft(string reason)
     {
+        // Maç sonlandırma RemoteOpponentController.OnOpponentLeft'te — burada çift tetiklemeyelim.
         Debug.Log($"[OnlineMatch] Opponent left: {reason}");
     }
 

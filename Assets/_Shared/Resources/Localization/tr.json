@@ -92,6 +92,19 @@
     { "key": "matching.finding_offline", "value": "Rakip aranıyor..." },
     { "key": "matching.estimate", "value": "Tahmini 20 saniye\n\n" },
 
+    { "key": "party.waiting_for_friend", "value": "Arkadaşın bekleniyor..." },
+    { "key": "party.opponent_found", "value": "Arkadaşın bulundu!" },
+    { "key": "party.create_failed", "value": "Oda oluşturulamadı" },
+    { "key": "party.join_failed", "value": "Odaya katılamadı" },
+    { "key": "party.enter_code", "value": "6 haneli kodu gir" },
+    { "key": "party.create_button", "value": "Oluştur" },
+    { "key": "party.join_button", "value": "Katıl" },
+
+    { "key": "exit_match.title", "value": "Maçı terk edeceksin!" },
+    { "key": "exit_match.subtitle", "value": "Maçtan çıkmak istediğine emin misin?" },
+    { "key": "exit_match.cancel_button", "value": "Vazgeç" },
+    { "key": "exit_match.yes_button", "value": "Evet, Çık" },
+
     { "key": "avatar.title", "value": "Avatarı Değiştir" },
     { "key": "avatar.active", "value": "Aktif" },
     { "key": "avatar.change_name", "value": "İsmi Değiştir" },

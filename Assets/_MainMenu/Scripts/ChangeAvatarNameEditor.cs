@@ -118,6 +118,7 @@ public class ChangeAvatarNameEditor : MonoBehaviour
         }
 
         LeagueService.Instance?.SetPlayerDisplayName(trimmed);
+        _ = OnlineAvatarService.PushDisplayNameAsync(trimmed);
         Refresh();
     }
 

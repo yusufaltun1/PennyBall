@@ -22,6 +22,7 @@ public class LeagueMatchController : MonoBehaviour
     bool _matchTimerLoopActive;
     Coroutine _matchTimerRoutine;
     Coroutine _prepareMatchRoutine;
+    MatchResultType? _forcedResult;
 
     const float MaxTimerDeltaSeconds = 0.1f;
     const float BackgroundForfeitThresholdSeconds = 10f;
@@ -397,6 +398,44 @@ public class LeagueMatchController : MonoBehaviour
         CompleteMatch(ResolveResultByScore(), startNextMatch: false);
     }
 
+    /// <summary>Kullanıcı "Çık" ile maçı pes etti — hükmen mağlup (skor fark etmez), ödül kesilir.</summary>
+    public void ForfeitActiveMatch(string reason = null)
+    {
+        if (!_matchActive || _matchReported)
+        {
+            return;
+        }
+
+        MatchSessionTracker.MarkAbandon(string.IsNullOrEmpty(reason) ? "self_forfeit" : reason);
+
+        _forcedResult = MatchResultType.Loss;
+        _matchTimeRemaining = 0f;
+        StopMatchTimer();
+        MatchTimerExpired?.Invoke();
+    }
+
+    /// <summary>Rakip bağlantıyı kopardı — kalan oyuncu galibiyet alır (skor fark etmez), ödül kesilmez.</summary>
+    public void EndMatchByOpponentDisconnect(string reason = null)
+    {
+        if (!_matchActive || _matchReported)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(reason))
+        {
+            Debug.Log($"[League] Opponent disconnect raw reason: {reason}");
+        }
+
+        // Kategori sabiti her zaman OpponentDisconnectReason — ödül/forfeit mantığı buna bakıyor.
+        MatchSessionTracker.MarkAbandon(MatchSessionTracker.OpponentDisconnectReason);
+
+        _forcedResult = MatchResultType.Win;
+        _matchTimeRemaining = 0f;
+        StopMatchTimer();
+        MatchTimerExpired?.Invoke();
+    }
+
     IEnumerator MatchTimerRoutine()
     {
         _matchTimerLoopActive = true;
@@ -472,7 +511,8 @@ public class LeagueMatchController : MonoBehaviour
                 MatchSessionContext.OpponentGoalsAtEnd);
         }
 
-        MatchResultType result = ResolveResultByScore();
+        MatchResultType result = _forcedResult ?? ResolveResultByScore();
+        _forcedResult = null;
         CompleteMatch(result, startNextMatch: false);
         return result;
     }

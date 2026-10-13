@@ -8,6 +8,9 @@ public static class MatchSessionTracker
 {
     const string ActiveMatchIdKey = "pennyball.match.active_id";
 
+    /// <summary>Rakip bağlantıyı kopardı — bu reason ödül kesme/forfeit dönüşümünden muaf.</summary>
+    public const string OpponentDisconnectReason = "opponent_disconnect";
+
     static string _currentMatchId;
     static bool _resultPending;
     static string _pendingAbandonReason;

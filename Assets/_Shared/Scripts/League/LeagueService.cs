@@ -278,10 +278,13 @@ public class LeagueService : MonoBehaviour
         LeagueSimulation.RefreshStandings(_save, LeagueSimulationTrigger.AfterMatch);
         SortStandings();
 
-        // Hükmen mağlubiyet / abandon: coin ve XP yok. Normal kayıpta ödül devam eder.
+        // Hükmen mağlubiyet / abandon: coin ve XP yok. Rakip disconnect'i bu kuraldan muaf —
+        // kalan dürüst oyuncu normal galibiyet ödülünü alır. Normal kayıpta ödül devam eder.
+        bool isPunitiveAbandon = !string.IsNullOrEmpty(abandonReason)
+            && abandonReason != MatchSessionTracker.OpponentDisconnectReason;
         int coins = 0;
         int xp = 0;
-        if (string.IsNullOrEmpty(abandonReason))
+        if (!isPunitiveAbandon)
         {
             (coins, xp) = WalletService.GetReward(result);
         }

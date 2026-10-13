@@ -10,8 +10,6 @@ public class HukmenMaglupController : MonoBehaviour
 {
     [SerializeField] Button _continueButton;
 
-    bool _buttonsBound;
-
     void Awake()
     {
         ResolveReferences();
@@ -27,6 +25,7 @@ public class HukmenMaglupController : MonoBehaviour
     {
         ResolveReferences();
         BindButtons();
+        HideOtherResultPanels();
         transform.SetAsLastSibling();
 
         if (!gameObject.activeSelf)
@@ -40,6 +39,27 @@ public class HukmenMaglupController : MonoBehaviour
     public void Hide()
     {
         gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// Önceki bir maç döngüsünden kalmış olabilecek diğer sonuç panellerini (kapatılmadan
+    /// bırakılmış ResultPanel/LeagueStatus/LevelUp/UnlockedFeatures) kapatır — aksi halde
+    /// HukmenMaglup ile aynı anda üst üste görünebiliyorlardı.
+    /// </summary>
+    static void HideOtherResultPanels()
+    {
+        HideIfActive(FindFirstObjectByType<ResultPanelController>(FindObjectsInactive.Include)?.gameObject);
+        HideIfActive(FindFirstObjectByType<LeagueStatusPresenter>(FindObjectsInactive.Include)?.gameObject);
+        HideIfActive(FindFirstObjectByType<LevelUpController>(FindObjectsInactive.Include)?.gameObject);
+        HideIfActive(FindFirstObjectByType<UnlockedFeaturesController>(FindObjectsInactive.Include)?.gameObject);
+    }
+
+    static void HideIfActive(GameObject go)
+    {
+        if (go != null && go.activeSelf)
+        {
+            go.SetActive(false);
+        }
     }
 
     public static HukmenMaglupController FindPanel()
@@ -93,15 +113,10 @@ public class HukmenMaglupController : MonoBehaviour
 
     void BindButtons()
     {
-        if (_buttonsBound)
-        {
-            return;
-        }
-
         if (_continueButton != null)
         {
+            _continueButton.onClick.RemoveListener(OnContinueClicked);
             _continueButton.onClick.AddListener(OnContinueClicked);
-            _buttonsBound = true;
         }
     }
 
@@ -111,15 +126,39 @@ public class HukmenMaglupController : MonoBehaviour
         {
             _continueButton.onClick.RemoveListener(OnContinueClicked);
         }
-
-        _buttonsBound = false;
     }
 
     void OnContinueClicked()
     {
         MainMenuClickSound.Play();
         Hide();
-        SceneManager.LoadScene(GameSceneNames.MainMenu);
+
+        // HukmenMaglup sadece "pes ettin" bildirimi — asıl yenilgi akışı (skor, ödül,
+        // seviye/lig zinciri) ResultPanel'in kendi Continue akışına devrediliyor.
+        ResultPanelController resultPanel =
+            FindFirstObjectByType<ResultPanelController>(FindObjectsInactive.Include);
+        if (resultPanel != null)
+        {
+            resultPanel.ShowResult(MatchResultType.Loss);
+            return;
+        }
+
+        Debug.LogWarning("[HukmenMaglup] ResultPanel bulunamadı — doğrudan lig/ana menüye düşülüyor.");
+        BoosterUnlockFlow.TryShowPendingUnlock(ShowLeagueStatusOrMainMenu);
+    }
+
+    static void ShowLeagueStatusOrMainMenu()
+    {
+        LeagueStatusPresenter presenter =
+            FindFirstObjectByType<LeagueStatusPresenter>(FindObjectsInactive.Include);
+        if (presenter != null)
+        {
+            presenter.gameObject.SetActive(true);
+        }
+        else
+        {
+            AdsService.GoToMainMenuMaybeWithInterstitial();
+        }
     }
 
     static Transform FindDeepChild(Transform parent, string childName)

@@ -100,7 +100,9 @@ public static class MatchResultSubmitter
             MatchResultType.Draw => "draw",
             _ => "loss"
         };
-        if (!string.IsNullOrEmpty(abandonReason))
+        bool isPunitiveAbandon = !string.IsNullOrEmpty(abandonReason)
+            && abandonReason != MatchSessionTracker.OpponentDisconnectReason;
+        if (isPunitiveAbandon)
         {
             resultKey = "forfeit";
         }
@@ -166,9 +168,11 @@ public static class MatchResultSubmitter
         }
 
         // Nakama yok / hata: local formülle fallback
+        bool isPunitiveAbandon = !string.IsNullOrEmpty(abandonReason)
+            && abandonReason != MatchSessionTracker.OpponentDisconnectReason;
         int coins = 0;
         int xp = 0;
-        if (string.IsNullOrEmpty(abandonReason))
+        if (!isPunitiveAbandon)
         {
             (coins, xp) = WalletService.GetReward(result);
         }

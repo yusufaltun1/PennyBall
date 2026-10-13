@@ -19,6 +19,12 @@ public class MatchShotNetworkRelay : NetworkBehaviour
 
     readonly HashSet<PlayerRef> _readyPlayers = new HashSet<PlayerRef>();
     int _goalSeq;
+    // RPC_RoundReset dedup sırası — SADECE authority tarafından atanır (ScheduleRoundReset).
+    // _goalSeq'ten bilerek ayrı: _goalSeq her istemcide bağımsız arttığı için iki farklı
+    // oyuncunun golleri aynı seq'i üretebilir (örn. ikisi de ilk golünde seq=1) ve bu da
+    // aşağıdaki seq<=_lastRoundResetSeq korumasının ikinci reset'i sessizce düşürüp
+    // _goalSequenceActive'i kalıcı kilitli bırakmasına yol açardı (1-1'de donma bug'ı).
+    int _roundResetSeq;
     int _lastRoundResetSeq = -1;
     bool _matchStartSent;
     float _spawnedAt;
@@ -253,20 +259,21 @@ public class MatchShotNetworkRelay : NetworkBehaviour
 
         if (Object.HasStateAuthority)
         {
-            ScheduleRoundReset(_goalSeq);
+            ScheduleRoundReset();
         }
 
         return true;
     }
 
-    void ScheduleRoundReset(int seq)
+    void ScheduleRoundReset()
     {
         if (_delayedResetRoutine != null)
         {
             StopCoroutine(_delayedResetRoutine);
         }
 
-        _delayedResetRoutine = StartCoroutine(DelayedRoundResetRoutine(seq));
+        int resetSeq = ++_roundResetSeq;
+        _delayedResetRoutine = StartCoroutine(DelayedRoundResetRoutine(resetSeq));
     }
 
     IEnumerator DelayedRoundResetRoutine(int seq)
@@ -369,7 +376,7 @@ public class MatchShotNetworkRelay : NetworkBehaviour
 
         if (Object.HasStateAuthority && senderScored)
         {
-            ScheduleRoundReset(seq);
+            ScheduleRoundReset();
         }
     }
 

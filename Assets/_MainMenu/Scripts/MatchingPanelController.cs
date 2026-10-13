@@ -20,6 +20,10 @@ public class MatchingPanelController : MonoBehaviour
     [SerializeField] private Image vsImage;
     [SerializeField] private Button cancelButton;
 
+    [Header("Play with Friends (Create/Join)")]
+    [SerializeField] private GameObject codeContainer;
+    [SerializeField] private TextMeshProUGUI codeText;
+
     [Header("Avatars")]
     [SerializeField] private AvatarSpriteLibrary avatarLibrary;
 
@@ -35,9 +39,14 @@ public class MatchingPanelController : MonoBehaviour
     [SerializeField] private float vsEndScale = 1f;
     [SerializeField] private float vsEasePower = 3f;
 
+    private enum PartyFlowMode { QuickMatch, CreateRoom, JoinRoom }
+
     private bool isShuffling;
     private bool isRunning;
     private bool cancelButtonBound;
+    private PartyFlowMode partyMode = PartyFlowMode.QuickMatch;
+    private string joinCode;
+    private string activeRoomCode;
     private Coroutine matchmakingCoroutine;
     private Coroutine findingFadeCoroutine;
     private RectTransform rectTransform;
@@ -173,6 +182,15 @@ public class MatchingPanelController : MonoBehaviour
 
         StopFindingMusic();
         MatchSessionContext.Clear();
+
+        if (partyMode == PartyFlowMode.CreateRoom && !string.IsNullOrEmpty(activeRoomCode))
+        {
+            _ = PartyRoomService.CancelRoomAsync(activeRoomCode);
+        }
+
+        partyMode = PartyFlowMode.QuickMatch;
+        joinCode = null;
+        activeRoomCode = null;
 
         ResetUiState();
         gameObject.SetActive(false);
@@ -376,12 +394,36 @@ public class MatchingPanelController : MonoBehaviour
 
     public void BeginMatchFlow()
     {
+        partyMode = PartyFlowMode.QuickMatch;
+        joinCode = null;
+        BeginFlowInternal();
+    }
+
+    /// <summary>Play with Friends > Create: 6 haneli kod üretir, bu panelde gösterir.</summary>
+    public void BeginCreateRoomFlow()
+    {
+        partyMode = PartyFlowMode.CreateRoom;
+        joinCode = null;
+        BeginFlowInternal();
+    }
+
+    /// <summary>Play with Friends > Join: verilen kodla aynı odaya katılır.</summary>
+    public void BeginJoinRoomFlow(string code)
+    {
+        partyMode = PartyFlowMode.JoinRoom;
+        joinCode = code;
+        BeginFlowInternal();
+    }
+
+    private void BeginFlowInternal()
+    {
         if (isRunning)
         {
             return;
         }
 
         isRunning = true;
+        activeRoomCode = null;
         ResetUiState();
 
         GameAnalytics.Track("matchmaking_started", new Dictionary<string, string>
@@ -433,9 +475,21 @@ public class MatchingPanelController : MonoBehaviour
         if (findingText != null)
         {
             findingText.fontSize = 64f;
-            findingText.text = OnlineFeatureFlags.OnlineMatchmakingEnabled
-                ? LocalizationService.Get("matching.finding")
-                : LocalizationService.Get("matching.finding_offline");
+            findingText.text = partyMode switch
+            {
+                PartyFlowMode.CreateRoom => LocalizationService.Get("party.waiting_for_friend"),
+                PartyFlowMode.JoinRoom => LocalizationService.Get("party.waiting_for_friend"),
+                _ => OnlineFeatureFlags.OnlineMatchmakingEnabled
+                    ? LocalizationService.Get("matching.finding")
+                    : LocalizationService.Get("matching.finding_offline")
+            };
+        }
+
+        bool showCode = partyMode != PartyFlowMode.QuickMatch;
+        codeContainer?.SetActive(showCode);
+        if (showCode)
+        {
+            codeText?.SetText("------");
         }
     }
 
@@ -484,11 +538,28 @@ public class MatchingPanelController : MonoBehaviour
 
         isShuffling = true;
 
-        // Online matchmaking (flag açıksa) — UI shuffle ile paralel
         MatchmakingResult matchResult = null;
         bool matchmakingDone = false;
-        if (OnlineFeatureFlags.OnlineMatchmakingEnabled)
+
+        if (partyMode == PartyFlowMode.CreateRoom)
         {
+            ResolveCreateRoomAsync(result =>
+            {
+                matchResult = result;
+                matchmakingDone = true;
+            });
+        }
+        else if (partyMode == PartyFlowMode.JoinRoom)
+        {
+            ResolveJoinRoomAsync(joinCode, result =>
+            {
+                matchResult = result;
+                matchmakingDone = true;
+            });
+        }
+        else if (OnlineFeatureFlags.OnlineMatchmakingEnabled)
+        {
+            // Online matchmaking (flag açıksa) — UI shuffle ile paralel
             ResolveOnlineOpponentAsync(result =>
             {
                 matchResult = result;
@@ -506,6 +577,61 @@ public class MatchingPanelController : MonoBehaviour
 
             matchResult = MatchmakingResult.BotFallback(bot, "flag_disabled");
             matchmakingDone = true;
+        }
+
+        bool isPartyFlow = partyMode != PartyFlowMode.QuickMatch;
+
+        if (isPartyFlow)
+        {
+            // Arkadaşla oynama: bot shuffle yok, sadece kod + spinner ile bekle.
+            // PartyRoomService kendi içinde ~120sn timeout uyguluyor, burada sadece bekliyoruz.
+            const float partyWaitCeilingSeconds = 130f;
+            float waitElapsed = 0f;
+            while (!matchmakingDone && waitElapsed < partyWaitCeilingSeconds)
+            {
+                yield return new WaitForSeconds(0.25f);
+                waitElapsed += 0.25f;
+            }
+
+            isShuffling = false;
+            if (loopImage != null)
+            {
+                loopImage.rectTransform.localRotation = Quaternion.identity;
+                loopImage.gameObject.SetActive(false);
+            }
+
+            if (matchResult == null || !matchResult.Success)
+            {
+                // Arkadaş bulunamadı/bağlanamadı — bot'a düşmeden hata göster, kullanıcı iptal edebilir.
+                if (findingText != null)
+                {
+                    findingText.text = LocalizationService.Get(
+                        partyMode == PartyFlowMode.CreateRoom ? "party.create_failed" : "party.join_failed");
+                }
+
+                isRunning = false;
+                matchmakingCoroutine = null;
+                yield break;
+            }
+
+            findingObject?.SetActive(false);
+            codeContainer?.SetActive(false);
+
+            BotPlayerEntry partyOpponent = MatchSessionContext.CurrentOpponent;
+            ShowOpponent(partyOpponent);
+
+            GameAnalytics.Track("matchmaking_completed", new Dictionary<string, string>
+            {
+                { "opponent_type", "human" },
+                { "timed_out", "false" },
+                { "reason", partyMode == PartyFlowMode.CreateRoom ? "create_room" : "join_room" }
+            });
+
+            yield return PlayVsRevealAnimation();
+
+            sayacObject?.SetActive(true);
+            yield return RunCountdownAndLoadScene();
+            yield break;
         }
 
         // Avatar shuffle + loop dönmesi: eşleşme bitene kadar sürer (min 3 sn).
@@ -588,7 +714,12 @@ public class MatchingPanelController : MonoBehaviour
         yield return PlayVsRevealAnimation();
 
         sayacObject?.SetActive(true);
+        yield return RunCountdownAndLoadScene();
+    }
 
+    /// <summary>Sayaç (countdownStart→0) + boynuz sesi + Game sahnesine geçiş. Quick-match ve Create/Join ortak.</summary>
+    private IEnumerator RunCountdownAndLoadScene()
+    {
         bool hornPlayed = false;
         for (int count = countdownStart; count >= 0; count--)
         {
@@ -635,6 +766,56 @@ public class MatchingPanelController : MonoBehaviour
         catch (System.Exception ex)
         {
             Debug.LogWarning($"[Matching] Online resolve failed: {ex.Message}");
+            onDone?.Invoke(MatchmakingResult.Fail(ex.Message));
+        }
+    }
+
+    async void ResolveCreateRoomAsync(System.Action<MatchmakingResult> onDone)
+    {
+        try
+        {
+            RoomCodeResult created = await PartyRoomService.RequestCreateCodeAsync();
+            if (!created.Success)
+            {
+                onDone?.Invoke(MatchmakingResult.Fail(created.Reason));
+                return;
+            }
+
+            // Kod RPC'den gelir gelmez göster — arkadaş beklemeden önce.
+            activeRoomCode = created.Code;
+            codeText?.SetText(created.Code);
+
+            RoomCodeResult connected = await PartyRoomService.ConnectAndWaitForOpponentAsync(created);
+            onDone?.Invoke(connected.Success
+                ? connected.Match
+                : MatchmakingResult.Fail(connected.Reason, timedOut: connected.Reason == "timeout"));
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"[Matching] Create room failed: {ex.Message}");
+            onDone?.Invoke(MatchmakingResult.Fail(ex.Message));
+        }
+    }
+
+    async void ResolveJoinRoomAsync(string code, System.Action<MatchmakingResult> onDone)
+    {
+        try
+        {
+            RoomCodeResult joined = await PartyRoomService.RequestJoinCodeAsync(code);
+            if (!joined.Success)
+            {
+                onDone?.Invoke(MatchmakingResult.Fail(joined.Reason));
+                return;
+            }
+
+            RoomCodeResult connected = await PartyRoomService.ConnectAndWaitForOpponentAsync(joined);
+            onDone?.Invoke(connected.Success
+                ? connected.Match
+                : MatchmakingResult.Fail(connected.Reason, timedOut: connected.Reason == "timeout"));
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"[Matching] Join room failed: {ex.Message}");
             onDone?.Invoke(MatchmakingResult.Fail(ex.Message));
         }
     }

@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public class UIManager : MonoBehaviour
 {
     [SerializeField] MatchingPanelController matchingPanel;
+    [SerializeField] JoinRoomPanelController joinRoomPanel;
     [SerializeField] Button exerciseButton;
 
     readonly List<Button> _wiredExerciseButtons = new();
@@ -29,6 +30,17 @@ public class UIManager : MonoBehaviour
         }
 
         Transform searchRoot = transform.parent != null ? transform.parent : transform;
+
+        if (joinRoomPanel == null)
+        {
+            Transform panelTransform = FindDeepChild(searchRoot, "JoinRoomPanel");
+            if (panelTransform != null)
+            {
+                joinRoomPanel = panelTransform.GetComponent<JoinRoomPanelController>();
+            }
+        }
+
+        joinRoomPanel?.gameObject.SetActive(false);
 
         if (exerciseButton == null)
         {
@@ -116,6 +128,32 @@ public class UIManager : MonoBehaviour
     }
 
     public void OnAntremanButtonPressed() => OnPlayOfflineButtonPressed();
+
+    public void OnCreateRoomButtonPressed()
+    {
+        MainMenuClickSound.Play();
+
+        if (matchingPanel == null)
+        {
+            Debug.LogError("[UIManager] Matching_Panel bulunamadı.");
+            return;
+        }
+
+        matchingPanel.BeginCreateRoomFlow();
+    }
+
+    public void OnJoinRoomButtonPressed()
+    {
+        MainMenuClickSound.Play();
+
+        if (joinRoomPanel == null)
+        {
+            Debug.LogError("[UIManager] JoinRoomPanel bulunamadı.");
+            return;
+        }
+
+        joinRoomPanel.OpenJoinScreen();
+    }
 
     static Transform FindDeepChild(Transform parent, string childName)
     {

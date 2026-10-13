@@ -11,12 +11,18 @@ public class MatchScoreboardPresenter : MonoBehaviour
 
     void Awake()
     {
-        _handleMatchEnd = GetComponentInParent<ResultPanelController>(true) == null;
+        // Sahnede birden fazla MatchScoreboardPresenter var: ana ScoreBar (skor + maç-bitişi
+        // yönetimi) ve ResultPanel/HukmenMaglup/ExitMatch gibi panellerin içindeki "Score"
+        // alt-objeleri (sadece skor gösterimi). Sadece gerçek ScoreBar örneği MatchTimerExpired'a
+        // abone olmalı — aksi halde maç bitişi birden fazla kez işlenip (örn. ikinci işlemde
+        // state tüketilmiş olduğu için yanlış "Draw" sonucu) çakışan panellere yol açıyordu.
+        _handleMatchEnd = gameObject.name == "ScoreBar";
     }
 
     void Start()
     {
         StartCoroutine(BindWhenReady());
+        ExitMatchPanelController.FindPanel();
     }
 
     void OnDestroy()
@@ -96,7 +102,10 @@ public class MatchScoreboardPresenter : MonoBehaviour
         OpponentBotController.Instance?.FreezeMatch();
         GameFeedback.EnsureInstance()?.PlayWhistle();
 
-        bool isForfeit = MatchSessionTracker.HasPendingAbandon;
+        // Rakip bağlantıyı kopardıysa biz kazanırız — HukmenMaglup sadece kendi pes
+        // ettiğimizde (reason != OpponentDisconnectReason) gösterilmeli.
+        bool isSelfForfeit = MatchSessionTracker.HasPendingAbandon
+            && MatchSessionTracker.PendingAbandonReason != MatchSessionTracker.OpponentDisconnectReason;
 
         MatchResultType result = MatchResultType.Draw;
         if (LeagueMatchController.Instance != null)
@@ -104,17 +113,16 @@ public class MatchScoreboardPresenter : MonoBehaviour
 
         RefreshAll();
 
-        if (isForfeit)
+        if (isSelfForfeit)
         {
-            // Hükmen mağlup paneli geçici kapalı — normal sonuç paneline düş.
-            // HukmenMaglupController forfeitPanel = HukmenMaglupController.FindPanel();
-            // if (forfeitPanel != null)
-            // {
-            //     forfeitPanel.Show();
-            //     return;
-            // }
-            //
-            // Debug.LogWarning("[Match] Hükmen mağlup paneli (HukmenMaglup) sahnede bulunamadı.");
+            HukmenMaglupController forfeitPanel = HukmenMaglupController.FindPanel();
+            if (forfeitPanel != null)
+            {
+                forfeitPanel.Show();
+                return;
+            }
+
+            Debug.LogWarning("[Match] Hükmen mağlup paneli (HukmenMaglup) sahnede bulunamadı.");
         }
 
         ResultPanelController resultPanel = FindNormalResultPanel();

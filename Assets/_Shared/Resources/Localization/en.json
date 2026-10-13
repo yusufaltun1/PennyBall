@@ -92,6 +92,19 @@
     { "key": "matching.finding_offline", "value": "Finding opponent..." },
     { "key": "matching.estimate", "value": "Est. 20 seconds\n\n" },
 
+    { "key": "party.waiting_for_friend", "value": "Waiting for your friend..." },
+    { "key": "party.opponent_found", "value": "Friend found!" },
+    { "key": "party.create_failed", "value": "Could not create room" },
+    { "key": "party.join_failed", "value": "Could not join room" },
+    { "key": "party.enter_code", "value": "Enter 6-digit code" },
+    { "key": "party.create_button", "value": "Create" },
+    { "key": "party.join_button", "value": "Join" },
+
+    { "key": "exit_match.title", "value": "You will forfeit!" },
+    { "key": "exit_match.subtitle", "value": "Are you sure you want to leave the match?" },
+    { "key": "exit_match.cancel_button", "value": "Cancel" },
+    { "key": "exit_match.yes_button", "value": "Yes, Exit" },
+
     { "key": "avatar.title", "value": "Change Avatar" },
     { "key": "avatar.active", "value": "Active" },
     { "key": "avatar.change_name", "value": "Change Name" },
