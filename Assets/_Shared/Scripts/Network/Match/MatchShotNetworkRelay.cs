@@ -16,6 +16,7 @@ public class MatchShotNetworkRelay : NetworkBehaviour
     public System.Action<bool> GoalReceived; // true = gönderen gol attı → alıcı gol yedi
     public System.Action RoundResetReceived;
     public System.Action<float, bool> TimeSyncReceived;
+    public System.Action<int, int, string> MatchEndReceived;
 
     readonly HashSet<PlayerRef> _readyPlayers = new HashSet<PlayerRef>();
     int _goalSeq;
@@ -295,6 +296,23 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Maç sonu, host→guest'e özel reliable-data kanalı yerine bu RPC ile gönderilir:
+    /// o kanal Shared Mode'da bazı bağlantılarda hiç teslim etmiyor (TimeSync/Goal gibi
+    /// RPC'ler sorunsuz çalışırken), guest'in süresi host'un senkronu kesilince asla 0'a
+    /// inmeyip maçın karşı tarafta hiç bitmemesine yol açıyordu.
+    /// </summary>
+    public bool TrySendMatchEnd(int playerGoals, int opponentGoals, string reason)
+    {
+        if (Object == null || !Object.IsValid)
+        {
+            return false;
+        }
+
+        RPC_MatchEnd(playerGoals, opponentGoals, reason ?? string.Empty);
+        return true;
+    }
+
     [Rpc(RpcSources.All, RpcTargets.All, InvokeLocal = true)]
     void RPC_ClientReady(PlayerRef player)
     {
@@ -397,5 +415,12 @@ public class MatchShotNetworkRelay : NetworkBehaviour
     void RPC_TimeSync(float remainingSeconds, NetworkBool paused)
     {
         TimeSyncReceived?.Invoke(remainingSeconds, paused);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.All, InvokeLocal = false)]
+    void RPC_MatchEnd(int playerGoals, int opponentGoals, string reason)
+    {
+        Debug.Log($"[ShotRelay] RPC_Recv MatchEnd playerGoals={playerGoals} opponentGoals={opponentGoals} reason={reason}");
+        MatchEndReceived?.Invoke(playerGoals, opponentGoals, reason);
     }
 }

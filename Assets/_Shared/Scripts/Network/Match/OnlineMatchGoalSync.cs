@@ -5,8 +5,8 @@ using UnityEngine;
 /// </summary>
 public static class OnlineMatchGoalSync
 {
-    static bool _rulesBound;
     static bool _applyingRemoteGoal;
+    static GameRulesManager _boundRules;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Boot()
@@ -22,11 +22,23 @@ public static class OnlineMatchGoalSync
             return;
         }
 
-        if (!_rulesBound && GameRulesManager.Instance != null)
+        // _boundRules, GameRulesManager.Instance ile karşılaştırılıyor — sahne yeniden
+        // yüklenip (yeni maç) Instance değiştiğinde yeniden abone olunsun diye. Eskiden
+        // bir kere-abone-ol bayrağı kullanılıyordu; bu, ikinci/sonraki her maçta golün
+        // hiç ağa gönderilmemesine (eski, yok olmuş GameRulesManager'a abone kalındığı
+        // için) ve dolayısıyla kalıcı donmaya yol açıyordu.
+        if (!ReferenceEquals(_boundRules, GameRulesManager.Instance))
         {
-            GameRulesManager.Instance.PlayerGoalScored -= OnLocalPlayerGoalScored;
-            GameRulesManager.Instance.PlayerGoalScored += OnLocalPlayerGoalScored;
-            _rulesBound = true;
+            if (_boundRules != null)
+            {
+                _boundRules.PlayerGoalScored -= OnLocalPlayerGoalScored;
+            }
+
+            _boundRules = GameRulesManager.Instance;
+            if (_boundRules != null)
+            {
+                _boundRules.PlayerGoalScored += OnLocalPlayerGoalScored;
+            }
         }
 
         TryBindRelay();
@@ -34,9 +46,10 @@ public static class OnlineMatchGoalSync
 
     static void Unbind()
     {
-        if (GameRulesManager.Instance != null)
+        if (_boundRules != null)
         {
-            GameRulesManager.Instance.PlayerGoalScored -= OnLocalPlayerGoalScored;
+            _boundRules.PlayerGoalScored -= OnLocalPlayerGoalScored;
+            _boundRules = null;
         }
 
         if (MatchShotNetworkRelay.Instance != null)
@@ -44,8 +57,6 @@ public static class OnlineMatchGoalSync
             MatchShotNetworkRelay.Instance.GoalReceived -= OnRemoteGoal;
             MatchShotNetworkRelay.Instance.RoundResetReceived -= OnNetworkRoundReset;
         }
-
-        _rulesBound = false;
     }
 
     public static void TryBindRelay()

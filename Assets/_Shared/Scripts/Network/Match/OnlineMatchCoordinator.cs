@@ -19,6 +19,7 @@ public class OnlineMatchCoordinator : MonoBehaviour
     int _lastSentOpponentGoals = -1;
     bool _connectInProgress;
     bool _timeSyncBound;
+    LeagueMatchController _boundLeagueController;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Ensure()
@@ -209,6 +210,7 @@ public class OnlineMatchCoordinator : MonoBehaviour
 
         OnlineMatchGoalSync.EnsureBound();
         EnsureTimeSyncBound();
+        EnsureMatchCompletedBound();
         SyncScoreIfNeeded();
         SyncTimeIfNeeded();
 
@@ -240,7 +242,17 @@ public class OnlineMatchCoordinator : MonoBehaviour
 
         MatchShotNetworkRelay.Instance.TimeSyncReceived -= OnTimeSyncReceived;
         MatchShotNetworkRelay.Instance.TimeSyncReceived += OnTimeSyncReceived;
+        MatchShotNetworkRelay.Instance.MatchEndReceived -= OnRelayMatchEndReceived;
+        MatchShotNetworkRelay.Instance.MatchEndReceived += OnRelayMatchEndReceived;
         _timeSyncBound = true;
+    }
+
+    /// <summary>
+    /// host perspektifinden gelir (playerGoals/opponentGoals host'a göre) — bize göre ters.
+    /// </summary>
+    void OnRelayMatchEndReceived(int hostPlayerGoals, int hostOpponentGoals, string reason)
+    {
+        LeagueMatchController.Instance?.CompleteMatchFromNetwork(hostOpponentGoals, hostPlayerGoals);
     }
 
     void SyncTimeIfNeeded()
@@ -280,6 +292,53 @@ public class OnlineMatchCoordinator : MonoBehaviour
         }
 
         LeagueMatchController.Instance?.ApplyNetworkTimeRemaining(remaining, paused);
+    }
+
+    /// <summary>
+    /// Host, süresi dolup kendi maçını bitirince SyncTimeIfNeeded artık hiç çalışmaz
+    /// (IsMatchActive false olur) — bu yüzden non-host taraf son senkron değeri asla tam
+    /// 0'a ulaşmayabilir ve kendi süresi hiç bitmeyebilir (sanki maç bitmemiş gibi takılı
+    /// kalır). Host'un maçı bittiğinde bunu açıkça karşı tarafa bildiriyoruz.
+    /// </summary>
+    void EnsureMatchCompletedBound()
+    {
+        if (!ReferenceEquals(_boundLeagueController, LeagueMatchController.Instance))
+        {
+            if (_boundLeagueController != null)
+            {
+                _boundLeagueController.MatchCompleted -= OnLocalMatchCompleted;
+            }
+
+            _boundLeagueController = LeagueMatchController.Instance;
+            if (_boundLeagueController != null)
+            {
+                _boundLeagueController.MatchCompleted += OnLocalMatchCompleted;
+            }
+        }
+    }
+
+    void OnLocalMatchCompleted(MatchResultType result)
+    {
+        if (OnlineMatchSession.Channel == null || !OnlineMatchSession.Channel.IsHost)
+        {
+            return;
+        }
+
+        int playerGoals = LeagueMatchController.Instance.PlayerGoals;
+        int opponentGoals = LeagueMatchController.Instance.OpponentGoals;
+        string reason = result.ToString();
+
+        // Asıl teslim RPC_MatchEnd ile olur (TimeSync/Goal ile aynı güvenilir Fusion RPC
+        // kanalı) — reliable-data custom kanalı Shared Mode'da bazı bağlantılarda hiç
+        // teslim etmiyordu. Eski kanal da yedek olarak gönderilir, zararsız.
+        MatchShotNetworkRelay.Instance?.TrySendMatchEnd(playerGoals, opponentGoals, reason);
+
+        OnlineMatchSession.Channel.SendMatchEnd(new MatchEndMessage
+        {
+            playerGoals = playerGoals,
+            opponentGoals = opponentGoals,
+            reason = reason
+        });
     }
 
     void EnsureRemoteOpponent()
@@ -393,7 +452,8 @@ public class OnlineMatchCoordinator : MonoBehaviour
 
     void OnMatchEndReceived(MatchEndMessage end)
     {
-        MatchSessionContext.SetFinalScore(end.playerGoals, end.opponentGoals);
+        // end.playerGoals/opponentGoals host perspektifinden — bize göre ters.
+        LeagueMatchController.Instance?.CompleteMatchFromNetwork(end.opponentGoals, end.playerGoals);
     }
 
     void OnSnapshotReceived(CoinSnapshotBatchMessage batch)

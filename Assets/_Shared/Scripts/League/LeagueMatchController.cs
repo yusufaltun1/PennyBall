@@ -414,6 +414,26 @@ public class LeagueMatchController : MonoBehaviour
         MatchTimerExpired?.Invoke();
     }
 
+    /// <summary>
+    /// Online non-host taraf: host süresi dolup maçını bitirdiğini ağ üzerinden bildirdi.
+    /// Host'un zaman senkronu maç bitince durduğu için bizim lokal sayacımız hiç 0'a
+    /// inmeyebilir — bu yüzden host'un gönderdiği nihai skorla burada da açıkça bitiriyoruz.
+    /// </summary>
+    public void CompleteMatchFromNetwork(int finalPlayerGoals, int finalOpponentGoals)
+    {
+        if (!_matchActive || _matchReported)
+        {
+            return;
+        }
+
+        _playerGoals = finalPlayerGoals;
+        _opponentGoals = finalOpponentGoals;
+        _forcedResult = ResolveResultByScore();
+        _matchTimeRemaining = 0f;
+        StopMatchTimer();
+        MatchTimerExpired?.Invoke();
+    }
+
     /// <summary>Rakip bağlantıyı kopardı — kalan oyuncu galibiyet alır (skor fark etmez), ödül kesilmez.</summary>
     public void EndMatchByOpponentDisconnect(string reason = null)
     {
