@@ -100,6 +100,15 @@
     { "key": "party.create_button", "value": "Oluştur" },
     { "key": "party.join_button", "value": "Katıl" },
 
+    { "key": "match_preset.play_online.title", "value": "Online Oyna" },
+    { "key": "match_preset.play_with_friend.title", "value": "Arkadaşınla Oyna!" },
+    { "key": "match_preset.create_match.button", "value": "Maç Oluştur!" },
+    { "key": "match_preset.join_match.button", "value": "Maça Katıl!" },
+    { "key": "match_preset.create_match.title", "value": "Maç Oluştur" },
+    { "key": "match_preset.create_match.desc", "value": "Kodu kopyala ve katılması için arkadaşına gönder..." },
+    { "key": "match_preset.join_match.title", "value": "Maça Katıl" },
+    { "key": "match_preset.join_match.desc", "value": "Kodu gir ve maça başla!" },
+
     { "key": "exit_match.title", "value": "Maçı terk edeceksin!" },
     { "key": "exit_match.subtitle", "value": "Maçtan çıkmak istediğine emin misin?" },
     { "key": "exit_match.cancel_button", "value": "Vazgeç" },

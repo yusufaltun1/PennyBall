@@ -1,21 +1,28 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// LevelStatus'un sahnedeki dikey yerleşimini ve sol başlangıcını korur;
+/// yalnızca sağ kenarı XP ilerlemesine göre FillTrack içinde uzatır.
+/// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Image))]
 public class LevelXpBarFill : MonoBehaviour
 {
-    [Header("100% dolu iken LevelStatus RectTransform değerleri")]
-    [SerializeField] Vector2 _fullAnchorMin = new(0f, 0f);
-    [SerializeField] Vector2 _fullAnchorMax = new(0.8571429f, 1f);
-    [SerializeField] Vector2 _fillAnchoredPosition = new(18.4f, 7.5f);
-    [SerializeField] Vector2 _fillPivot = new(0f, 0.5f);
+    [Tooltip("%100 dolulukta sağ kenarın FillTrack genişliğine oranı (1 = FillTrack'in sağ kenarı).")]
+    [SerializeField, Range(0f, 1f)] float _fullAnchorMaxX = 1f;
 
-    [SerializeField] RectTransform _trackRect;
     [SerializeField] RectTransform _fillRect;
     [SerializeField] float _minVisibleProgress = 0.02f;
 
     Image _fillImage;
+    bool _hasDesignLayout;
+    float _designAnchorMinY;
+    float _designAnchorMaxY;
+    Vector2 _designPivot;
+    float _designLeft;
+    float _designOffsetMinY;
+    float _designOffsetMaxY;
 
     void Awake()
     {
@@ -57,16 +64,29 @@ public class LevelXpBarFill : MonoBehaviour
             _fillImage = GetComponent<Image>();
         }
 
-        if (_trackRect == null && _fillRect != null && _fillRect.parent is RectTransform parentRect)
-        {
-            _trackRect = parentRect;
-        }
-
         if (_fillImage != null)
         {
             _fillImage.type = Image.Type.Simple;
             _fillImage.preserveAspect = false;
         }
+
+        CaptureDesignLayout();
+    }
+
+    void CaptureDesignLayout()
+    {
+        if (_hasDesignLayout || _fillRect == null)
+        {
+            return;
+        }
+
+        _designAnchorMinY = _fillRect.anchorMin.y;
+        _designAnchorMaxY = _fillRect.anchorMax.y;
+        _designPivot = _fillRect.pivot;
+        _designLeft = _fillRect.offsetMin.x;
+        _designOffsetMinY = _fillRect.offsetMin.y;
+        _designOffsetMaxY = _fillRect.offsetMax.y;
+        _hasDesignLayout = true;
     }
 
     public void Refresh()
@@ -90,13 +110,11 @@ public class LevelXpBarFill : MonoBehaviour
     void ApplyProgress(float progress)
     {
         _fillRect.localScale = Vector3.one;
-        _fillRect.pivot = _fillPivot;
-        _fillRect.anchorMin = _fullAnchorMin;
-        _fillRect.anchorMax = new Vector2(
-            Mathf.Lerp(_fullAnchorMin.x, _fullAnchorMax.x, progress),
-            _fullAnchorMax.y);
-        _fillRect.anchoredPosition = _fillAnchoredPosition;
-        _fillRect.sizeDelta = Vector2.zero;
+        _fillRect.pivot = _designPivot;
+        _fillRect.anchorMin = new Vector2(0f, _designAnchorMinY);
+        _fillRect.anchorMax = new Vector2(Mathf.Lerp(0f, _fullAnchorMaxX, progress), _designAnchorMaxY);
+        _fillRect.offsetMin = new Vector2(_designLeft, _designOffsetMinY);
+        _fillRect.offsetMax = new Vector2(0f, _designOffsetMaxY);
     }
 
 #if UNITY_EDITOR
@@ -107,19 +125,11 @@ public class LevelXpBarFill : MonoBehaviour
         ApplyProgress(1f);
     }
 
-    [ContextMenu("Capture Current Rect As 100% Layout")]
-    void CaptureCurrentLayoutAsFull()
+    [ContextMenu("Preview 50% Fill")]
+    void PreviewHalfFill()
     {
         ResolveReferences();
-        if (_fillRect == null)
-        {
-            return;
-        }
-
-        _fullAnchorMin = _fillRect.anchorMin;
-        _fullAnchorMax = _fillRect.anchorMax;
-        _fillAnchoredPosition = _fillRect.anchoredPosition;
-        _fillPivot = _fillRect.pivot;
+        ApplyProgress(0.5f);
     }
 
     void OnValidate()

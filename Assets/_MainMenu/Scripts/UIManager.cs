@@ -7,6 +7,7 @@ public class UIManager : MonoBehaviour
 {
     [SerializeField] MatchingPanelController matchingPanel;
     [SerializeField] JoinRoomPanelController joinRoomPanel;
+    [SerializeField] MatchPresetPanelController matchPresetPanel;
     [SerializeField] Button exerciseButton;
 
     readonly List<Button> _wiredExerciseButtons = new();
@@ -42,6 +43,25 @@ public class UIManager : MonoBehaviour
 
         joinRoomPanel?.gameObject.SetActive(false);
 
+        if (matchPresetPanel == null)
+        {
+            Transform panelTransform = FindDeepChild(searchRoot, "MatchPreset");
+            if (panelTransform != null)
+            {
+                matchPresetPanel = panelTransform.GetComponent<MatchPresetPanelController>();
+                if (matchPresetPanel == null)
+                {
+                    matchPresetPanel = panelTransform.gameObject.AddComponent<MatchPresetPanelController>();
+                }
+            }
+        }
+
+        if (matchPresetPanel != null)
+        {
+            matchPresetPanel.PlayOnlineRequested += StartOnlineMatch;
+            matchPresetPanel.Close();
+        }
+
         if (exerciseButton == null)
         {
             Transform exerciseTransform = FindDeepChild(searchRoot, "Btn_Exercise");
@@ -62,6 +82,11 @@ public class UIManager : MonoBehaviour
 
     void OnDestroy()
     {
+        if (matchPresetPanel != null)
+        {
+            matchPresetPanel.PlayOnlineRequested -= StartOnlineMatch;
+        }
+
         for (int i = 0; i < _wiredExerciseButtons.Count; i++)
         {
             Button button = _wiredExerciseButtons[i];
@@ -104,6 +129,17 @@ public class UIManager : MonoBehaviour
             return;
         }
 
+        if (matchPresetPanel == null)
+        {
+            Debug.LogError("[UIManager] MatchPreset bulunamadı.");
+            return;
+        }
+
+        matchPresetPanel.Open();
+    }
+
+    void StartOnlineMatch()
+    {
         if (matchingPanel == null)
         {
             Debug.LogError("[UIManager] Matching_Panel bulunamadı.");
