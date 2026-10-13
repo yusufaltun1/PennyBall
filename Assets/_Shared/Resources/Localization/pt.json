@@ -95,6 +95,28 @@
     { "key": "matching.finding_offline", "value": "Procurando adversário..." },
     { "key": "matching.estimate", "value": "Aprox. 20 segundos\n\n" },
 
+    { "key": "party.waiting_for_friend", "value": "Aguardando seu amigo..." },
+    { "key": "party.opponent_found", "value": "Amigo encontrado!" },
+    { "key": "party.create_failed", "value": "Não foi possível criar a sala" },
+    { "key": "party.join_failed", "value": "Não foi possível entrar na sala" },
+    { "key": "party.enter_code", "value": "Digite o código de 6 dígitos" },
+    { "key": "party.create_button", "value": "Criar" },
+    { "key": "party.join_button", "value": "Entrar" },
+
+    { "key": "match_preset.play_online.title", "value": "Jogar Online" },
+    { "key": "match_preset.play_with_friend.title", "value": "Jogue com um Amigo!" },
+    { "key": "match_preset.create_match.button", "value": "Criar Partida!" },
+    { "key": "match_preset.join_match.button", "value": "Entrar na Partida!" },
+    { "key": "match_preset.create_match.title", "value": "Criar Partida" },
+    { "key": "match_preset.create_match.desc", "value": "Copie o código e envie para seu amigo entrar..." },
+    { "key": "match_preset.join_match.title", "value": "Entrar na Partida" },
+    { "key": "match_preset.join_match.desc", "value": "Digite o código e comece a partida!" },
+
+    { "key": "exit_match.title", "value": "Você vai desistir!" },
+    { "key": "exit_match.subtitle", "value": "Tem certeza de que quer sair da partida?" },
+    { "key": "exit_match.cancel_button", "value": "Cancelar" },
+    { "key": "exit_match.yes_button", "value": "Sim, Sair" },
+
     { "key": "avatar.title", "value": "Mudar Avatar" },
     { "key": "avatar.active", "value": "Ativo" },
     { "key": "avatar.change_name", "value": "Mudar Nome" },

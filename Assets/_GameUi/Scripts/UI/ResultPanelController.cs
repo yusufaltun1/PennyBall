@@ -23,6 +23,9 @@ public class ResultPanelController : MonoBehaviour
         public Sprite p3;
     }
 
+    [Tooltip("Açıkken Btn_Ad gizlenir; Btn_Continue, Buttons'ı gizleyip RePlay'i gösterir.")]
+    [SerializeField] private bool gameWithFriend;
+
     [Header("Playback")]
     [SerializeField] private bool loop;
     [SerializeField] private bool won;
@@ -46,6 +49,7 @@ public class ResultPanelController : MonoBehaviour
     [SerializeField] private ConfettiController confetti;
     [SerializeField] private Button continueButton;
     [SerializeField] private Button adButton;
+    [SerializeField] private GameObject replay;
 
     [Header("Navigation")]
     [SerializeField] private GameObject leagueStatusPanel;
@@ -91,9 +95,16 @@ public class ResultPanelController : MonoBehaviour
     private bool previousDraw;
     private bool _rewardDoubled;
     private bool _buttonsBound;
+    private bool _replayShown;
     private Coroutine playCoroutine;
 
     private bool IsExerciseMode => ExerciseRuntime.IsActive;
+
+    public bool GameWithFriend
+    {
+        get => gameWithFriend;
+        set => gameWithFriend = value;
+    }
 
     public void ShowResult(MatchResultType result)
     {
@@ -103,6 +114,8 @@ public class ResultPanelController : MonoBehaviour
         lost = result == MatchResultType.Loss;
         draw = result == MatchResultType.Draw;
         _rewardDoubled = false;
+        _replayShown = false;
+        SetReplayVisible(false);
 
         if (!IsExerciseMode)
         {
@@ -175,6 +188,15 @@ public class ResultPanelController : MonoBehaviour
         }
 
         BindButtons();
+
+        if (replay == null)
+        {
+            Transform replayTransform = transform.Find("RePlay") ?? transform.Find("Replay");
+            if (replayTransform != null)
+            {
+                replay = replayTransform.gameObject;
+            }
+        }
 
         // Inspector'da atanmamışsa sahnedeki LeagueStatusPresenter'ı bul
         if (leagueStatusPanel == null)
@@ -282,8 +304,35 @@ public class ResultPanelController : MonoBehaviour
 
     public void OnContinueClicked()
     {
+        if (gameWithFriend && !IsExerciseMode)
+        {
+            MainMenuClickSound.Play();
+            ShowReplay();
+            return;
+        }
+
         SetButtonsInteractable(false);
         ReturnToMainMenu();
+    }
+
+    void ShowReplay()
+    {
+        _replayShown = true;
+
+        if (buttons != null)
+        {
+            buttons.gameObject.SetActive(false);
+        }
+
+        SetReplayVisible(true);
+    }
+
+    void SetReplayVisible(bool visible)
+    {
+        if (replay != null && replay.activeSelf != visible)
+        {
+            replay.SetActive(visible);
+        }
     }
 
     void OnClaimX2Clicked()
@@ -367,7 +416,8 @@ public class ResultPanelController : MonoBehaviour
         }
 
         adButton.gameObject.SetActive(
-            !IsExerciseMode
+            !gameWithFriend
+            && !IsExerciseMode
             && MatchSessionContext.EarnedCoins > 0
             && !_rewardDoubled);
     }
@@ -455,6 +505,16 @@ public class ResultPanelController : MonoBehaviour
             RefreshRewardLabels();
         }
     }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (Application.isPlaying && adButton != null)
+        {
+            RefreshAdButtonVisibility();
+        }
+    }
+#endif
 
     private void Update()
     {
@@ -660,6 +720,7 @@ public class ResultPanelController : MonoBehaviour
         icon.localScale = iconFinal.LocalScale;
 
         buttons.gameObject.SetActive(false);
+        RefreshAdButtonVisibility();
         if (!IsExerciseMode)
         {
             buttons.anchoredPosition = new Vector2(
@@ -716,10 +777,20 @@ public class ResultPanelController : MonoBehaviour
             rewards.SetActive(false);
         }
 
-        if (!IsExerciseMode && buttons != null)
+        if (_replayShown)
+        {
+            if (buttons != null)
+            {
+                buttons.gameObject.SetActive(false);
+            }
+
+            SetReplayVisible(true);
+        }
+        else if (!IsExerciseMode && buttons != null)
         {
             buttons.gameObject.SetActive(true);
             Apply(buttons, continueFinal);
+            RefreshAdButtonVisibility();
         }
         else if (buttons != null)
         {
