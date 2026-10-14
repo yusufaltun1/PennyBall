@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// ScoreBar'daki ExitButton ile açılan "maçtan çık" onay paneli.
-/// Btn_yes: online ise rakibe forfeit bildirilir, maç hükmen kaybedilir (HukmenMaglup paneli açılır).
+/// Btn_yes: online ise rakibe forfeit bildirilir, maç hükmen kaybedilir (ResultPanel yenilgiyle açılır).
 /// Btn_cancel: paneli kapatır, maç devam eder.
 /// </summary>
 [DisallowMultipleComponent]

@@ -86,7 +86,8 @@
     { "key": "unlocked.goal_keeper.name", "value": "Goal Keeper" },
     { "key": "unlocked.last_coin.name", "value": "Last Coin" },
 
-    { "key": "main.play_button", "value": "Play" },
+    { "key": "main.play_online_button", "value": "Online" },
+    { "key": "main.play_wfriend_button", "value": "With Friend" },
 
     { "key": "matching.finding", "value": "Finding a match..." },
     { "key": "matching.finding_offline", "value": "Finding opponent..." },
@@ -106,7 +107,7 @@
     { "key": "match_preset.create_match.button", "value": "Create a Match!" },
     { "key": "match_preset.join_match.button", "value": "Join a Match!" },
     { "key": "match_preset.create_match.title", "value": "Create a Match" },
-    { "key": "match_preset.create_match.desc", "value": "Copy the code and send to your friend to enter..." },
+    { "key": "match_preset.create_match.desc", "value": "Send the code to your friend and wait..." },
     { "key": "match_preset.join_match.title", "value": "Join a Match" },
     { "key": "match_preset.join_match.desc", "value": "Enter the code and start the match!" },
     { "key": "result.play_again_button", "value": "Play Again!" },

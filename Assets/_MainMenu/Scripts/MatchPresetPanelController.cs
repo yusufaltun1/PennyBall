@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -20,6 +21,12 @@ public class MatchPresetPanelController : MonoBehaviour
     public event Action<string> JoinCodeSubmitted;
     public event Action<RoomCodeResult> RoomMatchFound;
 
+    [Header("Copy Feedback")]
+    [SerializeField] Sprite copiedSprite;
+    [SerializeField] Color codeColor = Color.white;
+    [SerializeField] Color copiedCodeColor = new Color32(0x00, 0x96, 0x11, 0xFF);
+    [SerializeField, Min(0f)] float copiedFeedbackDuration = 2f;
+
     GameObject _playOnline;
     GameObject _playWithFriend;
     GameObject _codeGenerated;
@@ -29,11 +36,31 @@ public class MatchPresetPanelController : MonoBehaviour
     bool _initialized;
     bool _createRequestInFlight;
     string _activeCode;
+    Image _copyButtonImage;
+    Sprite _copyButtonDefaultSprite;
+    Coroutine _copyFeedbackRoutine;
 
     void Awake()
     {
         EnsureInitialized();
     }
+
+    void OnDisable()
+    {
+        ResetCopyFeedback();
+    }
+
+#if UNITY_EDITOR
+    const string DefaultCopiedSpritePath = "Assets/_MainMenu/Textures/EnterTick_btn.png";
+
+    void OnValidate()
+    {
+        if (copiedSprite == null)
+        {
+            copiedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(DefaultCopiedSpritePath);
+        }
+    }
+#endif
 
     public void Open()
     {
@@ -63,6 +90,14 @@ public class MatchPresetPanelController : MonoBehaviour
 
         Transform codeTransform = transform.Find($"{CodeGeneratedPath}/CodeHolder/Code");
         _codeText = codeTransform != null ? codeTransform.GetComponent<TextMeshProUGUI>() : null;
+        if (_codeText != null)
+        {
+            _codeText.color = codeColor;
+        }
+
+        Transform copyButtonTransform = transform.Find($"{CodeGeneratedPath}/CodeHolder/Btn_Copy");
+        _copyButtonImage = copyButtonTransform != null ? copyButtonTransform.GetComponent<Image>() : null;
+        _copyButtonDefaultSprite = _copyButtonImage != null ? _copyButtonImage.sprite : null;
 
         EnsureJoinCodeInput();
 
@@ -336,6 +371,64 @@ public class MatchPresetPanelController : MonoBehaviour
         }
 
         GUIUtility.systemCopyBuffer = LocalizationService.Get("party.invite_share_text", _activeCode);
+        ShowCopyFeedback();
+    }
+
+    void ShowCopyFeedback()
+    {
+        if (copiedSprite == null)
+        {
+            Debug.LogWarning("[MatchPreset] Copied Sprite atanmamış; kopyalama geri bildirimi gösterilemedi.", this);
+            return;
+        }
+
+        if (_copyButtonImage == null || !isActiveAndEnabled)
+        {
+            return;
+        }
+
+        if (_copyFeedbackRoutine != null)
+        {
+            StopCoroutine(_copyFeedbackRoutine);
+        }
+
+        _copyFeedbackRoutine = StartCoroutine(CopyFeedbackRoutine());
+    }
+
+    IEnumerator CopyFeedbackRoutine()
+    {
+        _copyButtonImage.sprite = copiedSprite;
+        if (_codeText != null)
+        {
+            _codeText.color = copiedCodeColor;
+        }
+
+        yield return new WaitForSecondsRealtime(copiedFeedbackDuration);
+        _copyFeedbackRoutine = null;
+        _copyButtonImage.sprite = _copyButtonDefaultSprite;
+        if (_codeText != null)
+        {
+            _codeText.color = codeColor;
+        }
+    }
+
+    void ResetCopyFeedback()
+    {
+        if (_copyFeedbackRoutine != null)
+        {
+            StopCoroutine(_copyFeedbackRoutine);
+            _copyFeedbackRoutine = null;
+        }
+
+        if (_copyButtonImage != null)
+        {
+            _copyButtonImage.sprite = _copyButtonDefaultSprite;
+        }
+
+        if (_codeText != null)
+        {
+            _codeText.color = codeColor;
+        }
     }
 
     void OnGoBackPressed()

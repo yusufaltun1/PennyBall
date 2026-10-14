@@ -102,28 +102,11 @@ public class MatchScoreboardPresenter : MonoBehaviour
         OpponentBotController.Instance?.FreezeMatch();
         GameFeedback.EnsureInstance()?.PlayWhistle();
 
-        // Rakip bağlantıyı kopardıysa biz kazanırız — HukmenMaglup sadece kendi pes
-        // ettiğimizde (reason != OpponentDisconnectReason) gösterilmeli.
-        bool isSelfForfeit = MatchSessionTracker.HasPendingAbandon
-            && MatchSessionTracker.PendingAbandonReason != MatchSessionTracker.OpponentDisconnectReason;
-
         MatchResultType result = MatchResultType.Draw;
         if (LeagueMatchController.Instance != null)
             result = LeagueMatchController.Instance.CompleteMatchFromTimer();
 
         RefreshAll();
-
-        if (isSelfForfeit)
-        {
-            HukmenMaglupController forfeitPanel = HukmenMaglupController.FindPanel();
-            if (forfeitPanel != null)
-            {
-                forfeitPanel.Show();
-                return;
-            }
-
-            Debug.LogWarning("[Match] Hükmen mağlup paneli (HukmenMaglup) sahnede bulunamadı.");
-        }
 
         ResultPanelController resultPanel = FindNormalResultPanel();
         resultPanel?.ShowResult(result);

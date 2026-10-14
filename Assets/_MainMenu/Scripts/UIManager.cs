@@ -153,10 +153,20 @@ public class UIManager : MonoBehaviour
     {
         MainMenuClickSound.Play();
 
-        string pendingFirstRunScene = FirstRunFlow.GetPendingFirstRunScene();
-        if (pendingFirstRunScene != null)
+        if (TryLoadPendingFirstRunScene())
         {
-            SceneManager.LoadScene(pendingFirstRunScene);
+            return;
+        }
+
+        StartOnlineMatch();
+    }
+
+    public void OnPlayWithFriendButtonPressed()
+    {
+        MainMenuClickSound.Play();
+
+        if (TryLoadPendingFirstRunScene())
+        {
             return;
         }
 
@@ -167,6 +177,18 @@ public class UIManager : MonoBehaviour
         }
 
         matchPresetPanel.Open();
+    }
+
+    static bool TryLoadPendingFirstRunScene()
+    {
+        string pendingFirstRunScene = FirstRunFlow.GetPendingFirstRunScene();
+        if (pendingFirstRunScene == null)
+        {
+            return false;
+        }
+
+        SceneManager.LoadScene(pendingFirstRunScene);
+        return true;
     }
 
     void StartOnlineMatch()

@@ -89,7 +89,8 @@
     { "key": "unlocked.goal_keeper.name", "value": "Goleiro" },
     { "key": "unlocked.last_coin.name", "value": "Última Moeda" },
 
-    { "key": "main.play_button", "value": "Jogar" },
+   { "key": "main.play_online_button", "value": "Online" },
+    { "key": "main.play_wfriend_button", "value": "Com Amigo" },
 
     { "key": "matching.finding", "value": "Procurando partida..." },
     { "key": "matching.finding_offline", "value": "Procurando adversário..." },
@@ -108,7 +109,7 @@
     { "key": "match_preset.create_match.button", "value": "Criar Partida!" },
     { "key": "match_preset.join_match.button", "value": "Entrar na Partida!" },
     { "key": "match_preset.create_match.title", "value": "Criar Partida" },
-    { "key": "match_preset.create_match.desc", "value": "Copie o código e envie para seu amigo entrar..." },
+    { "key": "match_preset.create_match.desc", "value": "Envie o código para o seu amigo e aguarde..." },
     { "key": "match_preset.join_match.title", "value": "Entrar na Partida" },
     { "key": "match_preset.join_match.desc", "value": "Digite o código e comece a partida!" },
 

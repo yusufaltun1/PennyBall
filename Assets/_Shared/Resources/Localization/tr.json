@@ -86,7 +86,8 @@
     { "key": "unlocked.goal_keeper.name", "value": "Kaleci" },
     { "key": "unlocked.last_coin.name", "value": "Son Para" },
 
-    { "key": "main.play_button", "value": "Oyna" },
+    { "key": "main.play_online_button", "value": "Online" },
+    { "key": "main.play_wfriend_button", "value": "Arkadaşınla" },
 
     { "key": "matching.finding", "value": "Rakip aranıyor..." },
     { "key": "matching.finding_offline", "value": "Rakip aranıyor..." },
@@ -106,7 +107,7 @@
     { "key": "match_preset.create_match.button", "value": "Maç Oluştur!" },
     { "key": "match_preset.join_match.button", "value": "Maça Katıl!" },
     { "key": "match_preset.create_match.title", "value": "Maç Oluştur" },
-    { "key": "match_preset.create_match.desc", "value": "Kodu kopyala ve katılması için arkadaşına gönder..." },
+    { "key": "match_preset.create_match.desc", "value": "Kodu arkadaşına gönder ve bekle..." },
     { "key": "match_preset.join_match.title", "value": "Maça Katıl" },
     { "key": "match_preset.join_match.desc", "value": "Kodu gir ve maça başla!" },
     { "key": "result.play_again_button", "value": "Tekrar Oyna!" },
