@@ -72,6 +72,12 @@ public static class OnlineMatchGoalSync
         MatchShotNetworkRelay.Instance.RoundResetReceived += OnNetworkRoundReset;
     }
 
+    /// <summary>
+    /// Bu event'e ya host'un KENDİ golünde (otoriter, doğrulamaya gerek yok) ya da misafirin
+    /// host tarafından ONAYLANMIŞ golünde ulaşılır (bkz. GameRulesManager.ResolveShotRoutine'deki
+    /// misafir-bekleme dalı) — misafir tarafında burada ağa tekrar bir şey göndermiyoruz, onay
+    /// zaten host'tan geldi, host zaten biliyor.
+    /// </summary>
     static void OnLocalPlayerGoalScored()
     {
         if (_applyingRemoteGoal || !OnlineMatchSession.IsOnlineMatch)
@@ -79,22 +85,36 @@ public static class OnlineMatchGoalSync
             return;
         }
 
+        if (OnlineMatchSession.Channel == null || !OnlineMatchSession.Channel.IsHost)
+        {
+            return;
+        }
+
         // Skor zaten LeagueMatchController.OnPlayerGoal ile arttı.
         // Celebration reset'siz; RoundReset RPC ile gelecek.
-        MatchShotNetworkRelay.Instance?.TrySendGoal(localPlayerScored: true);
+        MatchShotNetworkRelay.Instance?.TrySendGoal(hostScored: true, shotSeq: 0);
     }
 
-    static void OnRemoteGoal(bool senderScored)
+    /// <summary>hostScored: host'un takımı mı attı (biz yedik) yoksa bizim golümüz host tarafından onaylandı mı.</summary>
+    static void OnRemoteGoal(bool hostScored, int shotSeq)
     {
-        if (!senderScored)
+        if (OnlineMatchSession.Channel != null && OnlineMatchSession.Channel.IsHost)
         {
+            // Host kendi RPC_Goal'ını almaz (InvokeLocal=false) — buraya düşmemeli.
+            return;
+        }
+
+        if (!hostScored)
+        {
+            Debug.Log($"[OnlineGoal] Host bizim golümüzü onayladı shotSeq={shotSeq}");
+            GameRulesManager.Instance?.ConfirmPendingGuestGoal();
             return;
         }
 
         _applyingRemoteGoal = true;
         try
         {
-            Debug.Log("[OnlineGoal] Remote scored — enemy celebration (reset RPC bekleniyor)");
+            Debug.Log("[OnlineGoal] Host scored — enemy celebration (reset RPC bekleniyor)");
             LeagueMatchController.Instance?.RegisterOpponentGoalFromNetwork();
             if (GameRulesManager.Instance != null)
             {

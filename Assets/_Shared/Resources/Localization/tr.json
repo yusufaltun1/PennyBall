@@ -99,6 +99,7 @@
     { "key": "party.enter_code", "value": "6 haneli kodu gir" },
     { "key": "party.create_button", "value": "Oluştur" },
     { "key": "party.join_button", "value": "Katıl" },
+    { "key": "party.invite_share_text", "value": "PennyBall'da bana katıl! \"Arkadaşla Oyna\" bölümüne bu kodu gir: {0}" },
 
     { "key": "match_preset.play_online.title", "value": "Online Oyna" },
     { "key": "match_preset.play_with_friend.title", "value": "Arkadaşınla Oyna!" },
@@ -108,6 +109,7 @@
     { "key": "match_preset.create_match.desc", "value": "Kodu kopyala ve katılması için arkadaşına gönder..." },
     { "key": "match_preset.join_match.title", "value": "Maça Katıl" },
     { "key": "match_preset.join_match.desc", "value": "Kodu gir ve maça başla!" },
+    { "key": "result.play_again_button", "value": "Tekrar Oyna!" },
 
     { "key": "exit_match.title", "value": "Maçı terk edeceksin!" },
     { "key": "exit_match.subtitle", "value": "Maçtan çıkmak istediğine emin misin?" },

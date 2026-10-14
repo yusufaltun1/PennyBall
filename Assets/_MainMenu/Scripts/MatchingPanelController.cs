@@ -39,7 +39,7 @@ public class MatchingPanelController : MonoBehaviour
     [SerializeField] private float vsEndScale = 1f;
     [SerializeField] private float vsEasePower = 3f;
 
-    private enum PartyFlowMode { QuickMatch, CreateRoom, JoinRoom }
+    private enum PartyFlowMode { QuickMatch, CreateRoom, JoinRoom, Rematch }
 
     private bool isShuffling;
     private bool isRunning;
@@ -47,6 +47,10 @@ public class MatchingPanelController : MonoBehaviour
     private PartyFlowMode partyMode = PartyFlowMode.QuickMatch;
     private string joinCode;
     private string activeRoomCode;
+    private string rematchRoomName;
+    private string rematchOpponentUserId;
+    private string rematchOpponentDisplayName;
+    private int rematchOpponentAvatarIndex;
     private Coroutine matchmakingCoroutine;
     private Coroutine findingFadeCoroutine;
     private RectTransform rectTransform;
@@ -415,6 +419,24 @@ public class MatchingPanelController : MonoBehaviour
         BeginFlowInternal();
     }
 
+    /// <summary>
+    /// ResultPanel > RePlay > "Play Again": host/guest ayrımı yok, yeni kod üretmeye/yazmaya
+    /// gerek yok — önceki maçın aynı Photon odasına tekrar katılıp rakibi bekler. Panel MainMenu
+    /// yüklenir yüklenmez hemen gösterilir (Create/Join ile aynı "bekleniyor" ekranı), böylece
+    /// ham MainMenu görünmeden doğrudan matchmaking ekranına geçilmiş olur.
+    /// </summary>
+    public void BeginRematchFlow(
+        string roomName, string opponentUserId, string opponentDisplayName, int opponentAvatarIndex)
+    {
+        partyMode = PartyFlowMode.Rematch;
+        joinCode = null;
+        rematchRoomName = roomName;
+        rematchOpponentUserId = opponentUserId;
+        rematchOpponentDisplayName = opponentDisplayName;
+        rematchOpponentAvatarIndex = opponentAvatarIndex;
+        BeginFlowInternal();
+    }
+
     private void BeginFlowInternal()
     {
         if (isRunning)
@@ -456,6 +478,77 @@ public class MatchingPanelController : MonoBehaviour
         matchmakingCoroutine = StartCoroutine(DoMatchmakingSequence());
     }
 
+    /// <summary>
+    /// Host, Container_CodeGenerated ekranında kalarak Photon'a zaten bağlandı ve arkadaşını buldu
+    /// (bkz. MatchPresetPanelController) — burada tekrar bağlanmaya/beklemeye çalışmadan doğrudan
+    /// "bulundu" görselinden (VS reveal + geri sayım + Game sahnesi) devam edilir.
+    /// </summary>
+    public void ShowMatchFoundAndCountdown(MatchmakingResult matchResult, string code)
+    {
+        if (isRunning)
+        {
+            return;
+        }
+
+        isRunning = true;
+        partyMode = PartyFlowMode.CreateRoom;
+        joinCode = null;
+        activeRoomCode = code;
+
+        ResetUiState();
+
+        if (!gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+        }
+
+        BindCancelButton();
+        if (cancelButton != null)
+        {
+            cancelButton.gameObject.SetActive(true);
+            cancelButton.interactable = true;
+        }
+
+        StopFootballGameMusic();
+        MainMenuMusicController.StopMusic();
+
+        if (matchmakingCoroutine != null)
+        {
+            StopCoroutine(matchmakingCoroutine);
+        }
+
+        matchmakingCoroutine = StartCoroutine(DoAlreadyMatchedSequence());
+    }
+
+    private IEnumerator DoAlreadyMatchedSequence()
+    {
+        yield return SlidePanelUp();
+
+        isShuffling = false;
+        findingObject?.SetActive(false);
+        codeContainer?.SetActive(false);
+        if (loopImage != null)
+        {
+            loopImage.rectTransform.localRotation = Quaternion.identity;
+            loopImage.gameObject.SetActive(false);
+        }
+
+        BotPlayerEntry partyOpponent = MatchSessionContext.CurrentOpponent;
+        ShowOpponent(partyOpponent);
+
+        GameAnalytics.Track("matchmaking_completed", new Dictionary<string, string>
+        {
+            { "opponent_type", "human" },
+            { "timed_out", "false" },
+            { "reason", "create_room" }
+        });
+
+        yield return PlayVsRevealAnimation();
+
+        sayacObject?.SetActive(true);
+        yield return RunCountdownAndLoadScene();
+    }
+
     private void ResetUiState()
     {
         rectTransform ??= GetComponent<RectTransform>();
@@ -479,13 +572,15 @@ public class MatchingPanelController : MonoBehaviour
             {
                 PartyFlowMode.CreateRoom => LocalizationService.Get("party.waiting_for_friend"),
                 PartyFlowMode.JoinRoom => LocalizationService.Get("party.waiting_for_friend"),
+                PartyFlowMode.Rematch => LocalizationService.Get("party.waiting_for_friend"),
                 _ => OnlineFeatureFlags.OnlineMatchmakingEnabled
                     ? LocalizationService.Get("matching.finding")
                     : LocalizationService.Get("matching.finding_offline")
             };
         }
 
-        bool showCode = partyMode != PartyFlowMode.QuickMatch;
+        // Rematch'te gösterilecek bir kod yok (aynı odaya sessizce tekrar katılıyoruz).
+        bool showCode = partyMode == PartyFlowMode.CreateRoom || partyMode == PartyFlowMode.JoinRoom;
         codeContainer?.SetActive(showCode);
         if (showCode)
         {
@@ -552,6 +647,14 @@ public class MatchingPanelController : MonoBehaviour
         else if (partyMode == PartyFlowMode.JoinRoom)
         {
             ResolveJoinRoomAsync(joinCode, result =>
+            {
+                matchResult = result;
+                matchmakingDone = true;
+            });
+        }
+        else if (partyMode == PartyFlowMode.Rematch)
+        {
+            ResolveRematchAsync(result =>
             {
                 matchResult = result;
                 matchmakingDone = true;
@@ -816,6 +919,24 @@ public class MatchingPanelController : MonoBehaviour
         catch (System.Exception ex)
         {
             Debug.LogWarning($"[Matching] Join room failed: {ex.Message}");
+            onDone?.Invoke(MatchmakingResult.Fail(ex.Message));
+        }
+    }
+
+    async void ResolveRematchAsync(System.Action<MatchmakingResult> onDone)
+    {
+        try
+        {
+            RoomCodeResult result = await PartyRoomService.RejoinRoomAsync(
+                rematchRoomName, rematchOpponentUserId, rematchOpponentDisplayName, rematchOpponentAvatarIndex);
+
+            onDone?.Invoke(result.Success
+                ? result.Match
+                : MatchmakingResult.Fail(result.Reason, timedOut: result.Reason == "timeout"));
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"[Matching] Rematch failed: {ex.Message}");
             onDone?.Invoke(MatchmakingResult.Fail(ex.Message));
         }
     }

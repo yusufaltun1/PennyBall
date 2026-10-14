@@ -110,6 +110,13 @@ public class ResultPanelController : MonoBehaviour
     {
         InvalidMoveFeedbackPresenter.ForceHideAll();
 
+        // Arkadaşla oynanan (Create/Join) maçlar Nakama'da "pb_rc_" önekli Photon oda adıyla
+        // kuruluyor — bu bilgiden, kullanıcı/Inspector'dan ayrı bir bayrak tutmadan otomatik
+        // tespit ediyoruz. RePlay/"Play Again" ekranı sadece bu tür maçlarda anlamlı.
+        gameWithFriend = OnlineMatchSession.IsOnlineMatch
+            && !string.IsNullOrEmpty(OnlineMatchSession.PhotonRoomName)
+            && OnlineMatchSession.PhotonRoomName.StartsWith("pb_rc_");
+
         won  = result == MatchResultType.Win;
         lost = result == MatchResultType.Loss;
         draw = result == MatchResultType.Draw;
@@ -197,6 +204,8 @@ public class ResultPanelController : MonoBehaviour
                 replay = replayTransform.gameObject;
             }
         }
+
+        RematchPanelController.FindPanel();
 
         // Inspector'da atanmamışsa sahnedeki LeagueStatusPresenter'ı bul
         if (leagueStatusPanel == null)

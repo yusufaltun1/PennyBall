@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -9,11 +8,8 @@ public class OnlineMatchCoordinator : MonoBehaviour
 {
     public static OnlineMatchCoordinator Instance { get; private set; }
 
-    [SerializeField] bool _broadcastSnapshots;
-    [SerializeField] float _snapshotInterval = 0.5f;
     [SerializeField] float _timeSyncInterval = 0.5f;
 
-    float _snapshotTimer;
     float _timeSyncTimer;
     int _lastSentPlayerGoals = -1;
     int _lastSentOpponentGoals = -1;
@@ -213,18 +209,6 @@ public class OnlineMatchCoordinator : MonoBehaviour
         EnsureMatchCompletedBound();
         SyncScoreIfNeeded();
         SyncTimeIfNeeded();
-
-        if (!_broadcastSnapshots || !OnlineMatchSession.Channel.IsHost)
-        {
-            return;
-        }
-
-        _snapshotTimer += Time.deltaTime;
-        if (_snapshotTimer >= _snapshotInterval)
-        {
-            _snapshotTimer = 0f;
-            BroadcastCoinSnapshot();
-        }
     }
 
     void EnsureTimeSyncBound()
@@ -403,7 +387,6 @@ public class OnlineMatchCoordinator : MonoBehaviour
 
         OnlineMatchSession.Channel.ScoreReceived += OnScoreReceived;
         OnlineMatchSession.Channel.MatchEndReceived += OnMatchEndReceived;
-        OnlineMatchSession.Channel.SnapshotReceived += OnSnapshotReceived;
         OnlineMatchSession.Channel.OpponentLeft += OnOpponentLeft;
     }
 
@@ -416,7 +399,6 @@ public class OnlineMatchCoordinator : MonoBehaviour
 
         OnlineMatchSession.Channel.ScoreReceived -= OnScoreReceived;
         OnlineMatchSession.Channel.MatchEndReceived -= OnMatchEndReceived;
-        OnlineMatchSession.Channel.SnapshotReceived -= OnSnapshotReceived;
         OnlineMatchSession.Channel.OpponentLeft -= OnOpponentLeft;
     }
 
@@ -456,66 +438,9 @@ public class OnlineMatchCoordinator : MonoBehaviour
         LeagueMatchController.Instance?.CompleteMatchFromNetwork(end.opponentGoals, end.playerGoals);
     }
 
-    void OnSnapshotReceived(CoinSnapshotBatchMessage batch)
-    {
-        if (OnlineMatchSession.Channel.IsHost || batch.coins == null)
-        {
-            return;
-        }
-
-        for (int i = 0; i < batch.coins.Length; i++)
-        {
-            CoinSnapshotMessage snap = batch.coins[i];
-            GameObject go = GameObject.Find(snap.coinObjectName);
-            if (go == null)
-            {
-                continue;
-            }
-
-            Rigidbody rb = go.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.position = new Vector3(snap.x, snap.y, snap.z);
-                rb.rotation = Quaternion.Euler(0f, snap.rotY, 0f);
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-            }
-            else
-            {
-                go.transform.SetPositionAndRotation(
-                    new Vector3(snap.x, snap.y, snap.z),
-                    Quaternion.Euler(0f, snap.rotY, 0f));
-            }
-        }
-    }
-
     void OnOpponentLeft(string reason)
     {
         // Maç sonlandırma RemoteOpponentController.OnOpponentLeft'te — burada çift tetiklemeyelim.
         Debug.Log($"[OnlineMatch] Opponent left: {reason}");
-    }
-
-    void BroadcastCoinSnapshot()
-    {
-        CoinIdentity[] coins = FindObjectsByType<CoinIdentity>(FindObjectsSortMode.None);
-        var list = new List<CoinSnapshotMessage>(coins.Length);
-        for (int i = 0; i < coins.Length; i++)
-        {
-            Transform t = coins[i].transform;
-            list.Add(new CoinSnapshotMessage
-            {
-                coinObjectName = coins[i].gameObject.name,
-                x = t.position.x,
-                y = t.position.y,
-                z = t.position.z,
-                rotY = t.eulerAngles.y
-            });
-        }
-
-        OnlineMatchSession.Channel.SendSnapshot(new CoinSnapshotBatchMessage
-        {
-            coins = list.ToArray(),
-            hostUserId = OnlineMatchSession.Channel.LocalUserId
-        });
     }
 }

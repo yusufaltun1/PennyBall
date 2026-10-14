@@ -343,7 +343,8 @@ public class RemoteOpponentController : MonoBehaviour, IOpponentController
         return go != null ? go.GetComponent<CoinDragController>() : null;
     }
 
-    static string FlipTeamToken(string objectName)
+    /// <summary>Gönderenin yerel "_P"/"_E" ismini alıcının yerel adlandırmasına çevirir (aynalanmış tahtalar).</summary>
+    public static string FlipTeamToken(string objectName)
     {
         if (objectName.Contains("_P"))
         {

@@ -13,10 +13,13 @@ public class MatchShotNetworkRelay : NetworkBehaviour
     public System.Action<ShotIntentMessage> ShotReceived;
     public System.Action<ShotRollbackMessage> ShotRollbackReceived;
     public System.Action MatchStartReceived;
-    public System.Action<bool> GoalReceived; // true = gönderen gol attı → alıcı gol yedi
+    /// <summary>hostScored: host'un takımı mı attı (true) yoksa misafirin golü host tarafından
+    /// onaylandı mı (false) — tek gönderen her zaman host'tur (bkz. RPC_Goal).</summary>
+    public System.Action<bool, int> GoalReceived;
     public System.Action RoundResetReceived;
     public System.Action<float, bool> TimeSyncReceived;
     public System.Action<int, int, string> MatchEndReceived;
+    public System.Action<int, float, float, float, float, float, float, float, float, float, float, float, float> CoinSnapshotReceived;
 
     readonly HashSet<PlayerRef> _readyPlayers = new HashSet<PlayerRef>();
     int _goalSeq;
@@ -247,7 +250,12 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         return activeCount >= 2;
     }
 
-    public bool TrySendGoal(bool localPlayerScored)
+    /// <summary>
+    /// Tek gönderen host'tur (RpcSources.StateAuthority) — hostScored=true host'un kendi golü
+    /// (otoriter, doğrulamaya gerek yok), hostScored=false misafirin golü host tarafından
+    /// onaylandığı anlamına gelir (bkz. HostPhysicsAuthority gol hakemliği).
+    /// </summary>
+    public bool TrySendGoal(bool hostScored, int shotSeq)
     {
         if (Object == null || !Object.IsValid)
         {
@@ -255,8 +263,8 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         }
 
         _goalSeq++;
-        RPC_Goal(localPlayerScored, _goalSeq);
-        Debug.Log($"[ShotRelay] RPC_Goal scored={localPlayerScored} seq={_goalSeq}");
+        RPC_Goal(hostScored, _goalSeq, shotSeq);
+        Debug.Log($"[ShotRelay] RPC_Goal hostScored={hostScored} seq={_goalSeq} shotSeq={shotSeq}");
 
         if (Object.HasStateAuthority)
         {
@@ -283,6 +291,25 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         _delayedResetRoutine = null;
         RPC_RoundReset(seq);
         Debug.Log($"[ShotRelay] RPC_RoundReset seq={seq}");
+    }
+
+    /// <summary>
+    /// Host-authoritative fizik: 6 paranın X/Z pozisyonunu (Y sabit, Rigidbody constraint'i ile
+    /// donuk) misafire yayınlar — bkz. HostPhysicsAuthority. Gönderen (host) kendi yerel
+    /// adlandırmasıyla gönderir ("Coin_P1.."Coin_E3"), alıcı RemoteOpponentController.FlipTeamToken
+    /// + Z ekseni negatif çevirmesiyle kendi yerel koordinatına uygular (aynalanmış tahtalar).
+    /// </summary>
+    public bool TrySendCoinSnapshot(int batchSeq,
+        float p1x, float p1z, float p2x, float p2z, float p3x, float p3z,
+        float e1x, float e1z, float e2x, float e2z, float e3x, float e3z)
+    {
+        if (Object == null || !Object.IsValid)
+        {
+            return false;
+        }
+
+        RPC_CoinSnapshot(batchSeq, p1x, p1z, p2x, p2z, p3x, p3z, e1x, e1z, e2x, e2z, e3x, e3z);
+        return true;
     }
 
     public bool TrySendTimeSync(float remainingSeconds, bool paused)
@@ -386,16 +413,11 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         MatchStartReceived?.Invoke();
     }
 
-    [Rpc(RpcSources.All, RpcTargets.All, InvokeLocal = false)]
-    void RPC_Goal(NetworkBool senderScored, int seq)
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All, InvokeLocal = false)]
+    void RPC_Goal(NetworkBool hostScored, int seq, int shotSeq)
     {
-        Debug.Log($"[ShotRelay] RPC_Recv Goal senderScored={senderScored} seq={seq}");
-        GoalReceived?.Invoke(senderScored);
-
-        if (Object.HasStateAuthority && senderScored)
-        {
-            ScheduleRoundReset();
-        }
+        Debug.Log($"[ShotRelay] RPC_Recv Goal hostScored={hostScored} seq={seq} shotSeq={shotSeq}");
+        GoalReceived?.Invoke(hostScored, shotSeq);
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All, InvokeLocal = true)]
@@ -422,5 +444,13 @@ public class MatchShotNetworkRelay : NetworkBehaviour
     {
         Debug.Log($"[ShotRelay] RPC_Recv MatchEnd playerGoals={playerGoals} opponentGoals={opponentGoals} reason={reason}");
         MatchEndReceived?.Invoke(playerGoals, opponentGoals, reason);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All, InvokeLocal = false)]
+    void RPC_CoinSnapshot(int batchSeq,
+        float p1x, float p1z, float p2x, float p2z, float p3x, float p3z,
+        float e1x, float e1z, float e2x, float e2z, float e3x, float e3z)
+    {
+        CoinSnapshotReceived?.Invoke(batchSeq, p1x, p1z, p2x, p2z, p3x, p3z, e1x, e1z, e2x, e2z, e3x, e3z);
     }
 }

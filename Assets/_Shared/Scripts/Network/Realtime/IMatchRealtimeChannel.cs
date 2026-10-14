@@ -51,29 +51,11 @@ public struct MatchEndMessage
     public string reason;
 }
 
-[Serializable]
-public struct CoinSnapshotMessage
-{
-    public string coinObjectName;
-    public float x;
-    public float y;
-    public float z;
-    public float rotY;
-}
-
-[Serializable]
-public struct CoinSnapshotBatchMessage
-{
-    public CoinSnapshotMessage[] coins;
-    public string hostUserId;
-}
-
 public enum MatchRealtimeOp : byte
 {
     ShotIntent = 1,
     ScoreSync = 2,
     MatchEnd = 3,
-    CoinSnapshot = 4,
     TurnGrant = 5,
     Forfeit = 6,
     Ready = 7,
@@ -94,7 +76,6 @@ public interface IMatchRealtimeChannel : IDisposable
     event Action<ShotRollbackMessage> ShotRollbackReceived;
     event Action<ScoreSyncMessage> ScoreReceived;
     event Action<MatchEndMessage> MatchEndReceived;
-    event Action<CoinSnapshotBatchMessage> SnapshotReceived;
     event Action<string> OpponentLeft;
 
     System.Threading.Tasks.Task JoinAsync(string matchIdOrRoom);
@@ -104,6 +85,5 @@ public interface IMatchRealtimeChannel : IDisposable
     void SendShotRollback(ShotRollbackMessage rollback);
     void SendScore(ScoreSyncMessage score);
     void SendMatchEnd(MatchEndMessage end);
-    void SendSnapshot(CoinSnapshotBatchMessage batch);
     void SendForfeit(string reason);
 }

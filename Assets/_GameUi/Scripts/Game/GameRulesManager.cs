@@ -15,6 +15,12 @@ public class GameRulesManager : MonoBehaviour
     [SerializeField] float _goalResetDuration = 0.55f;
     [SerializeField] float _coinStopTimeout = 8f;
 
+    /// <summary>
+    /// Online'da misafir, host'un gol onayını (RPC_Goal hostScored:false) bu kadar süre bekler —
+    /// bkz. HostPhysicsAuthority. Onay gelmezse gol sayılmaz, atış normal (golsüz) sonuçlanır.
+    /// </summary>
+    const float GuestGoalConfirmationTimeoutSeconds = 2.5f;
+
     readonly List<CoinIdentity> _playerCoins = new(3);
     readonly List<CoinIdentity> _roundCoins = new(6);
     readonly List<Vector3> _shotPathSamples = new(64);
@@ -35,6 +41,7 @@ public class GameRulesManager : MonoBehaviour
     int  _playerShotNumber = 1;   // bu turdaki atış sırası; yalnızca 1. atış gate validation'dan muaf
     Coroutine _resolveRoutine;
     Coroutine _roundResetRoutine;
+    bool? _pendingGuestGoalConfirmed;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void ResetSingleton()
@@ -47,6 +54,24 @@ public class GameRulesManager : MonoBehaviour
     public bool HasPendingGoalFreeze => _pendingGoalFreeze;
     public bool IsMatchLockedForInput => _goalSequenceActive || _pendingGoalFreeze || _isResolvingMove;
     public int PlayerShotNumber => _playerShotNumber;
+
+    /// <summary>
+    /// Sadece atışı yapan paranın değil, turdaki TÜM paraların (6'sının da) durduğunu kontrol eder —
+    /// host-authoritative fizik yayınının ne zaman durup gol hakemliği yapacağını buna göre karar vermesi için.
+    /// </summary>
+    public bool AreAllRoundCoinsAtRest()
+    {
+        for (int i = 0; i < _roundCoins.Count; i++)
+        {
+            CoinIdentity coin = _roundCoins[i];
+            if (coin != null && coin.DragController != null && coin.DragController.IsSliding)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /// <summary>Sıradaki atış gate kuralına tabi mi (2. atış ve sonrası).</summary>
     public bool RequiresGateValidationForNextShot =>
@@ -542,6 +567,23 @@ public class GameRulesManager : MonoBehaviour
         _pendingGoalFreeze = false;
     }
 
+    /// <summary>OnlineMatchGoalSync, host'tan RPC_Goal(hostScored:false,...) gelince çağırır.</summary>
+    public void ConfirmPendingGuestGoal()
+    {
+        _pendingGuestGoalConfirmed = true;
+    }
+
+    IEnumerator WaitForHostGoalConfirmation()
+    {
+        _pendingGuestGoalConfirmed = null;
+        float elapsed = 0f;
+        while (_pendingGuestGoalConfirmed == null && elapsed < GuestGoalConfirmationTimeoutSeconds)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+    }
+
     void CancelActiveShotResolutionForGoal()
     {
         if (_resolveRoutine != null)
@@ -682,18 +724,56 @@ public class GameRulesManager : MonoBehaviour
                 yield break;
             }
 
-            if (OnlineMatchSession.IsOnlineMatch || MatchSessionContext.IsOnlineMatch)
+            bool isOnlineMatch = OnlineMatchSession.IsOnlineMatch || MatchSessionContext.IsOnlineMatch;
+            bool isGuestOnline = isOnlineMatch
+                && OnlineMatchSession.Channel != null
+                && !OnlineMatchSession.Channel.IsHost;
+
+            if (isGuestOnline)
             {
-                HandlePlayerGoalCelebrationOnline();
+                // Misafirin kendi fiziği "gol" dese de tek otorite host — onay beklenmeden
+                // kutlama/skor YAPILMAZ (bkz. HostPhysicsAuthority gol hakemliği).
+                yield return WaitForHostGoalConfirmation();
+
+                if (_pendingGuestGoalConfirmed == true)
+                {
+                    _pendingGuestGoalConfirmed = null;
+                    HandlePlayerGoalCelebrationOnline();
+                    _resolvingShotCoin = null;
+                    _resolveRoutine = null;
+                    yield break;
+                }
+
+                // Host onaylamadı / zaman aşımı → aslında gol değilmiş, donmayı kaldırıp
+                // normal (golsüz) sonuca düş. Golsüz atışlarda yapılması gereken ama
+                // "scoredGoal=true" sanıldığı için atlanmış olan ilerlemeyi burada tamamla.
+                _pendingGuestGoalConfirmed = null;
+                _goalSequenceActive = false;
+                UnfreezeAllRoundCoins();
+
+                if (!isOpeningShot)
+                {
+                    ValidShotCommitted?.Invoke(CoinTeam.Player);
+                }
+
+                _playerShotNumber++;
+                scoredGoal = false;
             }
             else
             {
-                HandlePlayerGoalCelebration();
-            }
+                if (isOnlineMatch)
+                {
+                    HandlePlayerGoalCelebrationOnline();
+                }
+                else
+                {
+                    HandlePlayerGoalCelebration();
+                }
 
-            _resolvingShotCoin = null;
-            _resolveRoutine = null;
-            yield break;
+                _resolvingShotCoin = null;
+                _resolveRoutine = null;
+                yield break;
+            }
         }
 
         if (_pendingGoalFreeze)

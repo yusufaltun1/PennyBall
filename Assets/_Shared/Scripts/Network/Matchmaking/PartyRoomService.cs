@@ -167,6 +167,36 @@ public static class PartyRoomService
         return await JoinPhotonAndWaitAsync(bootstrap, pending.Match, pending.Code, progress);
     }
 
+    /// <summary>
+    /// Play Again (rematch): host/guest ayrımı yok, yeni kod üretmeye/yazmaya gerek yok —
+    /// iki taraf da önceki maçın AYNI Photon odasına tekrar katılıp birbirini bekler
+    /// (zaten kim olduğunu biliyorlar, Nakama'daki room_codes'a tekrar ihtiyaç yok).
+    /// </summary>
+    public static async Task<RoomCodeResult> RejoinRoomAsync(
+        string roomName, string opponentUserId, string opponentDisplayName, int opponentAvatarIndex,
+        IProgress<float> progress = null)
+    {
+        if (string.IsNullOrEmpty(roomName))
+        {
+            return Fail("invalid_room");
+        }
+
+        NetworkBootstrap bootstrap = NetworkBootstrap.Instance;
+        if (bootstrap == null || !await bootstrap.EnsureAuthenticatedAsync())
+        {
+            return Fail("not_authenticated");
+        }
+
+        var match = MatchmakingResult.Human(
+            matchId: roomName,
+            photonRoomName: roomName,
+            opponentUserId: opponentUserId,
+            displayName: opponentDisplayName,
+            avatarIndex: opponentAvatarIndex);
+
+        return await JoinPhotonAndWaitAsync(bootstrap, match, code: null, progress);
+    }
+
     public static async Task CancelRoomAsync(string code)
     {
         NetworkBootstrap bootstrap = NetworkBootstrap.Instance;

@@ -99,6 +99,7 @@
     { "key": "party.enter_code", "value": "Enter 6-digit code" },
     { "key": "party.create_button", "value": "Create" },
     { "key": "party.join_button", "value": "Join" },
+    { "key": "party.invite_share_text", "value": "Join me in PennyBall! Enter this code in \"Play with a Friend\": {0}" },
 
     { "key": "match_preset.play_online.title", "value": "Play Online" },
     { "key": "match_preset.play_with_friend.title", "value": "Play with a Friend!" },
@@ -108,6 +109,7 @@
     { "key": "match_preset.create_match.desc", "value": "Copy the code and send to your friend to enter..." },
     { "key": "match_preset.join_match.title", "value": "Join a Match" },
     { "key": "match_preset.join_match.desc", "value": "Enter the code and start the match!" },
+    { "key": "result.play_again_button", "value": "Play Again!" },
 
     { "key": "exit_match.title", "value": "You will forfeit!" },
     { "key": "exit_match.subtitle", "value": "Are you sure you want to leave the match?" },

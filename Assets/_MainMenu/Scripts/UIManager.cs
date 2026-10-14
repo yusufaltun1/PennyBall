@@ -59,6 +59,8 @@ public class UIManager : MonoBehaviour
         if (matchPresetPanel != null)
         {
             matchPresetPanel.PlayOnlineRequested += StartOnlineMatch;
+            matchPresetPanel.JoinCodeSubmitted += OnJoinCodeSubmitted;
+            matchPresetPanel.RoomMatchFound += OnRoomMatchFound;
             matchPresetPanel.Close();
         }
 
@@ -85,6 +87,8 @@ public class UIManager : MonoBehaviour
         if (matchPresetPanel != null)
         {
             matchPresetPanel.PlayOnlineRequested -= StartOnlineMatch;
+            matchPresetPanel.JoinCodeSubmitted -= OnJoinCodeSubmitted;
+            matchPresetPanel.RoomMatchFound -= OnRoomMatchFound;
         }
 
         for (int i = 0; i < _wiredExerciseButtons.Count; i++)
@@ -116,6 +120,33 @@ public class UIManager : MonoBehaviour
         {
             SceneManager.LoadScene("3d_Saha_Studio", LoadSceneMode.Additive);
         }
+
+        if (PendingRematch.HasPending)
+        {
+            ResumeRematch();
+        }
+    }
+
+    /// <summary>
+    /// ResultPanel > RePlay'de "Play Again"e basılınca bırakılan PendingRematch'i tüketir —
+    /// Matching_Panel'i (Create/Join ile aynı "bekleniyor" ekranı) hemen gösterir, ham MainMenu
+    /// hiç görünmeden doğrudan matchmaking akışına geçilmiş olur.
+    /// </summary>
+    void ResumeRematch()
+    {
+        string roomName = PendingRematch.RoomName;
+        string opponentUserId = PendingRematch.OpponentUserId;
+        string opponentName = PendingRematch.OpponentDisplayName;
+        int opponentAvatar = PendingRematch.OpponentAvatarIndex;
+        PendingRematch.Clear();
+
+        if (matchingPanel == null)
+        {
+            Debug.LogError("[UIManager] Matching_Panel bulunamadı.");
+            return;
+        }
+
+        matchingPanel.BeginRematchFlow(roomName, opponentUserId, opponentName, opponentAvatar);
     }
 
     public void OnPlayButtonPressed()
@@ -147,6 +178,28 @@ public class UIManager : MonoBehaviour
         }
 
         matchingPanel.BeginMatchFlow();
+    }
+
+    void OnJoinCodeSubmitted(string code)
+    {
+        if (matchingPanel == null)
+        {
+            Debug.LogError("[UIManager] Matching_Panel bulunamadı.");
+            return;
+        }
+
+        matchingPanel.BeginJoinRoomFlow(code);
+    }
+
+    void OnRoomMatchFound(RoomCodeResult result)
+    {
+        if (matchingPanel == null)
+        {
+            Debug.LogError("[UIManager] Matching_Panel bulunamadı.");
+            return;
+        }
+
+        matchingPanel.ShowMatchFoundAndCountdown(result.Match, result.Code);
     }
 
     public void OnPlayOfflineButtonPressed()

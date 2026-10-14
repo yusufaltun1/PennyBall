@@ -35,7 +35,6 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
     public event Action<ShotRollbackMessage> ShotRollbackReceived;
     public event Action<ScoreSyncMessage> ScoreReceived;
     public event Action<MatchEndMessage> MatchEndReceived;
-    public event Action<CoinSnapshotBatchMessage> SnapshotReceived;
     public event Action<string> OpponentLeft;
     /// <summary>Remote sayısı değişince (matchmaking wait için).</summary>
     public event Action RemotePlayersChanged;
@@ -266,9 +265,6 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
     public void SendMatchEnd(MatchEndMessage end) =>
         SendJson(MatchRealtimeOp.MatchEnd, JsonUtility.ToJson(end));
 
-    public void SendSnapshot(CoinSnapshotBatchMessage batch) =>
-        SendJson(MatchRealtimeOp.CoinSnapshot, JsonUtility.ToJson(batch));
-
     public void SendForfeit(string reason) =>
         SendJson(MatchRealtimeOp.Forfeit, reason ?? "forfeit");
 
@@ -456,9 +452,6 @@ public sealed class PhotonFusionMatchChannel : IMatchRealtimeChannel
                 break;
             case MatchRealtimeOp.MatchEnd:
                 MatchEndReceived?.Invoke(JsonUtility.FromJson<MatchEndMessage>(json));
-                break;
-            case MatchRealtimeOp.CoinSnapshot:
-                SnapshotReceived?.Invoke(JsonUtility.FromJson<CoinSnapshotBatchMessage>(json));
                 break;
             case MatchRealtimeOp.Forfeit:
                 OpponentLeft?.Invoke(json);
