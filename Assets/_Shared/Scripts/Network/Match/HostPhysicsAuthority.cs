@@ -176,6 +176,9 @@ public class HostPhysicsAuthority : MonoBehaviour
         Vector3 e3 = PositionOf(_cachedEnemyCoins, 2);
 
         _batchSeq++;
+        Debug.Log(
+            $"[HostPhysics] SEND batchSeq={_batchSeq} p1={p1:F2} p2={p2:F2} p3={p3:F2} " +
+            $"e1={e1:F2} e2={e2:F2} e3={e3:F2}");
         _boundRelay.TrySendCoinSnapshot(_batchSeq,
             p1.x, p1.z, p2.x, p2.z, p3.x, p3.z,
             e1.x, e1.z, e2.x, e2.z, e3.x, e3.z);
@@ -214,8 +217,12 @@ public class HostPhysicsAuthority : MonoBehaviour
         var result = new Transform[names.Length];
         for (int i = 0; i < names.Length; i++)
         {
-            GameObject go = GameObject.Find(names[i]);
-            result[i] = go != null ? go.transform : null;
+            CoinIdentity coin = FindCoinByName(names[i]);
+            result[i] = coin != null ? coin.transform : null;
+            if (coin == null)
+            {
+                Debug.LogWarning($"[HostPhysics] Coin bulunamadı (cache): {names[i]}");
+            }
         }
 
         return result;
@@ -225,6 +232,31 @@ public class HostPhysicsAuthority : MonoBehaviour
     {
         Transform t = cache != null && index < cache.Length ? cache[index] : null;
         return t != null ? t.position : Vector3.zero;
+    }
+
+    /// <summary>
+    /// RemoteOpponentController.FindRemoteMappedCoin ile AYNI desen: GameObject.Find'ı tek
+    /// başına güvenmek yerine önce CoinIdentity tipine göre arar (bu projede isim-bazlı
+    /// GameObject.Find'ın tek başına güvenilmez olduğu zaten biliniyordu).
+    /// </summary>
+    static CoinIdentity FindCoinByName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return null;
+        }
+
+        CoinIdentity[] coins = FindObjectsByType<CoinIdentity>(FindObjectsSortMode.None);
+        for (int i = 0; i < coins.Length; i++)
+        {
+            if (coins[i] != null && coins[i].gameObject.name == name)
+            {
+                return coins[i];
+            }
+        }
+
+        GameObject go = GameObject.Find(name);
+        return go != null ? go.GetComponent<CoinIdentity>() : null;
     }
 
     // ===================== HOST: misafirin atışları için gol hakemliği (Faz 2) =====================
@@ -237,8 +269,7 @@ public class HostPhysicsAuthority : MonoBehaviour
         }
 
         string localName = RemoteOpponentController.FlipTeamToken(shot.coinObjectName ?? string.Empty);
-        GameObject go = GameObject.Find(localName);
-        CoinIdentity identity = go != null ? go.GetComponent<CoinIdentity>() : null;
+        CoinIdentity identity = FindCoinByName(localName);
         if (identity == null)
         {
             Debug.LogWarning($"[GoalArbiter] Coin bulunamadı: {localName}");
@@ -307,6 +338,10 @@ public class HostPhysicsAuthority : MonoBehaviour
 
         _lastAppliedBatchSeq = batchSeq;
 
+        Debug.Log(
+            $"[GuestReconcile] RECV batchSeq={batchSeq} p1=({p1x:F2},{p1z:F2}) p2=({p2x:F2},{p2z:F2}) " +
+            $"p3=({p3x:F2},{p3z:F2}) e1=({e1x:F2},{e1z:F2}) e2=({e2x:F2},{e2z:F2}) e3=({e3x:F2},{e3z:F2})");
+
         ApplySnapshotSlot(PlayerCoinNames[0], p1x, p1z);
         ApplySnapshotSlot(PlayerCoinNames[1], p2x, p2z);
         ApplySnapshotSlot(PlayerCoinNames[2], p3x, p3z);
@@ -323,19 +358,21 @@ public class HostPhysicsAuthority : MonoBehaviour
     static void ApplySnapshotSlot(string senderLocalName, float x, float z)
     {
         string localName = RemoteOpponentController.FlipTeamToken(senderLocalName);
-        GameObject go = GameObject.Find(localName);
-        if (go == null)
+        CoinIdentity identity = FindCoinByName(localName);
+        if (identity == null)
         {
+            Debug.LogWarning($"[GuestReconcile] Coin bulunamadı: {localName}");
             return;
         }
 
-        CoinDragController drag = go.GetComponent<CoinDragController>();
+        CoinDragController drag = identity.DragController;
         if (drag != null && drag.IsAiming)
         {
             // Tam o anda nişan alınıyorsa dokunma — eski/geç gelmiş bir snapshot olabilir.
             return;
         }
 
+        GameObject go = identity.gameObject;
         Vector3 targetPosition = new(x, go.transform.position.y, -z);
 
         Rigidbody rb = go.GetComponent<Rigidbody>();
