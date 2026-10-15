@@ -22259,7 +22259,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3100001002
 RectTransform:
   m_ObjectHideFlags: 0
@@ -22512,6 +22512,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Saha
       objectReference: {fileID: 0}
+    - target: {fileID: 2404768523648375083, guid: a20f58e9fcd8e4ff7a9128c8e79209a2, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3107575955259858585, guid: a20f58e9fcd8e4ff7a9128c8e79209a2, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1.51527
@@ -22574,6 +22578,10 @@ PrefabInstance:
     - target: {fileID: 1034944052130216605, guid: af5e291db2b4844ac9f47e6ccd658c19, type: 3}
       propertyPath: m_Name
       value: Base
+      objectReference: {fileID: 0}
+    - target: {fileID: 1034944052130216605, guid: af5e291db2b4844ac9f47e6ccd658c19, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6671813913644076230, guid: af5e291db2b4844ac9f47e6ccd658c19, type: 3}
       propertyPath: m_LocalPosition.x
