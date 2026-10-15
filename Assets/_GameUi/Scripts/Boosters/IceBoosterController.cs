@@ -74,7 +74,7 @@ public class IceBoosterController : MonoBehaviour
 
     public void RefreshWalletState()
     {
-        _hasCoins = WalletService.HasEnoughCoins(BoosterConfig.UseCostCoins);
+        _hasCoins = WalletService.HasEnoughCoins(BoosterConfig.FreezeCostCoins);
 
         // Sayaç / kullanım sırasında coin yetersizliği InUse görünümünü ezmesin.
         if (_cooldownActive || _activationRoutine != null)
@@ -181,7 +181,7 @@ public class IceBoosterController : MonoBehaviour
         // Coin harcaması Changed tetikler; sayaç başlamadan önce kilitle ki NoCoins uygulanmasın.
         _cooldownActive = true;
 
-        if (!WalletService.TrySpendCoins(BoosterConfig.UseCostCoins))
+        if (!WalletService.TrySpendCoins(BoosterConfig.FreezeCostCoins))
         {
             _cooldownActive = false;
             RefreshWalletState();
@@ -320,7 +320,7 @@ public class IceBoosterController : MonoBehaviour
         TextMeshProUGUI label = _costText.GetComponent<TextMeshProUGUI>();
         if (label != null)
         {
-            label.text = BoosterConfig.UseCostCoins.ToString();
+            label.text = BoosterConfig.FreezeCostCoins.ToString();
         }
     }
 

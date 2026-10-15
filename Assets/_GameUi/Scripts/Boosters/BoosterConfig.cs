@@ -1,9 +1,10 @@
 public static class BoosterConfig
 {
     public const int UseCostCoins = 200;
+    public const int FreezeCostCoins = 80;
 
-    public const int FreezeUnlockLevel = 4;
-    public const int TimeUnlockLevel = 7;
+    public const int FreezeUnlockLevel = 2;
+    public const int TimeUnlockLevel = 4;
     public const int GoalKeeperUnlockLevel = 14;
     public const int LastCoinUnlockLevel = 24;
 

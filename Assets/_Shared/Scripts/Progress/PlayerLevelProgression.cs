@@ -3,7 +3,7 @@ public static class PlayerLevelProgression
     public const int MaxLevel = 100;
 
     // Seviye 1→2, 2→3, 3→4, 4→5 için gereken XP
-    static readonly int[] EarlyLevelXp = { 30, 35, 40, 45 };
+    static readonly int[] EarlyLevelXp = { 20, 35, 40, 45 };
 
     public static int GetXpRequiredForNextLevel(int currentLevel)
     {
