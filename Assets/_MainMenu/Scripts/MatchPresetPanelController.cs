@@ -18,7 +18,7 @@ public class MatchPresetPanelController : MonoBehaviour
     const string EnterCodePath = "PanelRoot/Container_EnterCode";
 
     public event Action PlayOnlineRequested;
-    public event Action<string> JoinCodeSubmitted;
+    public event Action<RoomCodeResult> JoinCodeSubmitted;
     public event Action<RoomCodeResult> RoomMatchFound;
 
     [Header("Copy Feedback")]
@@ -33,8 +33,12 @@ public class MatchPresetPanelController : MonoBehaviour
     GameObject _enterCode;
     TextMeshProUGUI _codeText;
     TMP_InputField _joinCodeInput;
+    GameObject _enterCodeError;
+    LocalizedText _enterCodeErrorLabel;
     bool _initialized;
     bool _createRequestInFlight;
+    bool _joinRequestInFlight;
+    int _requestSeq;
     string _activeCode;
     Image _copyButtonImage;
     Sprite _copyButtonDefaultSprite;
@@ -172,6 +176,11 @@ public class MatchPresetPanelController : MonoBehaviour
         _copyButtonDefaultSprite = _copyButtonImage != null ? _copyButtonImage.sprite : null;
 
         EnsureJoinCodeInput();
+
+        Transform errorTransform = transform.Find($"{EnterCodePath}/ErrorDesc");
+        _enterCodeError = errorTransform != null ? errorTransform.gameObject : null;
+        _enterCodeErrorLabel = errorTransform != null ? errorTransform.GetComponent<LocalizedText>() : null;
+        SetActive(_enterCodeError, false);
 
         Bind($"{PlayOnlinePath}/Btn_Play", OnPlayOnlinePressed);
         Bind($"{PlayWithFriendPath}/Btn_StartMatch", OnStartMatchPressed);
@@ -354,6 +363,17 @@ public class MatchPresetPanelController : MonoBehaviour
             return;
         }
 
+        // Bu akışın kimliği: kullanıcı "Geri" ile ekrandan ayrılırsa CancelActiveCodeIfAny
+        // _requestSeq'i artırıp _createRequestInFlight'ı HEMEN serbest bırakıyor — ama bu async
+        // metod zaten await'te askıda kalmaya devam ediyor (iptal edilmiyor, sadece "öksüz"
+        // kalıyor). O öksüz akış eninde sonunda devam edip _createRequestInFlight = false
+        // yazarsa, bu arada başlamış YENİ (ikinci) bir "Create a Match" denemesinin hâlâ geçerli
+        // olan in-flight bayrağını YANLIŞLIKLA temizleyip üçüncü bir denemeye izin verebilirdi —
+        // "geri gidip tekrar oluşturunca butona basınca hiç bir şey olmuyor" bug'ının kökü buydu
+        // (ikinci deneme _createRequestInFlight hâlâ true sanıldığı için tamamen engelleniyordu).
+        // requestSeq karşılaştırması, öksüz kalan eski akışın artık geçerli olmadığını anlayıp
+        // paylaşılan duruma (bayrak, UI) hiç dokunmamasını sağlıyor.
+        int requestSeq = ++_requestSeq;
         _createRequestInFlight = true;
         _activeCode = null;
         if (_codeText != null)
@@ -364,12 +384,17 @@ public class MatchPresetPanelController : MonoBehaviour
         ShowOnly(_codeGenerated);
 
         RoomCodeResult created = await PartyRoomService.RequestCreateCodeAsync();
+        bool isCurrentRequest = requestSeq == _requestSeq;
 
         // Kullanıcı RPC dönene kadar geri/kapat yapmış olabilir — ekranda değilsek sonucu
         // uygulamadan odayı hemen iptal et (sunucuda askıda kalmasın).
-        if (_codeGenerated == null || !_codeGenerated.activeSelf)
+        if (!isCurrentRequest || _codeGenerated == null || !_codeGenerated.activeSelf)
         {
-            _createRequestInFlight = false;
+            if (isCurrentRequest)
+            {
+                _createRequestInFlight = false;
+            }
+
             if (created.Success)
             {
                 _ = PartyRoomService.CancelRoomAsync(created.Code);
@@ -399,9 +424,14 @@ public class MatchPresetPanelController : MonoBehaviour
         // Kod ekrandayken host arka planda Photon'a bağlanır ve bu ekranda kalarak
         // arkadaşını bekler — panel burada değişmez, bulununca Matching_Panel'e devredilir.
         RoomCodeResult connected = await PartyRoomService.ConnectAndWaitForOpponentAsync(created);
-        _createRequestInFlight = false;
+        isCurrentRequest = requestSeq == _requestSeq;
+        if (isCurrentRequest)
+        {
+            _createRequestInFlight = false;
+        }
 
-        bool stillWaitingHere = _codeGenerated != null && _codeGenerated.activeSelf && _activeCode == created.Code;
+        bool stillWaitingHere = isCurrentRequest
+            && _codeGenerated != null && _codeGenerated.activeSelf && _activeCode == created.Code;
         if (!stillWaitingHere)
         {
             // Kullanıcı beklerken geri/kapat yaptı (kod zaten o sırada iptal edildi) —
@@ -434,6 +464,7 @@ public class MatchPresetPanelController : MonoBehaviour
             _joinCodeInput.SetTextWithoutNotify(string.Empty);
         }
 
+        SetActive(_enterCodeError, false);
         ShowOnly(_enterCode);
 
         if (_joinCodeInput != null)
@@ -443,19 +474,86 @@ public class MatchPresetPanelController : MonoBehaviour
         }
     }
 
-    void OnJoinSubmitPressed()
+    /// <summary>
+    /// Oda kodunu burada (Container_EnterCode'dan hiç ayrılmadan) doğrular — "iki kişi dolu",
+    /// "kod yanlış/yok", "kodun süresi dolmuş" gibi durumlarda ErrorDesc'te ANLAMLI, lokalize
+    /// bir mesaj gösterir. Doğrulama (RequestJoinCodeAsync) sadece Nakama RPC'si, Photon
+    /// bağlantısı burada YOK — başarılıysa zaten doğrulanmış sonuç JoinCodeSubmitted ile
+    /// iletilir, Matching_Panel bunu TEKRAR doğrulamadan doğrudan Photon bağlantı adımına
+    /// (ConnectAndWaitForOpponentAsync) geçer (bkz. aşağıdaki yorum — RPC idempotent değil).
+    /// </summary>
+    async void OnJoinSubmitPressed()
     {
         MainMenuClickSound.Play();
+        SetActive(_enterCodeError, false);
+
+        if (_joinRequestInFlight)
+        {
+            return;
+        }
 
         string code = _joinCodeInput != null ? (_joinCodeInput.text ?? string.Empty).Trim() : string.Empty;
         if (code.Length != 6)
         {
-            Debug.LogWarning("[MatchPreset] Geçersiz oda kodu.");
+            ShowJoinError("party.join_error.invalid_code");
             return;
         }
 
+        int requestSeq = ++_requestSeq;
+        _joinRequestInFlight = true;
+
+        RoomCodeResult result = await PartyRoomService.RequestJoinCodeAsync(code);
+
+        bool isCurrentRequest = requestSeq == _requestSeq;
+        if (isCurrentRequest)
+        {
+            _joinRequestInFlight = false;
+        }
+
+        // Kullanıcı RPC dönene kadar geri/kapat yapmış olabilir — ekranda değilsek sessizce çık.
+        if (!isCurrentRequest || _enterCode == null || !_enterCode.activeSelf)
+        {
+            return;
+        }
+
+        if (!result.Success)
+        {
+            Debug.LogWarning($"[MatchPreset] Oda kodu doğrulanamadı: {result.Reason}");
+            ShowJoinError(MapJoinErrorKey(result.Reason));
+            return;
+        }
+
+        // ÖNEMLİ: result'ı (zaten başarıyla doğrulanmış) olduğu gibi iletiyoruz — alıcı TEKRAR
+        // RequestJoinCodeAsync çağırmamalı. Nakama'daki join_room_code RPC'si idempotent DEĞİL:
+        // odayı sunucu tarafında "waiting"ten "full"a çevirip misafiri kalıcı olarak kaydediyor.
+        // İkinci bir çağrı odayı zaten "full" bulup "full_or_cancelled" ile başarısız olurdu —
+        // misafir hiçbir zaman gerçek Photon bağlantı adımına (ConnectAndWaitForOpponentAsync)
+        // geçemezdi, host da kimsenin katıldığını hiç göremeyip kod ekranında sonsuza dek
+        // beklerdi ("host tarafında hâlâ kod ekranında bekliyor" bug'ının kök sebebi tam olarak
+        // buydu — bir önceki turda ErrorDesc'i eklerken yanlışlıkla bu çifte-çağrıyı yarattım).
         Close();
-        JoinCodeSubmitted?.Invoke(code);
+        JoinCodeSubmitted?.Invoke(result);
+    }
+
+    static string MapJoinErrorKey(string reason)
+    {
+        return reason switch
+        {
+            "not_found" => "party.join_error.not_found",
+            "expired" => "party.join_error.expired",
+            "full_or_cancelled" => "party.join_error.full",
+            _ => "party.join_error.generic",
+        };
+    }
+
+    void ShowJoinError(string localizationKey)
+    {
+        if (_enterCodeErrorLabel != null)
+        {
+            _enterCodeErrorLabel.Key = localizationKey;
+        }
+
+        SetActive(_enterCodeError, true);
     }
 
     void OnCopyCodePressed()
@@ -543,6 +641,15 @@ public class MatchPresetPanelController : MonoBehaviour
 
     void CancelActiveCodeIfAny()
     {
+        // Ekrandan ayrılıyoruz — olası bir in-flight "Create a Match" / "Join" akışını (henüz
+        // sonuç bile dönmemiş olsa dahi) geçersiz kılıp butonları HEMEN serbest bırak; o akış
+        // kendisi eninde sonunda (öksüz kalmış halde) devam edip bitecek ama requestSeq
+        // uyuşmazlığı sayesinde artık paylaşılan duruma dokunmayacak (bkz. OnStartMatchPressed /
+        // OnJoinSubmitPressed).
+        _requestSeq++;
+        _createRequestInFlight = false;
+        _joinRequestInFlight = false;
+
         if (string.IsNullOrEmpty(_activeCode))
         {
             return;

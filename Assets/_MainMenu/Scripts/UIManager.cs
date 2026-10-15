@@ -202,7 +202,7 @@ public class UIManager : MonoBehaviour
         matchingPanel.BeginMatchFlow();
     }
 
-    void OnJoinCodeSubmitted(string code)
+    void OnJoinCodeSubmitted(RoomCodeResult validatedResult)
     {
         if (matchingPanel == null)
         {
@@ -210,7 +210,7 @@ public class UIManager : MonoBehaviour
             return;
         }
 
-        matchingPanel.BeginJoinRoomFlow(code);
+        matchingPanel.BeginValidatedJoinRoomFlow(validatedResult);
     }
 
     void OnRoomMatchFound(RoomCodeResult result)

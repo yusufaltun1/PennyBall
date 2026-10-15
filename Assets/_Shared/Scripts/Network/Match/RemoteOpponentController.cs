@@ -11,7 +11,6 @@ public class RemoteOpponentController : MonoBehaviour, IOpponentController
     public static RemoteOpponentController Instance { get; private set; }
 
     const float RemoteRollbackDuration = 0.45f;
-    const float OpponentDisconnectGraceSeconds = 6f;
 
     int _shotSeq;
     int _lastAppliedSeq = -1;
@@ -19,7 +18,6 @@ public class RemoteOpponentController : MonoBehaviour, IOpponentController
     int _lastRollbackSeq = -1;
     string _lastRollbackSender;
     Coroutine _rollbackRoutine;
-    Coroutine _disconnectGraceRoutine;
 
     /// <summary>seq → atış öncesi lokal pozisyon.</summary>
     readonly Dictionary<int, Vector3> _shotStartBySeq = new Dictionary<int, Vector3>();
@@ -53,12 +51,6 @@ public class RemoteOpponentController : MonoBehaviour, IOpponentController
         UnbindChannel();
         OnlineMatchSession.SessionStarted -= TryBindChannel;
         OnlineMatchSession.SessionCleared -= UnbindChannel;
-
-        if (_disconnectGraceRoutine != null)
-        {
-            StopCoroutine(_disconnectGraceRoutine);
-            _disconnectGraceRoutine = null;
-        }
     }
 
     void OnDestroy()
@@ -67,12 +59,6 @@ public class RemoteOpponentController : MonoBehaviour, IOpponentController
         {
             StopCoroutine(_rollbackRoutine);
             _rollbackRoutine = null;
-        }
-
-        if (_disconnectGraceRoutine != null)
-        {
-            StopCoroutine(_disconnectGraceRoutine);
-            _disconnectGraceRoutine = null;
         }
 
         if (Instance == this)
@@ -248,42 +234,21 @@ public class RemoteOpponentController : MonoBehaviour, IOpponentController
         _rollbackRoutine = null;
     }
 
+    /// <summary>
+    /// Fusion'ın OnPlayerLeft'i (channel.OpponentLeft) ağdaki geçici bir kopma/burst'te de
+    /// tetiklenebiliyor (örn. gol sonrası RPC yoğunluğu sırasında) — AMA bu, gerçek cihazda
+    /// uygulama arka plana al��ndığında OS'un networking'i kestiği durumu da YAKALAYAN,
+    /// taşıma-katmanı (transport-level) bir sinyal. Önceden burada kendi sessiz (UI'sız)
+    /// 6sn bekleme+maç-bitirme mantığımız vardı — artık görünür geri sayım UI'sını ZATEN
+    /// taşıyan BackgroundForfeitController'a devrediyoruz (tek bir sayaç/UI otoritesi, iki
+    /// ayrı paralel zamanlayıcının yarışıp tutarsız bir geri sayım göstermesi önleniyor).
+    /// BackgroundForfeitController kendi döngüsünde RemotePlayerCount'u da izleyip geri
+    /// bağlanmayı algılıyor.
+    /// </summary>
     void OnOpponentLeft(string reason)
     {
-        Debug.Log($"[RemoteOpponent] Opponent left: {reason} — {OpponentDisconnectGraceSeconds}sn içinde geri dönerse maç bitmeyecek.");
-
-        if (_disconnectGraceRoutine != null)
-        {
-            StopCoroutine(_disconnectGraceRoutine);
-        }
-
-        _disconnectGraceRoutine = StartCoroutine(WaitForReconnectOrEndMatch(reason));
-    }
-
-    /// <summary>
-    /// Fusion'ın OnPlayerLeft'i ağdaki geçici bir kopma/burst'te de tetiklenebiliyor
-    /// (örn. gol sonrası RPC yoğunluğu sırasında). Rakip bu süre içinde geri bağlanırsa
-    /// (RemotePlayerCount tekrar >=1 olursa) maçı bitirmeden devam ederiz.
-    /// </summary>
-    IEnumerator WaitForReconnectOrEndMatch(string reason)
-    {
-        float elapsed = 0f;
-        while (elapsed < OpponentDisconnectGraceSeconds)
-        {
-            if (OnlineMatchSession.Channel != null && OnlineMatchSession.Channel.RemotePlayerCount >= 1)
-            {
-                Debug.Log("[RemoteOpponent] Opponent reconnected within grace period — maç devam ediyor.");
-                _disconnectGraceRoutine = null;
-                yield break;
-            }
-
-            yield return null;
-            elapsed += Time.unscaledDeltaTime;
-        }
-
-        Debug.LogWarning($"[RemoteOpponent] Opponent {OpponentDisconnectGraceSeconds}sn içinde dönmedi — maç bitiriliyor (reason={reason}).");
-        _disconnectGraceRoutine = null;
-        LeagueMatchController.Instance?.EndMatchByOpponentDisconnect(reason);
+        Debug.Log($"[RemoteOpponent] Opponent left: {reason} — BackgroundForfeitController devralıyor.");
+        BackgroundForfeitController.Instance?.NotifyOpponentConnectionLost(reason);
     }
 
     public int BroadcastLocalShot(CoinIdentity coin, Vector3 direction, float pullDistance)

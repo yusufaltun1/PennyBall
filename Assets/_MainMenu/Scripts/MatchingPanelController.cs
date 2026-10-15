@@ -46,6 +46,7 @@ public class MatchingPanelController : MonoBehaviour
     private bool cancelButtonBound;
     private PartyFlowMode partyMode = PartyFlowMode.QuickMatch;
     private string joinCode;
+    private RoomCodeResult preValidatedJoinResult;
     private string activeRoomCode;
     private string rematchRoomName;
     private string rematchOpponentUserId;
@@ -416,6 +417,24 @@ public class MatchingPanelController : MonoBehaviour
     {
         partyMode = PartyFlowMode.JoinRoom;
         joinCode = code;
+        preValidatedJoinResult = null;
+        BeginFlowInternal();
+    }
+
+    /// <summary>
+    /// Play with Friends > Join: kod ZATEN doğrulanmış (MatchPresetPanelController'da
+    /// RequestJoinCodeAsync başarıyla çağrılıp ErrorDesc için sonuç kontrol edilmiş) — burada
+    /// TEKRAR doğrulamıyoruz. Nakama'daki join_room_code RPC'si idempotent DEĞİL: odayı sunucu
+    /// tarafında "waiting"ten "full"a çevirip misafiri kalıcı olarak kaydediyor. İkinci bir
+    /// çağrı odayı zaten "full" bulup "full_or_cancelled" ile başarısız olurdu — misafir hiçbir
+    /// zaman gerçek Photon bağlantı adımına geçemez, host da kimsenin katıldığını göremeyip kod
+    /// ekranında sonsuza dek beklerdi.
+    /// </summary>
+    public void BeginValidatedJoinRoomFlow(RoomCodeResult validatedResult)
+    {
+        partyMode = PartyFlowMode.JoinRoom;
+        joinCode = validatedResult?.Code;
+        preValidatedJoinResult = validatedResult;
         BeginFlowInternal();
     }
 
@@ -904,7 +923,19 @@ public class MatchingPanelController : MonoBehaviour
     {
         try
         {
-            RoomCodeResult joined = await PartyRoomService.RequestJoinCodeAsync(code);
+            RoomCodeResult joined;
+            if (preValidatedJoinResult != null && preValidatedJoinResult.Code == code)
+            {
+                // BeginValidatedJoinRoomFlow üzerinden geldik — RPC zaten başarıyla çağrıldı,
+                // TEKRAR çağırmak odayı sunucuda "full" bulup başarısız olurdu (bkz. metod yorumu).
+                joined = preValidatedJoinResult;
+                preValidatedJoinResult = null;
+            }
+            else
+            {
+                joined = await PartyRoomService.RequestJoinCodeAsync(code);
+            }
+
             if (!joined.Success)
             {
                 onDone?.Invoke(MatchmakingResult.Fail(joined.Reason));
