@@ -232,6 +232,13 @@ public class ExitMatchPanelController : MonoBehaviour
 
         if (OnlineMatchSession.IsOnlineMatch)
         {
+            // Asıl teslim MatchShotNetworkRelay'in güvenilir Fusion [Rpc] kanalı ile olur —
+            // custom reliable-data kanalı (SendForfeit) Shared Mode'da bazı bağlantılarda hiç
+            // teslim etmiyordu (bu oturumda shot/goal/snapshot/match-end/background-forfeit için
+            // de aynı sorun bulunup hepsi bu RPC kanalına taşınmıştı — forfeit unutulmuştu, "pes
+            // ettiğimde karşı tarafta maç bitmiyor" bug'ının sebebi tam olarak buydu). Eski kanal
+            // zararsız bir yedek olarak kalıyor.
+            MatchShotNetworkRelay.Instance?.TrySendForfeit();
             OnlineMatchSession.Channel?.SendForfeit(ForfeitReason);
         }
 

@@ -40,9 +40,61 @@ public class MatchPresetPanelController : MonoBehaviour
     Sprite _copyButtonDefaultSprite;
     Coroutine _copyFeedbackRoutine;
 
+    RectTransform _panelRoot;
+    Vector2 _panelRootOriginalAnchoredPosition;
+    Canvas _rootCanvas;
+
+    const float KeyboardShiftLerpSpeed = 12f;
+    const float KeyboardShiftSnapThreshold = 0.5f;
+
     void Awake()
     {
         EnsureInitialized();
+    }
+
+    void Update()
+    {
+        UpdateKeyboardShift();
+    }
+
+    /// <summary>
+    /// Kod girme ekranında native klavye açıldığında PanelRoot'u yukarı kaydırır ki input/buton
+    /// klavyenin altında kalmasın. PanelRoot'u hedef alıyoruz çünkü: (1) PanelRoot'un kendi
+    /// pozisyonu üst nesnede (MatchPreset, sadece full-stretch bir Canvas çocuğu, layout grubu
+    /// YOK) hiçbir layout grubu tarafından yönetilmiyor — Container_EnterCode'u doğrudan kaydırmak
+    /// PanelRoot'un KENDİ VerticalLayoutGroup'uyla çakışırdı (her rebuild'de eski konuma geri
+    /// çekerdi); (2) karartma arka planı PanelRoot'un DIŞINDA, MatchPreset'in ayrı bir kardeşi —
+    /// bu yüzden PanelRoot kaydığında arkada boşluk kalmıyor, arka plan sabit tam ekran kalıyor.
+    /// TouchScreenKeyboard.area sadece gerçek cihazlarda (Editör'de genelde Rect.zero) anlamlı.
+    /// </summary>
+    void UpdateKeyboardShift()
+    {
+        if (_panelRoot == null)
+        {
+            return;
+        }
+
+        float targetOffset = 0f;
+
+        if (_enterCode != null && _enterCode.activeInHierarchy
+            && _joinCodeInput != null && _joinCodeInput.isFocused
+            && TouchScreenKeyboard.visible)
+        {
+            float keyboardHeightPx = TouchScreenKeyboard.area.height;
+            float scaleFactor = _rootCanvas != null && _rootCanvas.scaleFactor > 0f
+                ? _rootCanvas.scaleFactor
+                : 1f;
+            targetOffset = keyboardHeightPx / scaleFactor;
+        }
+
+        Vector2 pos = _panelRoot.anchoredPosition;
+        float desiredY = _panelRootOriginalAnchoredPosition.y + targetOffset;
+
+        pos.y = Mathf.Abs(pos.y - desiredY) < KeyboardShiftSnapThreshold
+            ? desiredY
+            : Mathf.Lerp(pos.y, desiredY, Time.unscaledDeltaTime * KeyboardShiftLerpSpeed);
+
+        _panelRoot.anchoredPosition = pos;
     }
 
     void OnDisable()
@@ -72,6 +124,13 @@ public class MatchPresetPanelController : MonoBehaviour
     public void Close()
     {
         gameObject.SetActive(false);
+
+        if (_panelRoot != null)
+        {
+            // Kapanırken klavye-kaydırmasından kalmış olabilecek ofseti temizle; aksi halde
+            // bir dahaki Open()'da Update() birkaç frame boyunca eski konumdan geri lerp eder.
+            _panelRoot.anchoredPosition = _panelRootOriginalAnchoredPosition;
+        }
     }
 
     void EnsureInitialized()
@@ -87,6 +146,19 @@ public class MatchPresetPanelController : MonoBehaviour
         _playWithFriend = FindChild(PlayWithFriendPath);
         _codeGenerated = FindChild(CodeGeneratedPath);
         _enterCode = FindChild(EnterCodePath);
+
+        Transform panelRootTransform = transform.Find("PanelRoot");
+        _panelRoot = panelRootTransform as RectTransform;
+        if (_panelRoot != null)
+        {
+            _panelRootOriginalAnchoredPosition = _panelRoot.anchoredPosition;
+        }
+
+        _rootCanvas = GetComponentInParent<Canvas>();
+        if (_rootCanvas != null)
+        {
+            _rootCanvas = _rootCanvas.rootCanvas;
+        }
 
         Transform codeTransform = transform.Find($"{CodeGeneratedPath}/CodeHolder/Code");
         _codeText = codeTransform != null ? codeTransform.GetComponent<TextMeshProUGUI>() : null;
@@ -122,6 +194,23 @@ public class MatchPresetPanelController : MonoBehaviour
         if (codeHolder == null)
         {
             return;
+        }
+
+        // CodeHolder'ın kendi ContentSizeFitter'ı (Horizontal=PreferredSize) içeriğe göre
+        // genişlemeye/daralmaya çalışıyor, AMA üst Container_EnterCode'un VerticalLayoutGroup'u
+        // (ChildControlWidth=1 + ChildForceExpandWidth=1) CodeHolder'ı ZATEN tam genişliğe
+        // zorluyor — ikisi aynı anda CodeHolder'ın genişliğini belirlemeye çalışınca, hangisinin
+        // kazandığı o anki rebuild sırasına göre değişiyordu (özellikle metin 6 haneye ulaşıp TMP
+        // tercih genişliğini yeniden hesapladığı anda) — "6 hanede buton/kod kayıyor" bug'ının
+        // GERÇEK kök sebebi buydu (Code'un kendi LayoutElement'ini dondurmak bunu çözmüyordu,
+        // çünkü CodeHolder'ın ChildControlWidth=0 olduğu için Code'un genişliği zaten üst satırın
+        // boyutunu etkilemiyordu — asıl çakışma CodeHolder'ın KENDİ ContentSizeFitter'ıyla üst
+        // layout grubu arasındaydı). Üst grup zaten genişliği sabitlediği için CSF gereksiz —
+        // kapatıyoruz.
+        ContentSizeFitter codeHolderFitter = codeHolder.GetComponent<ContentSizeFitter>();
+        if (codeHolderFitter != null)
+        {
+            codeHolderFitter.enabled = false;
         }
 
         Transform codeLabelTransform = codeHolder.Find("Code");
@@ -186,6 +275,13 @@ public class MatchPresetPanelController : MonoBehaviour
         _joinCodeInput.shouldHideMobileInput = false;
         _joinCodeInput.transition = Selectable.Transition.None;
         _joinCodeInput.interactable = true;
+
+        // İmleç (caret) görünmesin istendi — yazma hâlâ normal çalışır, sadece yanıp sönen
+        // çizgi çizilmiyor. caretWidth=0 tek başına bazı TMP sürümlerinde yetmiyor (min 1px'e
+        // yuvarlanabiliyor) — customCaretColor ile tamamen saydam yapmak daha güvenilir.
+        _joinCodeInput.caretWidth = 0;
+        _joinCodeInput.customCaretColor = true;
+        _joinCodeInput.caretColor = new Color(0f, 0f, 0f, 0f);
     }
 
     static TextMeshProUGUI EnsureCodeInputPlaceholder(RectTransform codeRect, TextMeshProUGUI codeLabel)
@@ -211,7 +307,7 @@ public class MatchPresetPanelController : MonoBehaviour
         Color color = codeLabel.color;
         color.a *= 0.4f;
         placeholder.color = color;
-        placeholder.text = "000000";
+        placeholder.text = "______";
 
         return placeholder;
     }

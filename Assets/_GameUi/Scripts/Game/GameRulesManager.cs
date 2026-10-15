@@ -21,6 +21,13 @@ public class GameRulesManager : MonoBehaviour
     /// </summary>
     const float GuestGoalConfirmationTimeoutSeconds = 2.5f;
 
+    /// <summary>
+    /// Misafirin kendi fiziği golü TAMAMEN kaçırmış olabilir (host'un otoriter fiziğiyle
+    /// sapma — tam da bu tasarımın çözmeye çalıştığı problem). Golsüz gibi görünen geçerli
+    /// bir atıştan sonra host'un geç gelebilecek "aslında goldü" onayı için kısa bir pencere.
+    /// </summary>
+    const float GuestLateGoalConfirmationSeconds = 1f;
+
     readonly List<CoinIdentity> _playerCoins = new(3);
     readonly List<CoinIdentity> _roundCoins = new(6);
     readonly List<Vector3> _shotPathSamples = new(64);
@@ -50,6 +57,17 @@ public class GameRulesManager : MonoBehaviour
     }
 
     public bool IsResolvingMove => _isResolvingMove;
+
+    /// <summary>
+    /// IsResolvingMove true iken YALNIZCA bu coin yerel oyuncunun kendi atışını çözümlüyor
+    /// (OnShotReleased sadece CoinTeam.Player coin'leri için set eder, gelen rakip atışlarında
+    /// hiç dokunulmaz). HostPhysicsAuthority bunu, host-takibini TÜM tahta için değil sadece
+    /// bu tek coin için bastırmak amacıyla kullanır — diğer 5 para (atışın çarpabileceği
+    /// paralar dahil) host düzeltmesini almaya devam etmeli, yoksa atış süresince oluşan
+    /// sapma hiç telafi edilmeden birikir.
+    /// </summary>
+    public CoinIdentity ResolvingShotCoin => _isResolvingMove ? _resolvingShotCoin : null;
+
     public bool IsGoalSequenceActive => _goalSequenceActive;
     public bool HasPendingGoalFreeze => _pendingGoalFreeze;
     public bool IsMatchLockedForInput => _goalSequenceActive || _pendingGoalFreeze || _isResolvingMove;
@@ -573,11 +591,11 @@ public class GameRulesManager : MonoBehaviour
         _pendingGuestGoalConfirmed = true;
     }
 
-    IEnumerator WaitForHostGoalConfirmation()
+    IEnumerator WaitForHostGoalConfirmation(float timeoutSeconds)
     {
         _pendingGuestGoalConfirmed = null;
         float elapsed = 0f;
-        while (_pendingGuestGoalConfirmed == null && elapsed < GuestGoalConfirmationTimeoutSeconds)
+        while (_pendingGuestGoalConfirmed == null && elapsed < timeoutSeconds)
         {
             elapsed += Time.unscaledDeltaTime;
             yield return null;
@@ -687,6 +705,38 @@ public class GameRulesManager : MonoBehaviour
                 $"overlap={IsOverlappingEnemyGoalArea(coin)}");
         }
 
+        bool isOnlineMatchForGoalCheck = OnlineMatchSession.IsOnlineMatch || MatchSessionContext.IsOnlineMatch;
+        bool isGuestOnlineForGoalCheck = isOnlineMatchForGoalCheck
+            && OnlineMatchSession.Channel != null
+            && !OnlineMatchSession.Channel.IsHost;
+
+        if (isGuestOnlineForGoalCheck && shotValid && !scoredGoal)
+        {
+            // Misafirin kendi fiziği golü kaçırmış olabilir — host'un geç gelebilecek
+            // "aslında goldü" onayı için kısa bir pencere bırakıyoruz.
+            yield return WaitForHostGoalConfirmation(GuestLateGoalConfirmationSeconds);
+
+            if (_pendingGuestGoalConfirmed == true)
+            {
+                _pendingGuestGoalConfirmed = null;
+                Debug.Log("[GameRules] Host geç onayla golü bildirdi — yerel fizik kaçırmıştı.");
+
+                if (!TryBeginGoalSequence(cancelActiveResolve: false))
+                {
+                    _resolvingShotCoin = null;
+                    _resolveRoutine = null;
+                    yield break;
+                }
+
+                HandlePlayerGoalCelebrationOnline();
+                _resolvingShotCoin = null;
+                _resolveRoutine = null;
+                yield break;
+            }
+
+            _pendingGuestGoalConfirmed = null;
+        }
+
         if (shotValid && !scoredGoal)
         {
             if (!isOpeningShot)
@@ -733,7 +783,7 @@ public class GameRulesManager : MonoBehaviour
             {
                 // Misafirin kendi fiziği "gol" dese de tek otorite host — onay beklenmeden
                 // kutlama/skor YAPILMAZ (bkz. HostPhysicsAuthority gol hakemliği).
-                yield return WaitForHostGoalConfirmation();
+                yield return WaitForHostGoalConfirmation(GuestGoalConfirmationTimeoutSeconds);
 
                 if (_pendingGuestGoalConfirmed == true)
                 {

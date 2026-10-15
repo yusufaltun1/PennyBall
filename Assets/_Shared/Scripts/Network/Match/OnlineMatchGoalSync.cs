@@ -111,10 +111,22 @@ public static class OnlineMatchGoalSync
             return;
         }
 
+        ApplyConcededGoal();
+    }
+
+    /// <summary>
+    /// Bu taraf gol yedi — skor + kutlama. Guest'in host'tan RPC_Goal(hostScored:true) alınca
+    /// (üstte) VE host'un misafirin golünü kendi hakemliğinde onayladığında (HostPhysicsAuthority)
+    /// ortak kullanılır — host kendi RPC_Goal yayınını InvokeLocal=false yüzünden hiç almadığı
+    /// için, kendi "gol yedim" işlemini burada AÇIKÇA tetiklemesi gerekiyor, yoksa host'un kendi
+    /// skoru asla artmazdı ("skor diğer tarafta güncellenmiyor" bug'ı).
+    /// </summary>
+    public static void ApplyConcededGoal()
+    {
         _applyingRemoteGoal = true;
         try
         {
-            Debug.Log("[OnlineGoal] Host scored — enemy celebration (reset RPC bekleniyor)");
+            Debug.Log("[OnlineGoal] Conceded — enemy celebration (reset RPC bekleniyor)");
             LeagueMatchController.Instance?.RegisterOpponentGoalFromNetwork();
             if (GameRulesManager.Instance != null)
             {

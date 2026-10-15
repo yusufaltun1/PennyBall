@@ -52,6 +52,19 @@ public class CoinIdentity : MonoBehaviour
 
     public bool CanBeSelectedByPlayer()
     {
-        return _team == CoinTeam.Player && !_isPassive;
+        return _team == CoinTeam.Player && !_isPassive && !IsFrozenByBooster();
+    }
+
+    /// <summary>
+    /// Donma booster'ı şimdiye kadar sadece CoinTeam.Opponent paralarını hedefliyordu — ki
+    /// aktive eden oyuncu zaten o paraları sürükleyemez, bu yüzden seçim mantığında hiç
+    /// kontrol edilmemişti. Artık karşı tarafa ağ üzerinden de uygulandığı için (kendi
+    /// CoinTeam.Player paraları donuyor), bu kontrol olmadan donmuş bir para yine de
+    /// sürüklenip atılabilirdi.
+    /// </summary>
+    public bool IsFrozenByBooster()
+    {
+        IceFrozenCoinState frozen = GetComponent<IceFrozenCoinState>();
+        return frozen != null && frozen.IsFrozen;
     }
 }

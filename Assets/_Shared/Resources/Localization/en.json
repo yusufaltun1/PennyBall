@@ -111,6 +111,7 @@
     { "key": "match_preset.join_match.title", "value": "Join a Match" },
     { "key": "match_preset.join_match.desc", "value": "Enter the code and start the match!" },
     { "key": "result.play_again_button", "value": "Play Again!" },
+    { "key": "result.quit_button", "value": "Quit!" },
 
     { "key": "exit_match.title", "value": "You will forfeit!" },
     { "key": "exit_match.subtitle", "value": "Are you sure you want to leave the match?" },

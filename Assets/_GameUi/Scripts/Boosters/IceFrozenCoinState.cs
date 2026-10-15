@@ -145,20 +145,22 @@ public static class IceOpponentFreezeUtility
         return false;
     }
 
-    public static List<CoinIdentity> CollectOpponentCoins()
+    public static List<CoinIdentity> CollectOpponentCoins() => CollectCoinsForTeam(CoinTeam.Opponent);
+
+    public static List<CoinIdentity> CollectCoinsForTeam(CoinTeam team)
     {
-        var opponents = new List<CoinIdentity>();
+        var result = new List<CoinIdentity>();
         CoinIdentity[] coins = UnityEngine.Object.FindObjectsByType<CoinIdentity>(FindObjectsSortMode.None);
         for (int i = 0; i < coins.Length; i++)
         {
             CoinIdentity identity = coins[i];
-            if (identity != null && identity.Team == CoinTeam.Opponent)
+            if (identity != null && identity.Team == team)
             {
-                opponents.Add(identity);
+                result.Add(identity);
             }
         }
 
-        return opponents;
+        return result;
     }
 
     public static bool IsOpponentReadyForIceBooster()
@@ -234,12 +236,19 @@ public static class IceOpponentFreezeUtility
         }
     }
 
-    public static void FreezeAllOpponentCoins(float durationSeconds, IceCoinFrostVisual.Settings visualSettings)
+    public static void FreezeAllOpponentCoins(float durationSeconds, IceCoinFrostVisual.Settings visualSettings) =>
+        FreezeCoinsForTeam(CoinTeam.Opponent, durationSeconds, visualSettings);
+
+    /// <summary>
+    /// Online'da rakibin dondurma kullanması, bizim CoinTeam.Player paralarımızı dondurmasını
+    /// gerektirir (bkz. BoosterNetworkSync) — bu yüzden takım parametreli hale getirildi.
+    /// </summary>
+    public static void FreezeCoinsForTeam(CoinTeam team, float durationSeconds, IceCoinFrostVisual.Settings visualSettings)
     {
-        List<CoinIdentity> opponents = CollectOpponentCoins();
-        for (int i = 0; i < opponents.Count; i++)
+        List<CoinIdentity> coins = CollectCoinsForTeam(team);
+        for (int i = 0; i < coins.Count; i++)
         {
-            CoinIdentity identity = opponents[i];
+            CoinIdentity identity = coins[i];
             if (identity == null)
             {
                 continue;

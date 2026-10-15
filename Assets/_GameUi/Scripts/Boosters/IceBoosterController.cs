@@ -205,6 +205,10 @@ public class IceBoosterController : MonoBehaviour
             IceOpponentFreezeUtility.FreezeAllOpponentCoins(
                 _boosterTiming.FreezeDurationSeconds,
                 _frostSettings);
+            // Online'da bu sadece BİZİM ekranımızdaki (CoinTeam.Opponent, zaten bize sürüklenemez)
+            // paraları dondurur — asıl rakibin kendi ekranında paralarını dondurmasını sağlayan
+            // karşı tarafa ayrıca bildirilir, aksi halde rakip hiç etkilenmeden oynamaya devam eder.
+            BoosterNetworkSync.SendFreezeOpponent(_boosterTiming.FreezeDurationSeconds);
             _iceUsedFeedback?.Play(_usedFeedbackTiming);
 
             float startTime = Time.time;

@@ -111,6 +111,7 @@
     { "key": "match_preset.join_match.title", "value": "Maça Katıl" },
     { "key": "match_preset.join_match.desc", "value": "Kodu gir ve maça başla!" },
     { "key": "result.play_again_button", "value": "Tekrar Oyna!" },
+    { "key": "result.quit_button", "value": "Çık!" },
 
     { "key": "exit_match.title", "value": "Maçı terk edeceksin!" },
     { "key": "exit_match.subtitle", "value": "Maçtan çıkmak istediğine emin misin?" },

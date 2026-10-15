@@ -20,6 +20,26 @@ public class MatchShotNetworkRelay : NetworkBehaviour
     public System.Action<float, bool> TimeSyncReceived;
     public System.Action<int, int, string> MatchEndReceived;
     public System.Action<int, float, float, float, float, float, float, float, float, float, float, float, float> CoinSnapshotReceived;
+    /// <summary>Gönderen, karşı tarafı dondurma booster'ı kullandı — alıcı KENDİ CoinTeam.Player
+    /// paralarını dondurmalı (bkz. BoosterNetworkSync).</summary>
+    public System.Action<float> BoosterFreezeReceived;
+    /// <summary>Gönderen uygulamayı arka plana aldı (true) / geri döndü (false) — alıcı
+    /// (bekleyen taraf) bunu 10sn'lik hükmen mağlup geri sayımını başlatmak/iptal etmek için
+    /// kullanır (bkz. BackgroundForfeitController).</summary>
+    public System.Action<bool> OpponentBackgroundStateReceived;
+    /// <summary>Gönderen (bekleyen taraf), karşı tarafın 10sn arka planda kaldığını tespit edip
+    /// hükmen mağlubiyeti ilan etti — alıcı (arka plana alan taraf) KENDİ tarafında zorunlu
+    /// Loss uygulamalı (bkz. LeagueMatchController.ForfeitActiveMatch). Gönderen aynı anda kendi
+    /// tarafında zorunlu Win uygular (EndMatchByOpponentDisconnect) — host/misafir simetrik,
+    /// host-only MatchEnd akışına (OnLocalMatchCompleted sadece host'ta gönderir) bağımlı değil.</summary>
+    public System.Action BackgroundForfeitReceived;
+    /// <summary>Gönderen "Çık" (ExitMatchPanelController) ile maçtan manuel pes etti — alıcı
+    /// (karşı taraf) ANINDA galibiyet almalı, bekleme gerekmez (kasıtlı/kesin bir sinyal, 6sn'lik
+    /// disconnect grace-period'ına gerek yok). Eskiden sadece custom reliable-data kanalından
+    /// (IMatchRealtimeChannel.SendForfeit) gönderiliyordu — o kanal Shared Mode'da bazı
+    /// bağlantılarda hiç teslim etmiyor (bu oturumda shot/goal/snapshot/match-end için de aynı
+    /// sorun bulunup hepsi bu RPC kanalına taşınmıştı, forfeit unutulmuştu).</summary>
+    public System.Action ForfeitReceived;
 
     readonly HashSet<PlayerRef> _readyPlayers = new HashSet<PlayerRef>();
     int _goalSeq;
@@ -312,6 +332,18 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         return true;
     }
 
+    /// <summary>Dondurma booster'ını karşı tarafa bildirir — alıcı kendi paralarını dondurur.</summary>
+    public bool TrySendBoosterFreeze(float durationSeconds)
+    {
+        if (Object == null || !Object.IsValid)
+        {
+            return false;
+        }
+
+        RPC_BoosterFreeze(durationSeconds);
+        return true;
+    }
+
     public bool TrySendTimeSync(float remainingSeconds, bool paused)
     {
         if (Object == null || !Object.IsValid)
@@ -320,6 +352,41 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         }
 
         RPC_TimeSync(remainingSeconds, paused);
+        return true;
+    }
+
+    public bool TrySendBackgroundState(bool backgrounded)
+    {
+        if (Object == null || !Object.IsValid)
+        {
+            return false;
+        }
+
+        RPC_PlayerBackground(backgrounded);
+        return true;
+    }
+
+    public bool TrySendBackgroundForfeit()
+    {
+        if (Object == null || !Object.IsValid)
+        {
+            return false;
+        }
+
+        RPC_BackgroundForfeit();
+        return true;
+    }
+
+    /// <summary>ExitMatchPanelController, "Evet, Çık" onaylanınca çağırır.</summary>
+    public bool TrySendForfeit()
+    {
+        if (Object == null || !Object.IsValid)
+        {
+            return false;
+        }
+
+        RPC_Forfeit();
+        Debug.Log("[ShotRelay] RPC_Send Forfeit");
         return true;
     }
 
@@ -452,5 +519,33 @@ public class MatchShotNetworkRelay : NetworkBehaviour
         float e1x, float e1z, float e2x, float e2z, float e3x, float e3z)
     {
         CoinSnapshotReceived?.Invoke(batchSeq, p1x, p1z, p2x, p2z, p3x, p3z, e1x, e1z, e2x, e2z, e3x, e3z);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.All, InvokeLocal = false)]
+    void RPC_BoosterFreeze(float durationSeconds)
+    {
+        Debug.Log($"[ShotRelay] RPC_Recv BoosterFreeze duration={durationSeconds}");
+        BoosterFreezeReceived?.Invoke(durationSeconds);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.All, InvokeLocal = false)]
+    void RPC_PlayerBackground(NetworkBool backgrounded)
+    {
+        Debug.Log($"[ShotRelay] RPC_Recv PlayerBackground backgrounded={backgrounded}");
+        OpponentBackgroundStateReceived?.Invoke(backgrounded);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.All, InvokeLocal = false)]
+    void RPC_BackgroundForfeit()
+    {
+        Debug.Log("[ShotRelay] RPC_Recv BackgroundForfeit");
+        BackgroundForfeitReceived?.Invoke();
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.All, InvokeLocal = false)]
+    void RPC_Forfeit()
+    {
+        Debug.Log("[ShotRelay] RPC_Recv Forfeit");
+        ForfeitReceived?.Invoke();
     }
 }

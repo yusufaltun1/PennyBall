@@ -112,6 +112,8 @@
     { "key": "match_preset.create_match.desc", "value": "Envie o código para o seu amigo e aguarde..." },
     { "key": "match_preset.join_match.title", "value": "Entrar na Partida" },
     { "key": "match_preset.join_match.desc", "value": "Digite o código e comece a partida!" },
+    { "key": "result.play_again_button", "value": "Jogar Novamente!" },
+    { "key": "result.quit_button", "value": "Sair!" },
 
     { "key": "exit_match.title", "value": "Você vai desistir!" },
     { "key": "exit_match.subtitle", "value": "Tem certeza de que quer sair da partida?" },

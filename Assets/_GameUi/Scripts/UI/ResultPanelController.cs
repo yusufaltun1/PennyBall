@@ -324,6 +324,15 @@ public class ResultPanelController : MonoBehaviour
         ReturnToMainMenu();
     }
 
+    /// <summary>RematchPanelController'daki "Quit" butonu çağırır — rematch reddedildi, normal
+    /// devam akışına (level-up/booster-unlock/lig durumu zincirine) aynen diğer Continue
+    /// yolundaki gibi gider.</summary>
+    public void OnReplayDeclined()
+    {
+        SetButtonsInteractable(false);
+        ReturnToMainMenu();
+    }
+
     void ShowReplay()
     {
         _replayShown = true;
@@ -334,6 +343,11 @@ public class ResultPanelController : MonoBehaviour
         }
 
         SetReplayVisible(true);
+
+        // Awake()'teki tek seferlik RetargetLabel'a güvenmek yerine, panel oyuncuya GERÇEKTEN
+        // görünür olduğu bu anda butonların lokalizasyonunu güncel dile göre tazele — "replay
+        // butonları İngilizce'de takılı kalıyor" bug'ı için ek güvence.
+        RematchPanelController.RefreshLocalization();
     }
 
     void SetReplayVisible(bool visible)

@@ -205,6 +205,7 @@ public class OnlineMatchCoordinator : MonoBehaviour
         }
 
         OnlineMatchGoalSync.EnsureBound();
+        BoosterNetworkSync.EnsureBound();
         EnsureTimeSyncBound();
         EnsureMatchCompletedBound();
         SyncScoreIfNeeded();
@@ -228,6 +229,8 @@ public class OnlineMatchCoordinator : MonoBehaviour
         MatchShotNetworkRelay.Instance.TimeSyncReceived += OnTimeSyncReceived;
         MatchShotNetworkRelay.Instance.MatchEndReceived -= OnRelayMatchEndReceived;
         MatchShotNetworkRelay.Instance.MatchEndReceived += OnRelayMatchEndReceived;
+        MatchShotNetworkRelay.Instance.ForfeitReceived -= OnRelayForfeitReceived;
+        MatchShotNetworkRelay.Instance.ForfeitReceived += OnRelayForfeitReceived;
         _timeSyncBound = true;
     }
 
@@ -237,6 +240,16 @@ public class OnlineMatchCoordinator : MonoBehaviour
     void OnRelayMatchEndReceived(int hostPlayerGoals, int hostOpponentGoals, string reason)
     {
         LeagueMatchController.Instance?.CompleteMatchFromNetwork(hostOpponentGoals, hostPlayerGoals);
+    }
+
+    /// <summary>
+    /// ExitMatchPanelController'dan karşı taraf "Evet, Çık" ile manuel pes etti — kasıtlı/kesin
+    /// bir sinyal olduğu için (bağlantı kopması belirsizliği yok) RemoteOpponentController'ın
+    /// 6sn'lik disconnect grace-period'ını hiç beklemeden ANINDA galibiyet alıyoruz.
+    /// </summary>
+    void OnRelayForfeitReceived()
+    {
+        LeagueMatchController.Instance?.EndMatchByOpponentDisconnect("opponent_forfeit");
     }
 
     void SyncTimeIfNeeded()

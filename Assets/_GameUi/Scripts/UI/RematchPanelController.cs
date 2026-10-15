@@ -4,20 +4,26 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// ResultPanel &gt; RePlay &gt; Container_PlaywFriend: arkadaşla oynanan maç bitince "Play Again".
-/// MainMenu'deki Create/Join yapısı aynen var ama host/guest ayrımı yok — ikisi de AYNI Photon
-/// odasına (önceki maçın PhotonRoomName'i) tekrar katılıp birbirini bekliyor; yeni Nakama kodu
-/// üretmeye/yazmaya gerek yok, zaten kim olduklarını biliyorlar.
+/// ResultPanel &gt; RePlay &gt; Container_PlaywFriend: arkadaşla oynanan maç bitince iki seçenek.
+/// Btn_JoinMatch (üstteki) = "Quit": rematch'i reddedip normal Continue akışına
+/// (ResultPanelController.OnReplayDeclined → ReturnToMainMenu) döner. Btn_StartMatch
+/// (alttaki) = "Play Again": MainMenu'deki Create/Join yapısı aynen var ama host/guest ayrımı
+/// yok — AYNI Photon odasına (önceki maçın PhotonRoomName'i) tekrar katılıp birbirini
+/// bekliyorlar; yeni Nakama kodu üretmeye/yazmaya gerek yok, zaten kim olduklarını biliyorlar.
+/// NOT: buton renkleri/konumları (üst=kırmızı Btn_JoinMatch, alt=mavi Btn_StartMatch)
+/// SABİT — sadece hangi GameObject'in hangi metni/davranışı taşıdığı değişiyor.
 /// </summary>
 [DisallowMultipleComponent]
 public class RematchPanelController : MonoBehaviour
 {
     const string ContainerPath = "Container_PlaywFriend";
+    const string PlayAgainLocalizationKey = "result.play_again_button";
+    const string QuitLocalizationKey = "result.quit_button";
 
     bool _bound;
     bool _pressed;
-    Button _startButton;
-    Button _joinButton;
+    Button _topButton;
+    Button _bottomButton;
 
     public static RematchPanelController FindPanel()
     {
@@ -44,6 +50,19 @@ public class RematchPanelController : MonoBehaviour
         return controller;
     }
 
+    /// <summary>
+    /// ResultPanelController.ShowReplay() panel GÖRÜNÜR olurken açıkça çağırır — sadece
+    /// Awake() anındaki (ResultPanelController.Awake, maç başlamadan önce) tek seferlik
+    /// RetargetLabel'a güvenmek yerine, oyuncunun paneli GERÇEKTEN gördüğü an etiketleri o anki
+    /// güncel dile göre tazeler. "Key" zaten aynıysa LocalizedText.Refresh() ucuz bir no-op'tan
+    /// biraz fazlası (tek bir Get() çağrısı) olduğu için her seferinde çağırmak zararsız.
+    /// </summary>
+    public static void RefreshLocalization()
+    {
+        RematchPanelController controller = FindPanel();
+        controller?.ApplyLocalizedLabels();
+    }
+
     void EnsureBound()
     {
         if (_bound)
@@ -54,18 +73,26 @@ public class RematchPanelController : MonoBehaviour
         _bound = true;
         _pressed = false;
 
-        _startButton = Bind($"{ContainerPath}/Btn_StartMatch", OnPlayAgainPressed);
-        _joinButton = Bind($"{ContainerPath}/Btn_JoinMatch", OnPlayAgainPressed);
+        // Üstteki (Btn_JoinMatch) = Quit, alttaki (Btn_StartMatch) = Play Again — ikisi de
+        // aynı rematch'i tetikliyordu, kullanıcı bunun kafa karıştırıcı olduğunu belirtti.
+        // Buton renk/konumları SABİT kalıyor, sadece davranış+metin GameObject'lere göre atandı.
+        _topButton = Bind($"{ContainerPath}/Btn_JoinMatch", OnQuitPressed);
+        _bottomButton = Bind($"{ContainerPath}/Btn_StartMatch", OnPlayAgainPressed);
         SetButtonsInteractable(true);
 
-        // Bu butonlar MainMenu'deki Create/Join'den kopyalanmış — metinleri hâlâ
-        // "Create a Match!"/"Join a Match!" diyordu. Rematch'te ikisi de aynı "Play Again"
-        // anlamına geldiği için label'larını ortak bir anahtara çeviriyoruz.
-        RetargetLabel($"{ContainerPath}/Btn_StartMatch/Container/Play");
-        RetargetLabel($"{ContainerPath}/Btn_JoinMatch/Container/Play");
+        ApplyLocalizedLabels();
     }
 
-    void RetargetLabel(string path)
+    void ApplyLocalizedLabels()
+    {
+        // Bu butonlar MainMenu'deki Create/Join'den kopyalanmış — metinleri hâlâ
+        // "Create a Match!"/"Join a Match!" diyordu. Artık gerçek anlamlarına göre ayrı
+        // anahtarlara yönlendiriliyorlar.
+        RetargetLabel($"{ContainerPath}/Btn_JoinMatch/Container/Play", QuitLocalizationKey);
+        RetargetLabel($"{ContainerPath}/Btn_StartMatch/Container/Play", PlayAgainLocalizationKey);
+    }
+
+    void RetargetLabel(string path, string localizationKey)
     {
         Transform labelTransform = transform.Find(path);
         LocalizedText label = labelTransform != null ? labelTransform.GetComponent<LocalizedText>() : null;
@@ -75,7 +102,7 @@ public class RematchPanelController : MonoBehaviour
             return;
         }
 
-        label.Key = "result.play_again_button";
+        label.Key = localizationKey;
     }
 
     Button Bind(string path, UnityAction action)
@@ -95,14 +122,14 @@ public class RematchPanelController : MonoBehaviour
 
     void SetButtonsInteractable(bool interactable)
     {
-        if (_startButton != null)
+        if (_topButton != null)
         {
-            _startButton.interactable = interactable;
+            _topButton.interactable = interactable;
         }
 
-        if (_joinButton != null)
+        if (_bottomButton != null)
         {
-            _joinButton.interactable = interactable;
+            _bottomButton.interactable = interactable;
         }
     }
 
@@ -142,5 +169,28 @@ public class RematchPanelController : MonoBehaviour
             OnlineMatchSession.OpponentAvatarIndex);
 
         SceneManager.LoadScene(GameSceneNames.MainMenu);
+    }
+
+    void OnQuitPressed()
+    {
+        if (_pressed)
+        {
+            return;
+        }
+
+        _pressed = true;
+        SetButtonsInteractable(false);
+        MainMenuClickSound.Play();
+
+        ResultPanelController resultPanel = GetComponentInParent<ResultPanelController>();
+        if (resultPanel == null)
+        {
+            Debug.LogWarning("[Rematch] ResultPanelController bulunamadı — Quit uygulanamadı.", this);
+            _pressed = false;
+            SetButtonsInteractable(true);
+            return;
+        }
+
+        resultPanel.OnReplayDeclined();
     }
 }
